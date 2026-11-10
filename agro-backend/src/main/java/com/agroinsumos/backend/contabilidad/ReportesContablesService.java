@@ -78,7 +78,8 @@ public class ReportesContablesService {
     public EstadoResultados estadoResultados(Long cia, LocalDate desde, LocalDate hasta) {
         rango(desde, hasta);
         var plan = cuentas.findByCompaniaIdOrderByCodigo(cia);
-        var mov = acumular(plan, movimientos(cia, desde, hasta));
+        // Sin el asiento de cierre anual, que deja en cero las cuentas de resultado
+        var mov = acumular(plan, movimientos(cia, desde, hasta, true));
         var ingresos = seccion(plan, mov, TipoCuenta.INGRESO, "Ingresos");
         var costos = seccion(plan, mov, TipoCuenta.COSTO, "Costos");
         var gastos = seccion(plan, mov, TipoCuenta.GASTO, "Gastos");
@@ -125,14 +126,19 @@ public class ReportesContablesService {
 
     // ------------------------------------------------------------------ apoyo
     private Map<Long, Mov> movimientos(Long cia, LocalDate desde, LocalDate hasta) {
+        return movimientos(cia, desde, hasta, false);
+    }
+
+    private Map<Long, Mov> movimientos(Long cia, LocalDate desde, LocalDate hasta, boolean sinCierreAnual) {
         Map<Long, Mov> m = new HashMap<>();
         jdbc.query("""
                 select l.cuenta_id, sum(l.debito), sum(l.credito) from asiento_linea l join asiento a on a.id = l.asiento_id
                  where a.compania_id = ? and a.estado = 'REGISTRADO'
                    and (cast(? as date) is null or a.fecha >= ?) and a.fecha <= ?
+                   and (not ? or a.origen_tipo is null or a.origen_tipo <> 'CIERRE_ANUAL')
                  group by l.cuenta_id""",
                 rs -> { m.put(rs.getLong(1), new Mov(rs.getBigDecimal(2), rs.getBigDecimal(3))); },
-                cia, desde == null ? null : Date.valueOf(desde), desde == null ? null : Date.valueOf(desde), Date.valueOf(hasta));
+                cia, desde == null ? null : Date.valueOf(desde), desde == null ? null : Date.valueOf(desde), Date.valueOf(hasta), sinCierreAnual);
         return m;
     }
 

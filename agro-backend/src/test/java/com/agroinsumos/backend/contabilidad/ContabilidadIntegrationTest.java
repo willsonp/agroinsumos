@@ -178,6 +178,72 @@ class ContabilidadIntegrationTest extends IntegrationTestBase {
         assertThat(JsonPath.<List<?>>read(getJson(supervisor, "/api/v1/contabilidad/reportes/balanza?" + rango), "$.cuentas")).isEmpty();
     }
 
+    @Test
+    void cierreAnualLlevaElResultadoACapitalYBloqueaElEjercicio() throws Exception {
+        post(admin, "/api/v1/contabilidad/cuentas/plantilla", "", 200);
+        long caja = cuenta("110101"), ventas = cuenta("4101"), gastos = cuenta("6101");
+        int anio = hoy.getYear() - 1;
+        String manual = """
+                {"fecha":"%s","concepto":"%s","lineas":[{"cuentaId":%d,"debito":%s},{"cuentaId":%d,"credito":%s}]}""";
+        post(admin, "/api/v1/contabilidad/asientos", manual.formatted(anio + "-06-15", "Venta", caja, "1000", ventas, "1000"), 201);
+        post(admin, "/api/v1/contabilidad/asientos", manual.formatted(anio + "-07-15", "Gasto", gastos, "300", caja, "300"), 201);
+
+        assertThat(code(post(admin, "/api/v1/contabilidad/cierres-anuales/" + hoy.getYear(), "", 422))).isEqualTo("EJERCICIO_EN_CURSO");
+        String sim = post(admin, "/api/v1/contabilidad/cierres-anuales/" + anio + "?simular=true", "", 200);
+        assertThat(num(sim, "$.resultado")).isEqualTo(700.0);
+        assertThat(num(sim, "$.cuentasSaldadas")).isEqualTo(2.0);
+        assertThat(JsonPath.<Object>read(sim, "$.asientoId")).isNull();
+
+        String cierre = post(admin, "/api/v1/contabilidad/cierres-anuales/" + anio, "", 200);
+        String asiento = getJson(admin, "/api/v1/contabilidad/asientos/" + JsonPath.<Number>read(cierre, "$.asientoId"));
+        assertThat(JsonPath.<String>read(asiento, "$.fecha")).isEqualTo(anio + "-12-31");
+        assertThat(JsonPath.<List<String>>read(asiento, "$.lineas[*].cuentaCodigo")).containsExactlyInAnyOrder("4101", "6101", "3102");
+        assertThat(JsonPath.<List<Number>>read(asiento, "$.lineas[?(@.cuentaCodigo == '3102')].credito")).extracting(Number::doubleValue).containsExactly(700.0);
+
+        // El estado de resultados del año no se ve afectado por el cierre; el balance lleva la utilidad al capital
+        String rangoAnio = "desde=%d-01-01&hasta=%d-12-31".formatted(anio, anio);
+        assertThat(num(getJson(supervisor, "/api/v1/contabilidad/reportes/estado-resultados?" + rangoAnio), "$.utilidadNeta")).isEqualTo(700.0);
+        String bg = getJson(supervisor, "/api/v1/contabilidad/reportes/balance-general?corte=" + anio + "-12-31");
+        assertThat(JsonPath.<Boolean>read(bg, "$.cuadra")).isTrue();
+        assertThat(num(bg, "$.resultadoAcumulado")).isEqualTo(0.0);
+        assertThat(num(bg, "$.capital.total")).isEqualTo(700.0);
+        assertThat(JsonPath.<Boolean>read(getJson(supervisor, "/api/v1/contabilidad/reportes/balanza?" + rangoAnio), "$.cuadra")).isTrue();
+
+        // Ejercicio cerrado: no se registra en él ni se cierra dos veces
+        assertThat(code(post(admin, "/api/v1/contabilidad/asientos", manual.formatted(anio + "-08-01", "Tarde", caja, "1", ventas, "1"), 422)))
+                .isEqualTo("EJERCICIO_CERRADO");
+        assertThat(code(post(admin, "/api/v1/contabilidad/cierres-anuales/" + anio, "", 422))).isEqualTo("EJERCICIO_YA_CERRADO");
+        post(supervisor, "/api/v1/contabilidad/cierres-anuales/" + anio + "/anular", "{\"motivo\":\"x\"}", 403);
+
+        // Reabrir: anular el cierre, registrar el ajuste y cerrar de nuevo
+        post(admin, "/api/v1/contabilidad/cierres-anuales/" + anio + "/anular", "{\"motivo\":\"Ajuste de auditoría\"}", 200);
+        post(admin, "/api/v1/contabilidad/asientos", manual.formatted(anio + "-12-20", "Ajuste", gastos, "100", caja, "100"), 201);
+        assertThat(num(post(admin, "/api/v1/contabilidad/cierres-anuales/" + anio, "", 200), "$.resultado")).isEqualTo(600.0);
+        assertThat(JsonPath.<List<String>>read(getJson(supervisor, "/api/v1/contabilidad/cierres-anuales"), "$[*].estado"))
+                .containsExactly("REGISTRADO", "ANULADO");
+    }
+
+    @Test
+    void sobrantesYFaltantesDeCajaSeContabilizan() throws Exception {
+        post(admin, "/api/v1/contabilidad/cuentas/plantilla", "", 200);
+        // Fondo 1000, se cuentan 1050: sobrante 50
+        post(admin, "/api/v1/caja/sesiones/abrir", "{\"montoInicial\":1000}", 201);
+        String c1 = post(admin, "/api/v1/caja/sesiones/actual/cerrar", "{\"conteo\":[{\"denominacion\":500,\"cantidad\":2},{\"denominacion\":50,\"cantidad\":1}]}", 200);
+        assertThat(num(c1, "$.cuadre.diferencia")).isEqualTo(50.0);
+        // Fondo 1000, se cuentan 900: faltante 100
+        post(admin, "/api/v1/caja/sesiones/abrir", "{\"montoInicial\":1000}", 201);
+        post(admin, "/api/v1/caja/sesiones/actual/cerrar", "{\"conteo\":[{\"denominacion\":100,\"cantidad\":9}]}", 200);
+
+        String gen = post(admin, "/api/v1/contabilidad/asientos/generar?" + rango, "", 200);
+        assertThat(JsonPath.<List<Number>>read(gen, "$.porOrigen[?(@.origenTipo == 'CIERRE_CAJA')].asientos"))
+                .extracting(Number::intValue).containsExactly(2);
+        String asientos = getJson(admin, "/api/v1/contabilidad/asientos?origenTipo=CIERRE_CAJA");
+        assertThat(JsonPath.<List<String>>read(asientos, "$.content[*].lineas[*].cuentaCodigo")).contains("4203", "6103", "110101");
+        String er = getJson(supervisor, "/api/v1/contabilidad/reportes/estado-resultados?" + rango);
+        assertThat(num(er, "$.ingresos.total")).isEqualTo(50.0);
+        assertThat(num(er, "$.gastos.total")).isEqualTo(100.0);
+    }
+
     // ------------------------------------------------------------------ helpers
     private long cuenta(String codigo) throws Exception {
         List<Map<String, Object>> arbol = JsonPath.read(getJson(admin, "/api/v1/contabilidad/cuentas/arbol"), "$");

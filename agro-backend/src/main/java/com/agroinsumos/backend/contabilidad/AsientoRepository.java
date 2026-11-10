@@ -11,7 +11,15 @@ import java.util.Optional;
 public interface AsientoRepository extends JpaRepository<Asiento, Long> {
     Optional<Asiento> findByIdAndCompaniaId(Long id, Long companiaId);
 
-    Optional<Asiento> findByCompaniaIdAndOrigenTipoAndOrigenIdAndReversoFalse(Long companiaId, String origenTipo, Long origenId);
+    Optional<Asiento> findByCompaniaIdAndOrigenTipoAndOrigenIdAndReversoFalseAndEstado(Long companiaId, String origenTipo, Long origenId,
+                                                                                      Asiento.Estado estado);
+
+    boolean existsByCompaniaIdAndOrigenTipoAndOrigenIdAndEstado(Long companiaId, String origenTipo, Long origenId, Asiento.Estado estado);
+
+    Optional<Asiento> findFirstByCompaniaIdAndOrigenTipoAndOrigenIdAndEstado(Long companiaId, String origenTipo, Long origenId,
+                                                                              Asiento.Estado estado);
+
+    java.util.List<Asiento> findByCompaniaIdAndOrigenTipoOrderByOrigenIdDescIdDesc(Long companiaId, String origenTipo);
 
     @Query("""
             select a from Asiento a where a.companiaId = :cia

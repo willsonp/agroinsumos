@@ -147,7 +147,7 @@ public class CuentaContableService extends CrudService<CuentaContable, CuentaCon
             new Plantilla("210203", "ISR retenido a terceros por pagar", TipoCuenta.PASIVO, "2102", ClaveContable.ISR_RETENIDO_POR_PAGAR),
             new Plantilla("3", "CAPITAL", TipoCuenta.CAPITAL, null),
             new Plantilla("3101", "Capital suscrito y pagado", TipoCuenta.CAPITAL, "3"),
-            new Plantilla("3102", "Resultados acumulados", TipoCuenta.CAPITAL, "3"),
+            new Plantilla("3102", "Resultados acumulados", TipoCuenta.CAPITAL, "3", ClaveContable.RESULTADOS_ACUMULADOS),
             new Plantilla("4", "INGRESOS", TipoCuenta.INGRESO, null),
             new Plantilla("41", "Ingresos operacionales", TipoCuenta.INGRESO, "4"),
             new Plantilla("4101", "Ventas de mercancías", TipoCuenta.INGRESO, "41", ClaveContable.INGRESOS_VENTAS),
@@ -155,11 +155,13 @@ public class CuentaContableService extends CrudService<CuentaContable, CuentaCon
             new Plantilla("42", "Otros ingresos", TipoCuenta.INGRESO, "4"),
             new Plantilla("4201", "Otros ingresos", TipoCuenta.INGRESO, "42", ClaveContable.OTROS_INGRESOS),
             new Plantilla("4202", "Ingresos financieros", TipoCuenta.INGRESO, "42", ClaveContable.INGRESOS_FINANCIEROS),
+            new Plantilla("4203", "Sobrantes de caja", TipoCuenta.INGRESO, "42", ClaveContable.SOBRANTES_CAJA),
             new Plantilla("5", "COSTOS", TipoCuenta.COSTO, null),
             new Plantilla("5101", "Costo de mercancías vendidas", TipoCuenta.COSTO, "5", ClaveContable.COSTO_VENTAS),
             new Plantilla("6", "GASTOS", TipoCuenta.GASTO, null),
             new Plantilla("6101", "Gastos generales", TipoCuenta.GASTO, "6", ClaveContable.GASTOS_CAJA, ClaveContable.GASTOS_COMPRAS),
-            new Plantilla("6102", "Gastos bancarios", TipoCuenta.GASTO, "6", ClaveContable.GASTOS_BANCARIOS));
+            new Plantilla("6102", "Gastos bancarios", TipoCuenta.GASTO, "6", ClaveContable.GASTOS_BANCARIOS),
+            new Plantilla("6103", "Faltantes de caja", TipoCuenta.GASTO, "6", ClaveContable.FALTANTES_CAJA));
 
     /**
      * Carga un catálogo base (estructura usual en RD) y la configuración de cuentas por defecto.

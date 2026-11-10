@@ -32,6 +32,7 @@ public class ContabilidadController {
     private final GeneracionAsientosService generacion;
     private final ReportesContablesService reportes;
     private final PeriodoContableService periodos;
+    private final CierreAnualService cierreAnual;
 
     // ------------------------------------------------------------------ catálogo
     @Operation(summary = "Catálogo completo ordenado por código")
@@ -149,6 +150,25 @@ public class ContabilidadController {
     public ResponseEntity<Void> cerrar(AuthUser user, @PathVariable int anio, @PathVariable int mes) {
         periodos.cerrar(user, anio, mes);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/cierres-anuales")
+    @PreAuthorize(SUPERVISOR + "@permisos.tiene('CONT_PERIODOS','CONT_REPORTES')")
+    public List<CierreAnualService.Cierre> cierresAnuales(AuthUser user) { return cierreAnual.listar(user.companiaId()); }
+
+    @Operation(summary = "Cierre del ejercicio: lleva ingresos, costos y gastos del año a resultados acumulados (simular=true: vista previa)")
+    @PostMapping("/cierres-anuales/{anio}")
+    @PreAuthorize("hasRole('ADMIN') and @permisos.tiene('CONT_PERIODOS')")
+    public CierreAnualService.Resultado cerrarEjercicio(AuthUser user, @PathVariable int anio,
+                                                       @RequestParam(defaultValue = "false") boolean simular) {
+        return cierreAnual.cerrar(user, anio, simular);
+    }
+
+    @Operation(summary = "Reabre el ejercicio anulando su asiento de cierre")
+    @PostMapping("/cierres-anuales/{anio}/anular")
+    @PreAuthorize("hasRole('ADMIN') and @permisos.tiene('CONT_PERIODOS')")
+    public CierreAnualService.Cierre anularCierre(AuthUser user, @PathVariable int anio, @Valid @RequestBody AsientoService.AnularRequest r) {
+        return cierreAnual.anular(user, anio, r.motivo());
     }
 
     @PostMapping("/periodos/{anio}/{mes}/reabrir")

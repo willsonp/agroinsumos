@@ -268,6 +268,7 @@ Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y
   | Pago a suplidor | Dr CxP / Cr Caja o Banco (cuenta contable de la cuenta bancaria) |
   | Banco (manuales) | depósito: Banco/Caja; ND: Gastos bancarios/Banco; NC: Banco/Ingresos financieros; cheque directo: contrapartida indicada/Banco; transferencia: Banco destino/Banco origen |
   | Gasto de caja (e-CF 43) | Dr Gastos / Dr ITBIS adelantado / Cr Caja |
+  | Cierre de caja con diferencia | sobrante: Dr Caja / Cr Sobrantes de caja; faltante: Dr Faltantes de caja / Cr Caja (fecha del cierre) |
 
   Prioridad de cuentas: la del departamento / cliente / proveedor / cuenta bancaria; si no tiene, la **cuenta por defecto**
   (`cuenta_contable_config`, claves `CAJA`, `CXC_CLIENTES`, `ITBIS_POR_PAGAR`…; las cuentas `compania.cuenta_*` del legado se
@@ -277,12 +278,17 @@ Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y
 - **Fecha de inicio contable** (`compania.fecha_inicio_contable`): los documentos anteriores no se contabilizan (su contabilidad
   se migra del sistema anterior con el script 05).
 - **Cierre de períodos** mensual (`periodo_contable`): sin asientos, reversos ni anulaciones en meses cerrados; el admin puede reabrir.
+- **Cierre del ejercicio** (`POST /cierres-anuales/{año}[?simular=true]`, admin): asiento al 31/12 que salda cada cuenta
+  de ingreso, costo y gasto contra `RESULTADOS_ACUMULADOS` (cuenta de capital). Exige que no queden documentos del año sin
+  contabilizar y que diciembre esté abierto; luego rechaza asientos con fecha de ese año (`EJERCICIO_CERRADO`). Se reabre
+  anulando el cierre (`/anular`) y se puede volver a cerrar. El estado de resultados excluye este asiento.
 - **Reportes**: balanza de comprobación (saldo anterior, débitos, créditos, saldo final, acumulados a los grupos), estado de
-  resultados (ingresos − costos = utilidad bruta − gastos = utilidad neta), balance general (el resultado acumulado de las
-  cuentas de resultado se presenta dentro del capital, pues no hay asiento de cierre anual) y mayor por cuenta con saldo corrido.
+  resultados (ingresos − costos = utilidad bruta − gastos = utilidad neta), balance general (el resultado de los ejercicios
+  aún no cerrados se presenta dentro del capital como "resultado acumulado") y mayor por cuenta con saldo corrido.
 
-**Pendiente de definir con el contador:** asiento de cierre anual (traslado a resultados acumulados), sobrantes/faltantes
-de caja al cierre, descuento en ventas en cuenta separada (hoy el ingreso se registra neto de descuento) y moneda extranjera.
+**Pendiente de definir con el contador:** si los faltantes de caja se cargan a gasto o a una cuenta por cobrar al cajero
+(basta con asignar esa cuenta a `FALTANTES_CAJA`), descuento en ventas en cuenta separada (hoy el ingreso se registra neto
+de descuento) y moneda extranjera.
 
 ## 5.6 Fase 7: Formato 608 y notas de suplidores (CxP)
 Migración `V12__formato608_notas_proveedor.sql`.
