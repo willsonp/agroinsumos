@@ -9,9 +9,12 @@ API REST (Spring Boot 4 · Java 21 · PostgreSQL 16) que reemplaza la aplicació
 
 ```bash
 docker compose up -d                       # PostgreSQL 16 en localhost:5432 (agrodb / agro / agro)
-mvn spring-boot:run                         # perfil "dev": admin / xxxxxc, almacén, consumidor final,
+mvn spring-boot:run                         # perfil "dev": xxxxxxx / xxxxxc, almacén, consumidor final,
                                             # secuencias e-NCF y certificado de PRUEBA para poder facturar
 ```
+
+El usuario inicial del perfil `dev` se toma de las variables `DEV_ADMIN_USER` y `DEV_ADMIN_PASSWORD`
+(mínimo 12 caracteres); solo se crea si la base está vacía. No se publican credenciales en el repositorio.
 
 Con el `.jar` (o desde el IDE) el perfil se indica explícitamente; **sin perfil el servidor no arranca** si falta
 `JWT_SECRET`, y nunca arranca fuera de `dev`/`test` con el secreto de desarrollo (es público en este repositorio):
@@ -25,7 +28,7 @@ java -jar target/agro-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=dev   
 
 ```bash
 curl -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
-     -d '{"username":"admin","password":"xxxxxc"}'
+     -d '{"username":"xxxxxxx","password":"xxxxxc"}'
 ```
 
 ## Variables de entorno (producción)

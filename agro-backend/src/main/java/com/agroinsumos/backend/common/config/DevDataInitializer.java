@@ -15,7 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Solo perfil dev: crea compañía y usuario "admin" si la BD está vacía. */
+/** Solo perfil dev: crea compañía y el usuario administrador (DEV_ADMIN_USER / DEV_ADMIN_PASSWORD) si la BD está vacía. */
 @Slf4j
 @Component
 @Profile("dev")
@@ -27,13 +27,20 @@ public class DevDataInitializer implements ApplicationRunner {
     private final PasswordEncoder encoder;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    @Value("${app.dev.admin-password}")
+    @Value("${app.dev.admin-user:}")
+    private String adminUser;
+
+    @Value("${app.dev.admin-password:}")
     private String adminPassword;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         if (usuarios.count() > 0) return;
+        if (adminUser.isBlank() || adminPassword.length() < 12) {
+            log.warn("DEV: base vacía. Defina DEV_ADMIN_USER y DEV_ADMIN_PASSWORD (mínimo 12 caracteres) y reinicie para crear el administrador");
+            return;
+        }
         var c = new Compania();
         c.setNombre("PV AGROINSUMOS (DEV)");
         c.setRnc("131000001");
@@ -42,7 +49,7 @@ public class DevDataInitializer implements ApplicationRunner {
         var u = new Usuario();
         u.setCompania(c);
         u.setNombre("Administrador");
-        u.setUsername("admin");
+        u.setUsername(adminUser.trim());
         u.setNivel(Nivel.ADMIN);
         u.setPasswordHash(encoder.encode(adminPassword));
         usuarios.save(u);
@@ -58,6 +65,6 @@ public class DevDataInitializer implements ApplicationRunner {
                     insert into ecf_secuencia(compania_id, tipo_ecf, secuencia_desde, secuencia_hasta, fecha_vencimiento)
                     values (?, ?, 1, 100000, date '2030-12-31')""", c.getId(), tipo);
         }
-        log.warn("DEV: creado usuario 'admin' (contraseña en app.dev.admin-password)");
+        log.warn("DEV: creado el usuario administrador '{}' (contraseña en DEV_ADMIN_PASSWORD)", adminUser.trim());
     }
 }

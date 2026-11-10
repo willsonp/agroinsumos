@@ -9,7 +9,7 @@ Gestión Administrativa PV Agroinsumos. Consume la API REST de `agro-backend`.
 # 1) Backend en http://localhost:8080 (ver agro-backend/README.md)
 # 2) Frontend con proxy hacia el backend (proxy.conf.json):
 npm install
-npm start            # http://localhost:4200  ·  admin / xxxxxc (perfil dev del backend)
+npm start            # http://localhost:4200  ·  xxxxxxx / xxxxxc (perfil dev del backend)
 ```
 
 | Script | Uso |

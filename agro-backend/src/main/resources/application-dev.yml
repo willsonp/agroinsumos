@@ -8,7 +8,9 @@ app:
     jwt:
       secret: ${JWT_SECRET:dev-secret-cambiar-0123456789-abcdefghijklmnop}
   dev:
-    admin-password: ${DEV_ADMIN_PASSWORD:xxxxxc}
+    # Usuario inicial (solo si la base está vacía). Sin valores en el repositorio: defínalos como variables de entorno.
+    admin-user: ${DEV_ADMIN_USER:}
+    admin-password: ${DEV_ADMIN_PASSWORD:}
   ecf:
     # Certificado AUTOFIRMADO solo para desarrollo (la DGII no lo acepta). En producción: ECF_CERT_PATH.
     certificado:
