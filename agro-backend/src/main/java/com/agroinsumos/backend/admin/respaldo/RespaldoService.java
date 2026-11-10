@@ -137,6 +137,13 @@ public class RespaldoService {
             Files.deleteIfExists(errores);
             if (p.exitValue() != 0) {
                 Files.deleteIfExists(temporal);
+                if (salida.contains("server version mismatch")) {
+                    // pg_dump debe ser de la misma versión mayor del servidor o más nueva (p.ej. PostgreSQL 18 requiere pg_dump 18)
+                    throw new BusinessException("PG_DUMP_VERSION", "La versión de pg_dump es más antigua que la del servidor PostgreSQL. "
+                            + "Instale el cliente de la misma versión del servidor y configure la variable PG_DUMP con su ruta "
+                            + "(p.ej. C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe o /usr/lib/postgresql/18/bin/pg_dump). Detalle: "
+                            + (salida.length() > 200 ? salida.substring(0, 200) : salida));
+                }
                 throw new BusinessException("RESPALDO_FALLIDO", "pg_dump terminó con error: " + (salida.length() > 300 ? salida.substring(0, 300) : salida));
             }
             Files.move(temporal, destino, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);

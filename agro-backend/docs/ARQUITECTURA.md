@@ -380,6 +380,10 @@ Migración `V16__etiquetas_respaldos.sql`.
 - Carpeta: `app.respaldo.directorio` (`RESPALDO_DIRECTORIO`) o la configurada en pantalla (ruta absoluta con permiso de
   escritura, guardada en `parametro_sistema`). Se listan y descargan los respaldos para copiarlos a otra ubicación.
   Recomendado: una unidad externa o de red, y copiar periódicamente fuera del servidor.
+- **Versión de `pg_dump`**: debe ser de la misma versión mayor del servidor o más nueva (PostgreSQL 18 → `pg_dump` 18;
+  un `pg_dump` 16 se niega con "server version mismatch"). Si en el servidor hay varias versiones instaladas, indique la ruta
+  con `PG_DUMP` (Windows: `C:\Program Files\PostgreSQL\18\bin\pg_dump.exe`; Linux: `/usr/lib/postgresql/18/bin/pg_dump`).
+  La pantalla muestra el error `PG_DUMP_VERSION` con esta indicación.
 
 ## 5.10 Reportes
 Migración `V18__reportes.sql` (módulo Reportes con una opción por grupo). Sustituye los reportes Jasper del sistema anterior
