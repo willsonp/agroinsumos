@@ -260,12 +260,12 @@ Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y
 
   | Documento | Asiento |
   |---|---|
-  | Factura | Dr CxC cliente / Cr Ingresos (cuenta del departamento) / Cr ITBIS por pagar; Dr Costo / Cr Inventario (departamento) |
+  | Factura | Dr CxC cliente / Cr Ingresos (cuenta del departamento) / Cr ITBIS por pagar; Dr Costo / Cr Inventario (departamento). Si `DESCUENTOS_VENTAS` está asignada: ingreso bruto y Dr Descuentos en ventas |
   | Devolución (e-CF 34) | Dr Devoluciones en ventas / Dr ITBIS por pagar / Cr CxC; reingreso: Dr Inventario / Cr Costo |
   | Nota de débito (e-CF 33) | Dr CxC / Cr Otros ingresos / Cr ITBIS por pagar |
   | Recibo | Dr Caja (efectivo neto, cheques) / Tarjetas por cobrar / Banco (transferencia) / CxC (saldo a favor) / retenciones sufridas; Cr CxC |
   | Compra | Dr Inventario (departamento; incluye flete) o Gastos (servicios) / Dr ITBIS adelantado; Cr CxP / Cr ITBIS e ISR retenidos por pagar |
-  | Pago a suplidor | Dr CxP / Cr Caja o Banco (cuenta contable de la cuenta bancaria) |
+  | Pago a suplidor | Dr CxP (pesos históricos) / Cr Caja o Banco (a la tasa del pago); la diferencia a Pérdida o Ganancia cambiaria |
   | Banco (manuales) | depósito: Banco/Caja; ND: Gastos bancarios/Banco; NC: Banco/Ingresos financieros; cheque directo: contrapartida indicada/Banco; transferencia: Banco destino/Banco origen |
   | Gasto de caja (e-CF 43) | Dr Gastos / Dr ITBIS adelantado / Cr Caja |
   | Cierre de caja con diferencia | sobrante: Dr Caja / Cr Sobrantes de caja; faltante: Dr Faltantes de caja / Cr Caja (fecha del cierre) |
@@ -286,9 +286,33 @@ Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y
   resultados (ingresos − costos = utilidad bruta − gastos = utilidad neta), balance general (el resultado de los ejercicios
   aún no cerrados se presenta dentro del capital como "resultado acumulado") y mayor por cuenta con saldo corrido.
 
+**Descuentos en ventas:** con la cuenta `DESCUENTOS_VENTAS` asignada (el catálogo base trae la 4103; la del legado
+`compania.DescuentoEnVenta` se copia), el ingreso se registra bruto y el descuento en su cuenta; sin asignar, el ingreso
+se registra neto como antes. Las devoluciones se registran netas en Devoluciones en ventas.
+
 **Pendiente de definir con el contador:** si los faltantes de caja se cargan a gasto o a una cuenta por cobrar al cajero
-(basta con asignar esa cuenta a `FALTANTES_CAJA`), descuento en ventas en cuenta separada (hoy el ingreso se registra neto
-de descuento) y moneda extranjera.
+(basta con asignar esa cuenta a `FALTANTES_CAJA`) y si se requiere revaluación mensual (diferencia cambiaria no realizada).
+
+## 5.7 Moneda extranjera
+Migración `V14__moneda_extranjera_descuentos.sql`. La contabilidad, el inventario y los formatos fiscales siguen en pesos.
+
+- **Tasas de cambio** (`tasa_cambio`, `/api/v1/monedas/tasas`): pesos por unidad, por moneda y fecha. Un documento usa la tasa
+  indicada al registrarlo o la última registrada en su fecha o antes (`TASA_NO_REGISTRADA` si no hay).
+- **Compras en otra moneda**: costos, descuentos, flete y retenciones se ingresan en la moneda del suplidor y se convierten a
+  pesos a la tasa de la compra (inventario, costo promedio, 606 y asiento en pesos). Se guardan `total_moneda` y
+  `balance_moneda`: la deuda se controla en la moneda original. No aplica e-CF 41 (se emite en pesos).
+- **Pagos en otra moneda**: aplicaciones y formas en la moneda de las compras (una sola moneda por pago; solo cheque o
+  transferencia). Cada aplicación rebaja de la compra los pesos históricos (`monto_dop`, a la tasa de la compra; si salda la
+  deuda, todo lo que quede en pesos). **Diferencia cambiaria realizada** = pesos pagados a la tasa del pago − pesos históricos:
+  positiva = pérdida (`PERDIDA_CAMBIARIA`), negativa = ganancia (`GANANCIA_CAMBIARIA`). Las notas de suplidores sobre una
+  compra en otra moneda se ingresan en esa moneda y ajustan ambos balances.
+- **Cuentas bancarias en otra moneda**: saldo, cheques, conciliación y validación de saldo en la moneda de la cuenta; cada
+  movimiento guarda su tasa y se contabiliza en pesos. Un pago en dólares puede salir de una cuenta en dólares o en pesos
+  (se debita el equivalente); los cobros en pesos y los depósitos desde caja solo van a cuentas en pesos (`CUENTA_OTRA_MONEDA`).
+  Transferencias entre monedas convierten con una sola tasa (sin diferencia cambiaria); entre dos monedas extranjeras
+  distintas se pasa por una cuenta en pesos.
+- **Recomendación contable:** asignar a cada cuenta bancaria en otra moneda su propia cuenta contable.
+- **No incluido:** ventas/facturación en otra moneda (los e-CF se emiten en pesos) y revaluación de saldos al cierre de mes.
 
 ## 5.6 Fase 7: Formato 608 y notas de suplidores (CxP)
 Migración `V12__formato608_notas_proveedor.sql`.
@@ -374,6 +398,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `BANCO_MOVIMIENTOS` | depósitos, cheques, transferencias, notas de débito/crédito, anulación | **supervisor** |
 | `BANCO_CONCILIACION` | conciliación bancaria e historial | **supervisor** |
 | `COMPRAS_NOTAS` | notas de crédito / débito de suplidores | **supervisor** |
+| `BANCO_TASAS` | registrar / quitar tasas de cambio (la consulta es libre) | **supervisor** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |

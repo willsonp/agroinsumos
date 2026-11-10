@@ -1,6 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { CuentasBancarias } from '../../shared/cuentas-bancarias';
+import { MONEDAS, Monedas } from '../../shared/monedas';
 import type { Pagina, S } from '../../api/tipos';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
@@ -45,6 +46,14 @@ export class Compras {
   protected readonly columnas = ['numero', 'fecha', 'proveedor', 'ncf', 'total', 'balance', 'estado', 'acciones'];
   protected f = this.vacia();
   protected flete = signal(0);
+  protected readonly monedas = MONEDAS;
+  private readonly tasas = inject(Monedas);
+  private readonly cd = inject(ChangeDetectorRef);
+
+  protected cambiarMoneda(): void {
+    this.f.tasa = null;
+    if (this.f.moneda !== 'DOP') this.tasas.vigente(this.f.moneda).subscribe((t) => { this.f.tasa = t; this.cd.markForCheck(); });
+  }
 
   protected readonly totales = computed(() => {
     let subtotal = 0, itbis = 0;
@@ -87,6 +96,7 @@ export class Compras {
       tipoRetencionIsr: this.f.isrRetenido ? this.f.tipoRetencionIsr || undefined : undefined,
       tipoBienServicio: this.f.tipoBienServicio, emitirComprobanteCompras: this.f.emitir41 || undefined,
       comentario: this.f.comentario || undefined,
+      moneda: this.f.moneda, tasaCambio: this.f.moneda !== 'DOP' ? this.f.tasa ?? undefined : undefined,
       lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, costoUnitario: l.costo,
         descuento: l.descuento || undefined, tasaItbis: l.tasa })),
     };
@@ -100,11 +110,17 @@ export class Compras {
   }
 
   protected pagar(c: S['CompraResponse']): void {
-    this.dialog.open(PagoProveedorDialog, { data: c }).afterClosed().subscribe((forma?: S['PagoRequest']) => {
-      if (!forma) return;
-      this.http.post('/api/v1/cxp/pagos', { proveedorId: c.proveedorId, concepto: `Pago compra ${c.numero}`,
-        aplicaciones: [{ compraId: c.id, monto: forma.monto }], formas: [forma] }).subscribe({
-        next: () => { this.notif.ok('Pago registrado'); this.cargar(); },
+    this.dialog.open(PagoProveedorDialog, { data: c }).afterClosed().subscribe((r?: { forma: S['PagoRequest']; tasa: number | null }) => {
+      if (!r) return;
+      const req: S['PagoProveedorRequest'] = { proveedorId: c.proveedorId!, concepto: `Pago compra ${c.numero}`,
+        aplicaciones: [{ compraId: c.id!, monto: r.forma.monto }], formas: [r.forma], moneda: c.moneda,
+        tasaCambio: c.moneda !== 'DOP' ? r.tasa ?? undefined : undefined };
+      this.http.post<S['PagoProveedorResponse']>('/api/v1/cxp/pagos', req).subscribe({
+        next: (p) => {
+          const dif = p.diferenciaCambiaria ?? 0;
+          this.notif.ok('Pago registrado' + (dif ? ` · diferencia cambiaria RD$${Math.abs(dif).toFixed(2)} (${dif > 0 ? 'pérdida' : 'ganancia'})` : ''));
+          this.cargar();
+        },
         error: (e) => this.notif.error(e),
       });
     });
@@ -119,25 +135,32 @@ export class Compras {
 
   private vacia() {
     return { proveedorId: null as number | null, ncf: '', condicion: 'CREDITO' as 'CONTADO' | 'CREDITO', diasCredito: 30,
-      tipoBienServicio: '09', itbisRetenido: 0, isrRetenido: 0, tipoRetencionIsr: '', emitir41: false, comentario: '' };
+      tipoBienServicio: '09', itbisRetenido: 0, isrRetenido: 0, tipoRetencionIsr: '', emitir41: false, comentario: '',
+      moneda: 'DOP', tasa: null as number | null };
   }
 }
 
 @Component({
   selector: 'app-pago-proveedor-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, CurrencyPipe],
+  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, CurrencyPipe, DecimalPipe],
   template: `
     <h2 mat-dialog-title>Pagar compra {{ compra.numero }}</h2>
     <mat-dialog-content class="grid-form" style="min-width:min(460px,90vw)">
-      <p class="ancho-completo">Balance pendiente: <strong>{{ compra.balance | currency }}</strong></p>
-      <mat-form-field><mat-label>Monto</mat-label><input matInput type="number" [(ngModel)]="monto" [max]="compra.balance ?? 0" /></mat-form-field>
+      <p class="ancho-completo">Balance pendiente: <strong>{{ pendiente | currency: compra.moneda }}</strong>
+        @if (ext) { <span class="muted"> (RD$ {{ compra.balance }} a la tasa de la compra {{ compra.tasaCambio }})</span> }</p>
+      <mat-form-field><mat-label>Monto ({{ compra.moneda }})</mat-label><input matInput type="number" [(ngModel)]="monto" [max]="pendiente" /></mat-form-field>
+      @if (ext) {
+        <mat-form-field><mat-label>Tasa de hoy (RD$ por {{ compra.moneda }})</mat-label><input matInput type="number" [(ngModel)]="tasa" />
+          @if (tasa) { <mat-hint>RD$ {{ monto * tasa | number: '1.2-2' }} · diferencia {{ (monto * tasa) - (monto * (compra.tasaCambio ?? 1)) | number: '1.2-2' }}</mat-hint> }
+        </mat-form-field>
+      }
       <mat-form-field><mat-label>Forma</mat-label><mat-select [(ngModel)]="forma">
         <mat-option value="TRANSFERENCIA">Transferencia</mat-option><mat-option value="CHEQUE">Cheque</mat-option>
-        <mat-option value="EFECTIVO">Efectivo (sale de mi caja)</mat-option></mat-select></mat-form-field>
+        @if (!ext) { <mat-option value="EFECTIVO">Efectivo (sale de mi caja)</mat-option> }</mat-select></mat-form-field>
       @if (forma !== 'EFECTIVO') {
         <mat-form-field class="ancho-completo"><mat-label>Sale de la cuenta</mat-label><mat-select [(ngModel)]="cuentaBancariaId">
           <mat-option [value]="null">Sin vincular al módulo Banco</mat-option>
-          @for (c of cuentas.activas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }} · disp. {{ c.saldo | currency }}</mat-option> }
+          @for (c of cuentasPermitidas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }} · disp. {{ c.saldo | currency: c.moneda }}</mat-option> }
         </mat-select>
         @if (cuentaBancariaId && forma === 'CHEQUE') { <mat-hint>Deje el No. de cheque vacío para usar la numeración de la cuenta</mat-hint> }
         </mat-form-field>
@@ -149,13 +172,18 @@ export class Compras {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancelar</button>
-      <button mat-flat-button [disabled]="monto <= 0 || monto > (compra.balance ?? 0)" (click)="pagar()">Pagar</button>
+      <button mat-flat-button [disabled]="monto <= 0 || monto > pendiente || (ext && !tasa)" (click)="pagar()">Pagar</button>
     </mat-dialog-actions>`,
 })
 export class PagoProveedorDialog {
   protected readonly compra = inject<S['CompraResponse']>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<PagoProveedorDialog>);
-  protected monto = this.compra.balance ?? 0;
+  protected readonly ext = this.compra.moneda !== 'DOP';
+  protected readonly pendiente = (this.ext ? this.compra.balanceMoneda : this.compra.balance) ?? 0;
+  protected monto = this.pendiente;
+  protected tasa: number | null = null;
+  /** Cuentas en pesos o en la moneda de la compra. */
+  protected readonly cuentasPermitidas = () => this.cuentas.activas().filter((c) => c.moneda === 'DOP' || c.moneda === this.compra.moneda);
   protected forma: 'TRANSFERENCIA' | 'CHEQUE' | 'EFECTIVO' = 'TRANSFERENCIA';
   protected referencia = '';
   protected banco = '';
@@ -165,11 +193,13 @@ export class PagoProveedorDialog {
 
   constructor() {
     this.cuentas.cargar();
+    const cd = inject(ChangeDetectorRef);
+    if (this.ext) inject(Monedas).vigente(this.compra.moneda!).subscribe((t) => { this.tasa = t; cd.markForCheck(); });
   }
 
   protected pagar(): void {
     const cuenta = this.forma === 'EFECTIVO' ? null : this.cuentaBancariaId;
-    this.ref.close({ forma: this.forma, monto: this.monto, referencia: this.referencia || undefined,
-      banco: cuenta ? undefined : this.banco || undefined, cuentaBancariaId: cuenta ?? undefined });
+    this.ref.close({ tasa: this.tasa, forma: { forma: this.forma, monto: this.monto, referencia: this.referencia || undefined,
+      banco: cuenta ? undefined : this.banco || undefined, cuentaBancariaId: cuenta ?? undefined } });
   }
 }

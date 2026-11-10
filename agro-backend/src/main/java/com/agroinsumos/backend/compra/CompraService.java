@@ -62,7 +62,11 @@ public class CompraService {
                           /** 606: 01..08, obligatorio si isrRetenido > 0. */
                           @Pattern(regexp = "0[1-8]") String tipoRetencionIsr,
                           /** true: el suplidor es informal y emitimos nosotros el Comprobante de Compras (e-CF 41). */
-                          Boolean emitirComprobanteCompras) {}
+                          Boolean emitirComprobanteCompras,
+                          /** Moneda de la factura del suplidor (DOP por defecto): costos, flete y retenciones vienen en ella. */
+                          @Pattern(regexp = "[A-Z]{3}") String moneda,
+                          /** Pesos por unidad; vacío = la tasa registrada vigente a la fecha de la compra. */
+                          @DecimalMin("0.0001") BigDecimal tasaCambio) {}
 
     public record LineaResponse(Long id, int linea, Long articuloId, BigDecimal cantidad, BigDecimal costoUnitario,
                                 BigDecimal descuento, BigDecimal tasaItbis, BigDecimal importe, BigDecimal itbis,
@@ -74,7 +78,8 @@ public class CompraService {
                            BigDecimal totalItbis, BigDecimal flete, BigDecimal total, BigDecimal itbisRetenido,
                            BigDecimal isrRetenido, BigDecimal aPagar, BigDecimal balance, Compra.Estado estado,
                            String tipoBienServicio, String tipoRetencionIsr, String encfCompra, Long ecfDocumentoId,
-                           List<LineaResponse> lineas) {
+                           List<LineaResponse> lineas, String moneda, BigDecimal tasaCambio, BigDecimal totalMoneda,
+                           BigDecimal balanceMoneda) {
         static Response de(Compra c) {
             return new Response(c.getId(), c.getNumero(), c.getProveedorId(), c.getFecha(), c.getNcfProveedor(),
                     c.getCondicion(), c.getDiasCredito(), c.getFechaVencimiento(), c.getAlmacenId(), c.getNumeroOrden(),
@@ -83,7 +88,7 @@ public class CompraService {
                     c.getTipoBienServicio(), c.getTipoRetencionIsr(), c.getEncfCompra(), c.getEcfDocumentoId(),
                     c.getLineas().stream().map(l -> new LineaResponse(l.getId(), l.getLinea(), l.getArticuloId(), l.getCantidad(),
                             l.getCostoUnitario(), l.getDescuento(), l.getTasaItbis(), l.getImporte(), l.getItbis(),
-                            l.getCostoFinal())).toList());
+                            l.getCostoFinal())).toList(), c.getMoneda(), c.getTasaCambio(), c.getTotalMoneda(), c.getBalanceMoneda());
         }
     }
 
@@ -95,6 +100,7 @@ public class CompraService {
     private final InventarioService inventario;
     private final NumeradorService numerador;
     private final EcfEmisionService ecf;
+    private final com.agroinsumos.backend.moneda.TasaCambioService tasas;
     private final Clock clock;
 
     @Transactional
@@ -116,6 +122,10 @@ public class CompraService {
         LocalDate fecha = r.fecha() != null ? r.fecha() : LocalDate.now(clock);
         if (fecha.isAfter(LocalDate.now(clock))) throw new BusinessException("FECHA_FUTURA", "La fecha de la compra no puede ser futura");
         int dias = r.condicion() == Compra.Condicion.CREDITO ? (r.diasCredito() == null ? 30 : r.diasCredito()) : 0;
+        String moneda = r.moneda() == null ? "DOP" : r.moneda();
+        BigDecimal tc = tasas.resolver(cia, moneda, fecha, r.tasaCambio());
+        boolean ext = !"DOP".equals(moneda);
+        if (ext && emite41) throw new BusinessException("MONEDA_NO_APLICA", "El Comprobante de Compras (e-CF 41) se emite en pesos");
 
         var c = new Compra();
         c.setCompaniaId(cia);
@@ -132,6 +142,8 @@ public class CompraService {
         c.setUsuarioId(user.usuarioId());
         c.setTipoBienServicio(r.tipoBienServicio() != null ? r.tipoBienServicio() : "09");
         c.setTipoRetencionIsr(r.tipoRetencionIsr());
+        c.setMoneda(moneda);
+        c.setTasaCambio(tc);
 
         BigDecimal subtotal = BigDecimal.ZERO, descuentos = BigDecimal.ZERO, itbis = BigDecimal.ZERO;
         int n = 1;
@@ -141,15 +153,17 @@ public class CompraService {
             if (TASAS.stream().noneMatch(t -> t.compareTo(tasa) == 0)) {
                 throw new BusinessException("TASA_ITBIS_INVALIDA", "Tasa de ITBIS inválida: " + tasa);
             }
-            BigDecimal desc = lr.descuento() == null ? BigDecimal.ZERO : lr.descuento().setScale(2, RoundingMode.HALF_UP);
-            BigDecimal importe = lr.cantidad().multiply(lr.costoUnitario()).subtract(desc).setScale(2, RoundingMode.HALF_UP);
+            // En otra moneda, los montos se convierten a pesos a la tasa de la compra
+            BigDecimal costo = ext ? lr.costoUnitario().multiply(tc).setScale(4, RoundingMode.HALF_UP) : lr.costoUnitario();
+            BigDecimal desc = pesos(lr.descuento(), tc);
+            BigDecimal importe = lr.cantidad().multiply(costo).subtract(desc).setScale(2, RoundingMode.HALF_UP);
             if (importe.signum() < 0) throw new BusinessException("DESCUENTO_INVALIDO", "El descuento supera el importe de '" + a.getNombre() + "'");
             var l = new CompraLinea();
             l.setCompra(c);
             l.setLinea(n++);
             l.setArticuloId(a.getId());
             l.setCantidad(lr.cantidad());
-            l.setCostoUnitario(lr.costoUnitario());
+            l.setCostoUnitario(costo);
             l.setDescuento(desc);
             l.setTasaItbis(tasa);
             l.setImporte(importe);
@@ -159,7 +173,7 @@ public class CompraService {
             descuentos = descuentos.add(desc);
             itbis = itbis.add(l.getItbis());
         }
-        BigDecimal flete = r.flete() == null ? BigDecimal.ZERO : r.flete();
+        BigDecimal flete = pesos(r.flete(), tc);
         prorratearFlete(c.getLineas(), flete, subtotal);
 
         c.setSubtotal(subtotal);
@@ -167,8 +181,8 @@ public class CompraService {
         c.setTotalItbis(itbis);
         c.setFlete(flete);
         c.setTotal(subtotal.add(itbis).add(flete));
-        c.setItbisRetenido(r.itbisRetenido() == null ? BigDecimal.ZERO : r.itbisRetenido());
-        c.setIsrRetenido(r.isrRetenido() == null ? BigDecimal.ZERO : r.isrRetenido());
+        c.setItbisRetenido(pesos(r.itbisRetenido(), tc));
+        c.setIsrRetenido(pesos(r.isrRetenido(), tc));
         if (c.getItbisRetenido().compareTo(itbis) > 0) {
             throw new BusinessException("RETENCION_INVALIDA", "El ITBIS retenido no puede superar el ITBIS facturado");
         }
@@ -185,6 +199,10 @@ public class CompraService {
             c.setTotal(tot.montoTotal());
         }
         c.setBalance(c.aPagar());
+        if (ext) {
+            c.setTotalMoneda(c.getTotal().divide(tc, 2, RoundingMode.HALF_UP));
+            c.setBalanceMoneda(c.aPagar().divide(tc, 2, RoundingMode.HALF_UP));
+        }
         if (c.getBalance().signum() == 0) c.setEstado(Compra.Estado.PAGADA);
         repo.save(c);
 
@@ -222,6 +240,7 @@ public class CompraService {
                     TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad(), l.getCostoFinal(), DOC_TIPO, c.getId()));
         }
         c.setBalance(BigDecimal.ZERO);
+        if (c.extranjera()) c.setBalanceMoneda(BigDecimal.ZERO);
         c.setEstado(Compra.Estado.ANULADA);
         return Response.de(c);
     }
@@ -230,6 +249,10 @@ public class CompraService {
 
     public Page<Response> buscar(Long cia, Long proveedorId, Compra.Estado estado, LocalDate desde, LocalDate hasta, Pageable p) {
         return repo.buscar(cia, proveedorId, estado, desde, hasta, p).map(Response::de);
+    }
+
+    private static BigDecimal pesos(BigDecimal monto, BigDecimal tasa) {
+        return monto == null ? BigDecimal.ZERO : monto.multiply(tasa).setScale(2, RoundingMode.HALF_UP);
     }
 
     Compra cargar(Long cia, Long id) {

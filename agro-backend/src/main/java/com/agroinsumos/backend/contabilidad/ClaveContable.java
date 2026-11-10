@@ -27,7 +27,10 @@ public enum ClaveContable {
     GASTOS_COMPRAS("Compras de servicios (artículos tipo servicio)"),
     SOBRANTES_CAJA("Sobrantes de caja (ingreso)"),
     FALTANTES_CAJA("Faltantes de caja (gasto o cuenta por cobrar al cajero)"),
-    RESULTADOS_ACUMULADOS("Resultados acumulados (destino del cierre anual)");
+    RESULTADOS_ACUMULADOS("Resultados acumulados (destino del cierre anual)"),
+    DESCUENTOS_VENTAS("Descuentos en ventas (si se asigna, las ventas se registran brutas y el descuento aparte)"),
+    GANANCIA_CAMBIARIA("Ganancia por diferencia cambiaria"),
+    PERDIDA_CAMBIARIA("Pérdida por diferencia cambiaria");
 
     private final String descripcion;
 

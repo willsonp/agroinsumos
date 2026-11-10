@@ -18,7 +18,7 @@ import java.util.List;
 public class FuenteVentas extends FuenteBase {
 
     private record Linea(Long docId, BigDecimal importe, BigDecimal costo, String tipo, String depto,
-                         String ctaIngreso, String ctaCosto, String ctaInventario) {}
+                         String ctaIngreso, String ctaCosto, String ctaInventario, BigDecimal descuento) {}
 
     public FuenteVentas(JdbcTemplate jdbc) { super(jdbc); }
 
@@ -41,18 +41,24 @@ public class FuenteVentas extends FuenteBase {
         if (cabs.isEmpty()) return List.of();
         var lineas = agrupar(jdbc.query("""
                 select fl.factura_id, fl.importe, fl.cantidad * fl.costo_unitario, a.tipo, d.nombre,
-                       d.cuenta_ingreso, d.cuenta_costo, d.cuenta_inventario
+                       d.cuenta_ingreso, d.cuenta_costo, d.cuenta_inventario, fl.descuento
                   from factura_linea fl join articulo a on a.id = fl.articulo_id join departamento d on d.id = a.departamento_id
                  where fl.factura_id = any(?) order by fl.factura_id, fl.linea""",
                 (rs, i) -> new Linea(rs.getLong(1), rs.getBigDecimal(2), rs.getBigDecimal(3), rs.getString(4), rs.getString(5),
-                        rs.getString(6), rs.getString(7), rs.getString(8)),
+                        rs.getString(6), rs.getString(7), rs.getString(8), rs.getBigDecimal(9)),
                 (Object) cabs.stream().map(c -> c.doc().origenId()).toArray(Long[]::new)), Linea::docId);
 
+        // Con cuenta de descuentos configurada: ingreso bruto (antes del descuento) y el descuento en su cuenta
+        boolean descuentoAparte = Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from cuenta_contable_config where compania_id = ? and clave = 'DESCUENTOS_VENTAS')", Boolean.class, cia));
         return cabs.stream().map(c -> {
             var doc = c.doc();
             doc.add(Partida.debe(c.ctaCliente(), "cliente", ClaveContable.CXC_CLIENTES, c.total(), "Cuentas por cobrar").tercero("C", c.clienteId()));
             var ls = lineas.getOrDefault(doc.origenId(), List.of());
-            var ingresos = repartir(c.total().subtract(c.itbis()), ls.stream().map(Linea::importe).toList());
+            BigDecimal descuentos = descuentoAparte ? ls.stream().map(Linea::descuento).reduce(BigDecimal.ZERO, BigDecimal::add) : BigDecimal.ZERO;
+            var ingresos = repartir(c.total().subtract(c.itbis()).add(descuentos),
+                    ls.stream().map(l -> descuentoAparte ? l.importe().add(l.descuento()) : l.importe()).toList());
+            doc.add(Partida.debe(ClaveContable.DESCUENTOS_VENTAS, descuentos, "Descuentos concedidos"));
             for (int i = 0; i < ls.size(); i++) {
                 var l = ls.get(i);
                 doc.add(Partida.haber(l.ctaIngreso(), "departamento " + l.depto(), ClaveContable.INGRESOS_VENTAS, ingresos.get(i), "Ventas " + l.depto()));

@@ -46,6 +46,14 @@ public class PagoProveedor extends Auditable {
     private String motivoAnulacion;
     @Column(name = "usuario_id")
     private Long usuarioId;
+    /** Moneda de las compras pagadas; total, aplicaciones y formas están en ella. */
+    @Column(nullable = false, length = 3)
+    private String moneda = "DOP";
+    @Column(name = "tasa_cambio", nullable = false, precision = 12, scale = 4)
+    private BigDecimal tasaCambio = BigDecimal.ONE;
+    /** Pesos pagados − pesos históricos de lo aplicado (positivo = pérdida cambiaria). */
+    @Column(name = "diferencia_cambiaria", nullable = false, precision = 18, scale = 2)
+    private BigDecimal diferenciaCambiaria = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "pago", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id")
@@ -70,6 +78,9 @@ public class PagoProveedor extends Auditable {
         private Long compraId;
         @Column(nullable = false, precision = 18, scale = 2)
         private BigDecimal monto;
+        /** Pesos que rebaja del balance de la compra (a la tasa de la compra). */
+        @Column(name = "monto_dop", nullable = false, precision = 18, scale = 2)
+        private BigDecimal montoDop;
     }
 
     @Getter

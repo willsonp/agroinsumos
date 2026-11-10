@@ -28,7 +28,11 @@ public class FuenteMovimientosBancarios extends FuenteBase {
     @Override
     public List<DocumentoContable> pendientes(Long cia, LocalDate desde, LocalDate hasta) {
         return jdbc.query("""
-                select m.id, m.numero, m.fecha, m.tipo, m.monto, m.referencia, m.concepto, m.cuenta_contrapartida, m.origen_tipo,
+                select m.id, m.numero, m.fecha, m.tipo,
+                       -- En pesos: cuentas en otra moneda a su tasa; en transferencias entre monedas, el monto del lado en pesos
+                       case when m.tipo = 'TRANSFERENCIA_SALIDA' and cb.moneda <> 'DOP' and dcb.moneda = 'DOP' then par.monto
+                            else round(m.monto * m.tasa_cambio, 2) end,
+                       m.referencia, m.concepto, m.cuenta_contrapartida, m.origen_tipo,
                        cb.cuenta_contable, cb.nombre, dcb.cuenta_contable, dcb.nombre
                   from movimiento_bancario m join cuenta_bancaria cb on cb.id = m.cuenta_id
                   left join movimiento_bancario par on par.id = m.transferencia_par_id

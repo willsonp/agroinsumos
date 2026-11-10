@@ -80,6 +80,18 @@ public class Compra extends Auditable {
     @Version
     private long version;
 
+    /** Moneda del suplidor; los montos de la compra están en pesos a {@code tasaCambio}. */
+    @Column(nullable = false, length = 3)
+    private String moneda = "DOP";
+    @Column(name = "tasa_cambio", nullable = false, precision = 12, scale = 4)
+    private BigDecimal tasaCambio = BigDecimal.ONE;
+    @Column(name = "total_moneda", precision = 18, scale = 2)
+    private BigDecimal totalMoneda;
+    @Column(name = "balance_moneda", precision = 18, scale = 2)
+    private BigDecimal balanceMoneda;
+
+    public boolean extranjera() { return !"DOP".equals(moneda); }
+
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("linea")
     private List<CompraLinea> lineas = new ArrayList<>();

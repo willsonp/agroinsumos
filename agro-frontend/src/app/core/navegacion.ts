@@ -33,6 +33,7 @@ export const NAVEGACION: Modulo[] = [
     { codigo: 'BANCO_MOVIMIENTOS', nombre: 'Movimientos bancarios', ruta: '/banco/movimientos', icono: 'swap_vert', rol: 'SUPERVISOR' },
     { codigo: 'BANCO_CONCILIACION', nombre: 'Conciliación', ruta: '/banco/conciliacion', icono: 'rule', rol: 'SUPERVISOR' },
     { codigo: 'BANCO_CUENTAS', nombre: 'Cuentas bancarias', ruta: '/banco/cuentas', icono: 'savings' },
+    { codigo: 'BANCO_TASAS', nombre: 'Tasas de cambio', ruta: '/banco/tasas', icono: 'currency_exchange', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Contabilidad', icono: 'calculate', opciones: [
     { codigo: 'CONT_ASIENTOS', nombre: 'Asientos contables', ruta: '/contabilidad/asientos', icono: 'menu_book', rol: 'SUPERVISOR' },

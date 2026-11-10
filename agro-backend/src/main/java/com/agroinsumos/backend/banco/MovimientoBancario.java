@@ -64,4 +64,7 @@ public class MovimientoBancario extends Auditable {
     public BigDecimal montoConSigno() { return tipo.entrada() ? monto : monto.negate(); }
     @Column(name = "cuenta_contrapartida", length = 14)
     private String cuentaContrapartida;
+    /** Pesos por unidad de la moneda de la cuenta (1 en cuentas en pesos). */
+    @Column(name = "tasa_cambio", nullable = false, precision = 12, scale = 4)
+    private BigDecimal tasaCambio = BigDecimal.ONE;
 }
