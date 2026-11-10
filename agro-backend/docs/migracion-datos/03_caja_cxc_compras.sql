@@ -45,6 +45,49 @@ JOIN recibo n ON n.id = r.norecibo
 CROSS JOIN LATERAL (VALUES ('EFECTIVO', r.pagoefectivo), ('TARJETA', r.pagotarjeta), ('CHEQUE', r.pagocheque)) x(forma, monto)
 WHERE coalesce(x.monto, 0) > 0;
 
+-- Recibos que pagan una factura de más (recibos duplicados en el sistema anterior). Se recorren los recibos de cada
+-- factura por fecha: el primero se respeta y los siguientes solo cubren lo que faltaba. Un recibo que ya no cubre
+-- nada se ANULA ("duplicado"); uno que cubre una parte se ajusta a esa parte (aplicado, recibido y forma de pago).
+CREATE TEMP TABLE tmp_exceso AS
+SELECT x.* FROM (
+  SELECT a.id aplicacion_id, a.recibo_id, a.documento_id factura_id, a.monto,
+         a.monto - greatest(0, least(a.monto, f.total - a.retencion_itbis - a.retencion_isr
+              - coalesce(sum(a.monto + a.retencion_itbis + a.retencion_isr) OVER (PARTITION BY a.documento_id ORDER BY r.fecha, r.id
+                                                    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0))) exceso
+  FROM recibo_aplicacion a
+  JOIN recibo r ON r.id = a.recibo_id AND r.estado = 'EMITIDO' AND r.compania_id = :cia
+  JOIN factura f ON f.id = a.documento_id
+  WHERE a.documento_tipo = 'FACTURA') x
+WHERE x.exceso > 0.005;
+
+CREATE TEMP TABLE tmp_recibo_exceso AS
+SELECT e.recibo_id, sum(e.exceso) exceso, r.total_aplicado + r.total_retenciones aplicado,
+       string_agg(DISTINCT e.factura_id::text, ', ') facturas
+FROM tmp_exceso e JOIN recibo r ON r.id = e.recibo_id GROUP BY e.recibo_id, r.total_aplicado, r.total_retenciones;
+
+-- a) Totalmente duplicados: se anulan (conservan sus datos, como cualquier recibo anulado)
+UPDATE recibo r SET estado = 'ANULADO', anulado_en = now(),
+       motivo_anulacion = left('Duplicado en el sistema anterior: la factura ' || t.facturas || ' ya estaba pagada', 200)
+FROM tmp_recibo_exceso t WHERE t.recibo_id = r.id AND t.exceso >= t.aplicado - 0.005;
+
+-- b) Parcialmente de más: se deja solo lo que faltaba por pagar
+DELETE FROM recibo_aplicacion a
+USING tmp_exceso e JOIN tmp_recibo_exceso t ON t.recibo_id = e.recibo_id AND t.exceso < t.aplicado - 0.005
+WHERE a.id = e.aplicacion_id AND e.exceso >= e.monto - 0.005;
+
+UPDATE recibo_aplicacion a SET monto = a.monto - e.exceso
+FROM tmp_exceso e JOIN tmp_recibo_exceso t ON t.recibo_id = e.recibo_id AND t.exceso < t.aplicado - 0.005
+WHERE a.id = e.aplicacion_id AND e.exceso < e.monto - 0.005;
+
+UPDATE recibo r SET total_aplicado = r.total_aplicado - t.exceso, total_recibido = greatest(r.total_recibido - t.exceso, 0),
+       concepto = left(coalesce(r.concepto || ' · ', '') || 'Ajustado al migrar: pagaba RD$' || t.exceso || ' de más', 200)
+FROM tmp_recibo_exceso t WHERE t.recibo_id = r.id AND t.exceso < t.aplicado - 0.005;
+
+UPDATE recibo_pago p SET monto = p.monto - t.exceso
+FROM tmp_recibo_exceso t
+WHERE t.recibo_id = p.recibo_id AND t.exceso < t.aplicado - 0.005 AND p.monto > t.exceso
+  AND p.id = (SELECT max(q.id) FROM recibo_pago q WHERE q.recibo_id = p.recibo_id AND q.monto > t.exceso);
+
 -- Pagos sin recibo en el sistema anterior (ventas de contado cobradas en caja, ajustes de balance): en el sistema
 -- nuevo toda factura se salda con un recibo, así que se crea uno por la diferencia (total - balance - recibos).
 -- Sin esto, el estado de cuenta mostraría las ventas de contado históricas como deuda del cliente.
@@ -214,6 +257,10 @@ JOIN (SELECT c.proveedor_id, sum(c.total - c.itbis_retenido - c.isr_retenido) - 
                      JOIN pago_proveedor pp ON pp.id = a.pago_id WHERE pp.estado = 'EMITIDO' GROUP BY 1) a ON a.compra_id = c.id
        WHERE c.estado <> 'ANULADA' GROUP BY 1) e ON e.proveedor_id = p.id
 WHERE abs(b.balance_compras - e.estado_cuenta) > 0.01;
+
+-- 5b) Recibos duplicados del sistema anterior: anulados o ajustados al migrar (informativo)
+SELECT r.numero recibo, r.fecha, r.cliente_id, t.facturas, t.exceso, CASE WHEN r.estado = 'ANULADO' THEN 'anulado' ELSE 'ajustado' END accion
+FROM tmp_recibo_exceso t JOIN recibo r ON r.id = t.recibo_id ORDER BY r.fecha;
 
 -- 5) Compras del sistema anterior que NO se migraron (suplidor inexistente o NCF repetido): registrarlas a mano
 SELECT c.idcompra, c.fecha, c.suplidor, round(c.monto::numeric, 2) monto, round(c.balance::numeric, 2) balance,

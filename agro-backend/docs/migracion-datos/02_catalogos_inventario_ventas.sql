@@ -211,7 +211,7 @@ END $$;
 SELECT 'clientes' AS entidad, (SELECT count(*) FROM legacy.clientex) AS legacy, (SELECT count(*) FROM cliente) AS nuevo
 UNION ALL SELECT 'articulos', (SELECT count(*) FROM legacy.articulo), (SELECT count(*) FROM articulo)
 UNION ALL SELECT 'facturas', (SELECT count(*) FROM legacy.factura), (SELECT count(*) FROM factura)
-UNION ALL SELECT 'CxC pendiente', (SELECT round(sum(balance)::numeric, 2) FROM legacy.factura WHERE estado <> 'N' AND upper(tipofactura) IN ('C', 'E')),
+UNION ALL SELECT 'CxC pendiente', (SELECT round(sum(greatest(balance, 0))::numeric, 2) FROM legacy.factura WHERE estado <> 'N' AND upper(tipofactura) IN ('C', 'E')),  -- balances negativos (pagos de más) cuentan 0
                                   (SELECT sum(balance) FROM factura WHERE condicion = 'CREDITO' AND estado <> 'ANULADA');
 
 COMMIT;
