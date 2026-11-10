@@ -27,6 +27,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Inventario', icono: 'inventory_2', opciones: [
     { codigo: 'INV_ARTICULOS', nombre: 'Artículos', ruta: '/inventario/articulos', icono: 'category' },
     { codigo: 'INV_DOCUMENTOS', nombre: 'Ajustes y transferencias', ruta: '/inventario/documentos', icono: 'swap_horiz', rol: 'SUPERVISOR' },
+    { codigo: 'INV_ETIQUETAS', nombre: 'Imprimir etiquetas', ruta: '/inventario/etiquetas', icono: 'barcode' },
   ]},
   { nombre: 'Compras', icono: 'local_shipping', opciones: [
     { codigo: 'COMPRAS_REGISTRO', nombre: 'Compras', ruta: '/compras', icono: 'add_shopping_cart', rol: 'SUPERVISOR' },
@@ -56,6 +57,7 @@ export const NAVEGACION: Modulo[] = [
   ]},
   { nombre: 'Administración', icono: 'admin_panel_settings', opciones: [
     { codigo: 'ADMIN_USUARIOS', nombre: 'Usuarios y permisos', ruta: '/admin/usuarios', icono: 'manage_accounts', rol: 'ADMIN' },
+    { codigo: 'ADMIN_RESPALDOS', nombre: 'Respaldos', ruta: '/admin/respaldos', icono: 'backup', rol: 'ADMIN' },
   ]},
 ];
 

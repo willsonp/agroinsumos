@@ -4,6 +4,8 @@ spring:
     username: ${TEST_DB_USER:agro}
     password: ${TEST_DB_PASSWORD:agro}
 app:
+  respaldo:
+    cron: "-"   # en pruebas no se ejecuta el respaldo automático
   security:
     jwt:
       secret: test-secret-0123456789-0123456789-abcdef

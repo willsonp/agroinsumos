@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/inventario/documentos/{id}": {
+    "/api/v1/inventario/impresoras/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -61,6 +61,22 @@ export interface paths {
         };
         get: operations["obtener_1"];
         put: operations["actualizar_1"];
+        post?: never;
+        delete: operations["desactivar_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/documentos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_2"];
+        put: operations["actualizar_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -75,10 +91,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_2"];
-        put: operations["actualizar_2"];
+        get: operations["obtener_3"];
+        put: operations["actualizar_3"];
         post?: never;
-        delete: operations["desactivar_1"];
+        delete: operations["desactivar_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -91,10 +107,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_3"];
-        put: operations["actualizar_3"];
+        get: operations["obtener_4"];
+        put: operations["actualizar_4"];
         post?: never;
-        delete: operations["desactivar_2"];
+        delete: operations["desactivar_3"];
         options?: never;
         head?: never;
         patch?: never;
@@ -141,22 +157,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_4"];
-        put: operations["actualizar_4"];
-        post?: never;
-        delete: operations["desactivar_3"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/catalogos/vendedores/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
         get: operations["obtener_5"];
         put: operations["actualizar_5"];
         post?: never;
@@ -166,7 +166,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/unidades/{id}": {
+    "/api/v1/catalogos/vendedores/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -182,7 +182,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/turnos/{id}": {
+    "/api/v1/catalogos/unidades/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -198,7 +198,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/proveedores/{id}": {
+    "/api/v1/catalogos/turnos/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -214,7 +214,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/departamentos/{id}": {
+    "/api/v1/catalogos/proveedores/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -230,7 +230,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/clientes/{id}": {
+    "/api/v1/catalogos/departamentos/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -246,7 +246,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/ciudades/{id}": {
+    "/api/v1/catalogos/clientes/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -262,7 +262,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/almacenes/{id}": {
+    "/api/v1/catalogos/ciudades/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -273,6 +273,22 @@ export interface paths {
         put: operations["actualizar_12"];
         post?: never;
         delete: operations["desactivar_11"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalogos/almacenes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_13"];
+        put: operations["actualizar_13"];
+        post?: never;
+        delete: operations["desactivar_12"];
         options?: never;
         head?: never;
         patch?: never;
@@ -302,10 +318,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_13"];
-        put: operations["actualizar_13"];
+        get: operations["obtener_14"];
+        put: operations["actualizar_14"];
         post?: never;
-        delete: operations["desactivar_12"];
+        delete: operations["desactivar_13"];
         options?: never;
         head?: never;
         patch?: never;
@@ -318,10 +334,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_14"];
-        put: operations["actualizar_14"];
+        get: operations["obtener_15"];
+        put: operations["actualizar_15"];
         post?: never;
-        delete: operations["desactivar_13"];
+        delete: operations["desactivar_14"];
         options?: never;
         head?: never;
         patch?: never;
@@ -336,6 +352,23 @@ export interface paths {
         };
         get?: never;
         put: operations["cambiarPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/respaldos/directorio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Carpeta del servidor donde se guardan los respaldos */
+        put: operations["directorio"];
         post?: never;
         delete?: never;
         options?: never;
@@ -592,7 +625,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/inventario/documentos": {
+    "/api/v1/inventario/impresoras": {
         parameters: {
             query?: never;
             header?: never;
@@ -601,8 +634,75 @@ export interface paths {
         };
         get: operations["listar_3"];
         put?: never;
-        /** Crea un ajuste/entrada/salida/transferencia en BORRADOR (no mueve inventario) */
         post: operations["crear_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/etiquetas/zpl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archivo .zpl para enviar a la impresora (Zebra Setup Utilities, copia RAW, etc.) */
+        post: operations["zpl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/etiquetas/vista-previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Diseño (vista previa) y ZPL de las etiquetas */
+        post: operations["vistaPrevia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/etiquetas/imprimir/{impresoraId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envía las etiquetas a una impresora de red registrada (puerto RAW 9100) */
+        post: operations["imprimir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/documentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_4"];
+        put?: never;
+        /** Crea un ajuste/entrada/salida/transferencia en BORRADOR (no mueve inventario) */
+        post: operations["crear_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -649,9 +749,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
-        post: operations["crear_6"];
+        post: operations["crear_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -700,7 +800,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         /** Genera, firma y guarda un e-CF (estado FIRMADO). No lo envía a la DGII */
         post: operations["emitir"];
@@ -870,7 +970,7 @@ export interface paths {
         get: operations["buscar_5"];
         put?: never;
         /** Financia el saldo de una factura a crédito en cuotas (el interés se emite como e-CF 33 exento) */
-        post: operations["crear_7"];
+        post: operations["crear_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -950,9 +1050,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
-        post: operations["crear_8"];
+        post: operations["crear_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1020,7 +1120,7 @@ export interface paths {
         get: operations["buscar_6"];
         put?: never;
         /** Asiento manual (entrada de diario) */
-        post: operations["crear_9"];
+        post: operations["crear_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1100,22 +1200,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
-        put?: never;
-        post: operations["crear_10"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/catalogos/vendedores": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
         get: operations["listar_8"];
         put?: never;
         post: operations["crear_11"];
@@ -1125,7 +1209,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/unidades": {
+    "/api/v1/catalogos/vendedores": {
         parameters: {
             query?: never;
             header?: never;
@@ -1141,7 +1225,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/turnos": {
+    "/api/v1/catalogos/unidades": {
         parameters: {
             query?: never;
             header?: never;
@@ -1157,7 +1241,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/proveedores": {
+    "/api/v1/catalogos/turnos": {
         parameters: {
             query?: never;
             header?: never;
@@ -1173,7 +1257,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/departamentos": {
+    "/api/v1/catalogos/proveedores": {
         parameters: {
             query?: never;
             header?: never;
@@ -1189,7 +1273,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/clientes": {
+    "/api/v1/catalogos/departamentos": {
         parameters: {
             query?: never;
             header?: never;
@@ -1205,7 +1289,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/ciudades": {
+    "/api/v1/catalogos/clientes": {
         parameters: {
             query?: never;
             header?: never;
@@ -1221,7 +1305,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/catalogos/almacenes": {
+    "/api/v1/catalogos/ciudades": {
         parameters: {
             query?: never;
             header?: never;
@@ -1231,6 +1315,22 @@ export interface paths {
         get: operations["listar_15"];
         put?: never;
         post: operations["crear_18"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalogos/almacenes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_16"];
+        put?: never;
+        post: operations["crear_19"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1377,9 +1477,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_16"];
+        get: operations["listar_17"];
         put?: never;
-        post: operations["crear_19"];
+        post: operations["crear_20"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1427,9 +1527,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_17"];
+        get: operations["listar_18"];
         put?: never;
-        post: operations["crear_20"];
+        post: operations["crear_21"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1486,6 +1586,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/respaldos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["estado"];
+        put?: never;
+        /** Genera el respaldo de hoy (BK_<base>_<día>.sql) en la carpeta configurada */
+        post: operations["crear_22"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ventas/facturas/{id}": {
         parameters: {
             query?: never;
@@ -1493,7 +1610,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_15"];
+        get: operations["obtener_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1525,7 +1642,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_16"];
+        get: operations["obtener_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1541,7 +1658,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_17"];
+        get: operations["obtener_18"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1557,7 +1674,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_18"];
+        get: operations["obtener_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1573,7 +1690,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_19"];
+        get: operations["obtener_20"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1591,6 +1708,22 @@ export interface paths {
         };
         /** Tasa vigente de la moneda a la fecha (la última registrada en o antes de ella) */
         get: operations["vigente"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/etiquetas/tamanos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["tamanos"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1757,7 +1890,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_20"];
+        get: operations["obtener_21"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1838,7 +1971,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_21"];
+        get: operations["obtener_22"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1902,7 +2035,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_22"];
+        get: operations["obtener_23"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2097,7 +2230,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_23"];
+        get: operations["obtener_24"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2113,7 +2246,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_24"];
+        get: operations["obtener_25"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2255,6 +2388,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/respaldos/{nombre}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descarga un respaldo para guardarlo en otra ubicación */
+        get: operations["descargar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/monedas/tasas/{moneda}/{fecha}": {
         parameters: {
             query?: never;
@@ -2336,6 +2486,29 @@ export interface components {
         };
         UsuarioResetPasswordRequest: {
             passwordNueva: string;
+        };
+        ImpresoraEtiquetaRequest: {
+            nombre: string;
+            host: string;
+            /** Format: int32 */
+            puerto?: number;
+            /** Format: int32 */
+            dpi: number;
+            anchoMm: number;
+            altoMm: number;
+        };
+        ImpresoraEtiquetaResponse: {
+            /** Format: int64 */
+            id?: number;
+            nombre?: string;
+            host?: string;
+            /** Format: int32 */
+            puerto?: number;
+            /** Format: int32 */
+            dpi?: number;
+            anchoMm?: number;
+            altoMm?: number;
+            estado?: string;
         };
         DocumentoInventarioLineaRequest: {
             /** Format: int64 */
@@ -2739,6 +2912,24 @@ export interface components {
             passwordActual: string;
             passwordNueva: string;
         };
+        RespaldoDirectorioRequest: {
+            directorio: string;
+        };
+        RespaldoArchivo: {
+            nombre?: string;
+            /** Format: int64 */
+            bytes?: number;
+            /** Format: date-time */
+            modificado?: string;
+        };
+        RespaldoEstado: {
+            directorio?: string;
+            baseDatos?: string;
+            proximoNombre?: string;
+            diarioAutomatico?: boolean;
+            respaldoDeHoy?: boolean;
+            respaldos?: components["schemas"]["RespaldoArchivo"][];
+        };
         FacturaCrearFacturaRequest: {
             /** Format: int64 */
             clienteId: number;
@@ -3079,6 +3270,73 @@ export interface components {
             /** Format: date */
             fecha?: string;
             tasa?: number;
+        };
+        EtiquetaItem: {
+            /** Format: int64 */
+            articuloId: number;
+            /** Format: int32 */
+            cantidad: number;
+        };
+        EtiquetaRequest: {
+            anchoMm: number;
+            altoMm: number;
+            /** Format: int32 */
+            dpi: number;
+            /** @enum {string} */
+            precio?: "CONTADO" | "CREDITO" | "MAYOR";
+            mostrarNombre?: boolean;
+            mostrarCodigo?: boolean;
+            items: components["schemas"]["EtiquetaItem"][];
+        };
+        Etiqueta: {
+            /** Format: int64 */
+            articuloId?: number;
+            nombre?: string;
+            codigo?: string;
+            /** @enum {string} */
+            simbologia?: "CODE128" | "EAN13" | "UPCA";
+            precio?: string;
+            /** Format: int32 */
+            cantidad?: number;
+            diseno?: components["schemas"]["GeneradorZplDiseno"];
+        };
+        EtiquetaResponse: {
+            /** Format: int32 */
+            totalEtiquetas?: number;
+            zpl?: string;
+            etiquetas?: components["schemas"]["Etiqueta"][];
+        };
+        GeneradorZplDiseno: {
+            /** Format: int32 */
+            anchoPuntos?: number;
+            /** Format: int32 */
+            altoPuntos?: number;
+            /** Format: int32 */
+            puntosPorMm?: number;
+            elementos?: components["schemas"]["GeneradorZplElemento"][];
+        };
+        GeneradorZplElemento: {
+            tipo?: string;
+            /** Format: int32 */
+            x?: number;
+            /** Format: int32 */
+            y?: number;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+            texto?: string;
+            /** @enum {string} */
+            simbologia?: "CODE128" | "EAN13" | "UPCA";
+            /** Format: int32 */
+            modulo?: number;
+        };
+        EtiquetaImpresion: {
+            /** Format: int32 */
+            totalEtiquetas?: number;
+            impresora?: string;
+            /** Format: int32 */
+            bytes?: number;
         };
         ComprobanteAnuladoRequest: {
             ncf: string;
@@ -3845,6 +4103,14 @@ export interface components {
             username: string;
             password: string;
         };
+        RespaldoResultado: {
+            nombre?: string;
+            ruta?: string;
+            /** Format: int64 */
+            bytes?: number;
+            /** Format: int64 */
+            milisegundos?: number;
+        };
         Pageable: {
             /** Format: int32 */
             page?: number;
@@ -3869,10 +4135,10 @@ export interface components {
             estado?: "EMITIDA" | "PAGADA" | "ANULADA";
         };
         PageFacturaResumen: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3903,10 +4169,10 @@ export interface components {
             unsorted?: boolean;
         };
         PageDevolucionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3921,10 +4187,10 @@ export interface components {
             empty?: boolean;
         };
         PageCotizacionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3939,10 +4205,10 @@ export interface components {
             empty?: boolean;
         };
         PageConduceResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3957,10 +4223,10 @@ export interface components {
             empty?: boolean;
         };
         PageApartadoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3975,10 +4241,10 @@ export interface components {
             empty?: boolean;
         };
         PageUsuarioResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -3992,11 +4258,34 @@ export interface components {
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
-        PageDocumentoInventarioResponse: {
-            /** Format: int64 */
-            totalElements?: number;
+        PageImpresoraEtiquetaResponse: {
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["ImpresoraEtiquetaResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            empty?: boolean;
+        };
+        EtiquetaTamano: {
+            nombre?: string;
+            anchoMm?: number;
+            altoMm?: number;
+        };
+        PageDocumentoInventarioResponse: {
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4011,10 +4300,10 @@ export interface components {
             empty?: boolean;
         };
         PageArticuloResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4045,10 +4334,10 @@ export interface components {
             usuario?: string;
         };
         PageArticuloKardexResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4179,10 +4468,10 @@ export interface components {
             itbisPorAdelantar?: number;
         };
         PageEcfResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4219,10 +4508,10 @@ export interface components {
             balanceMoneda?: number;
         };
         PagePagoProveedorResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4237,10 +4526,10 @@ export interface components {
             empty?: boolean;
         };
         PageNotaProveedorResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4266,10 +4555,10 @@ export interface components {
             total?: number;
         };
         PageReciboResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4284,10 +4573,10 @@ export interface components {
             empty?: boolean;
         };
         PageFinanciamientoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4480,10 +4769,10 @@ export interface components {
             cerradoPor?: number;
         };
         PageCuentaContableResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4498,10 +4787,10 @@ export interface components {
             empty?: boolean;
         };
         PageAsientoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4516,10 +4805,10 @@ export interface components {
             empty?: boolean;
         };
         PageCompraResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4534,10 +4823,10 @@ export interface components {
             empty?: boolean;
         };
         PageZonaResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4552,10 +4841,10 @@ export interface components {
             empty?: boolean;
         };
         PageVendedorResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4570,10 +4859,10 @@ export interface components {
             empty?: boolean;
         };
         PageUnidadResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4588,10 +4877,10 @@ export interface components {
             empty?: boolean;
         };
         PageTurnoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4606,10 +4895,10 @@ export interface components {
             empty?: boolean;
         };
         PageProveedorResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4624,10 +4913,10 @@ export interface components {
             empty?: boolean;
         };
         PageDepartamentoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4642,10 +4931,10 @@ export interface components {
             empty?: boolean;
         };
         PageClienteResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4660,10 +4949,10 @@ export interface components {
             empty?: boolean;
         };
         PageCiudadResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4678,10 +4967,10 @@ export interface components {
             empty?: boolean;
         };
         PageAlmacenResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4696,10 +4985,10 @@ export interface components {
             empty?: boolean;
         };
         PageCajaSesionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4719,10 +5008,10 @@ export interface components {
             conteo?: components["schemas"]["CajaConteoItem"][];
         };
         PageMovimientoBancarioResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4737,10 +5026,10 @@ export interface components {
             empty?: boolean;
         };
         PageCuentaBancariaResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4755,10 +5044,10 @@ export interface components {
             empty?: boolean;
         };
         PageBancoResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4983,12 +5272,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DocumentoInventarioResponse"];
+                    "*/*": components["schemas"]["ImpresoraEtiquetaResponse"];
                 };
             };
         };
     };
     actualizar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpresoraEtiquetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImpresoraEtiquetaResponse"];
+                };
+            };
+        };
+    };
+    desactivar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    obtener_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DocumentoInventarioResponse"];
+                };
+            };
+        };
+    };
+    actualizar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5014,7 +5371,7 @@ export interface operations {
             };
         };
     };
-    obtener_2: {
+    obtener_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5036,7 +5393,7 @@ export interface operations {
             };
         };
     };
-    actualizar_2: {
+    actualizar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5062,7 +5419,7 @@ export interface operations {
             };
         };
     };
-    desactivar_1: {
+    desactivar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5082,7 +5439,7 @@ export interface operations {
             };
         };
     };
-    obtener_3: {
+    obtener_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5104,7 +5461,7 @@ export interface operations {
             };
         };
     };
-    actualizar_3: {
+    actualizar_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5130,7 +5487,7 @@ export interface operations {
             };
         };
     };
-    desactivar_2: {
+    desactivar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5238,7 +5595,7 @@ export interface operations {
             };
         };
     };
-    obtener_4: {
+    obtener_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5260,7 +5617,7 @@ export interface operations {
             };
         };
     };
-    actualizar_4: {
+    actualizar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5282,74 +5639,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ZonaResponse"];
-                };
-            };
-        };
-    };
-    desactivar_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    obtener_5: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VendedorResponse"];
-                };
-            };
-        };
-    };
-    actualizar_5: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VendedorRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VendedorResponse"];
                 };
             };
         };
@@ -5391,7 +5680,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UnidadResponse"];
+                    "*/*": components["schemas"]["VendedorResponse"];
                 };
             };
         };
@@ -5407,7 +5696,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UnidadRequest"];
+                "application/json": components["schemas"]["VendedorRequest"];
             };
         };
         responses: {
@@ -5417,7 +5706,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UnidadResponse"];
+                    "*/*": components["schemas"]["VendedorResponse"];
                 };
             };
         };
@@ -5459,7 +5748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponse"];
+                    "*/*": components["schemas"]["UnidadResponse"];
                 };
             };
         };
@@ -5475,7 +5764,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TurnoRequest"];
+                "application/json": components["schemas"]["UnidadRequest"];
             };
         };
         responses: {
@@ -5485,7 +5774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["TurnoResponse"];
+                    "*/*": components["schemas"]["UnidadResponse"];
                 };
             };
         };
@@ -5527,7 +5816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ProveedorResponse"];
+                    "*/*": components["schemas"]["TurnoResponse"];
                 };
             };
         };
@@ -5543,7 +5832,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProveedorRequest"];
+                "application/json": components["schemas"]["TurnoRequest"];
             };
         };
         responses: {
@@ -5553,7 +5842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ProveedorResponse"];
+                    "*/*": components["schemas"]["TurnoResponse"];
                 };
             };
         };
@@ -5595,7 +5884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DepartamentoResponse"];
+                    "*/*": components["schemas"]["ProveedorResponse"];
                 };
             };
         };
@@ -5611,7 +5900,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DepartamentoRequest"];
+                "application/json": components["schemas"]["ProveedorRequest"];
             };
         };
         responses: {
@@ -5621,7 +5910,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DepartamentoResponse"];
+                    "*/*": components["schemas"]["ProveedorResponse"];
                 };
             };
         };
@@ -5663,7 +5952,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ClienteResponse"];
+                    "*/*": components["schemas"]["DepartamentoResponse"];
                 };
             };
         };
@@ -5679,7 +5968,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ClienteRequest"];
+                "application/json": components["schemas"]["DepartamentoRequest"];
             };
         };
         responses: {
@@ -5689,7 +5978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ClienteResponse"];
+                    "*/*": components["schemas"]["DepartamentoResponse"];
                 };
             };
         };
@@ -5731,7 +6020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CiudadResponse"];
+                    "*/*": components["schemas"]["ClienteResponse"];
                 };
             };
         };
@@ -5747,7 +6036,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CiudadRequest"];
+                "application/json": components["schemas"]["ClienteRequest"];
             };
         };
         responses: {
@@ -5757,7 +6046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CiudadResponse"];
+                    "*/*": components["schemas"]["ClienteResponse"];
                 };
             };
         };
@@ -5799,12 +6088,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AlmacenResponse"];
+                    "*/*": components["schemas"]["CiudadResponse"];
                 };
             };
         };
     };
     actualizar_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CiudadRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CiudadResponse"];
+                };
+            };
+        };
+    };
+    desactivar_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    obtener_13: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AlmacenResponse"];
+                };
+            };
+        };
+    };
+    actualizar_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -5830,7 +6187,7 @@ export interface operations {
             };
         };
     };
-    desactivar_11: {
+    desactivar_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -5876,7 +6233,7 @@ export interface operations {
             };
         };
     };
-    obtener_13: {
+    obtener_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -5898,7 +6255,7 @@ export interface operations {
             };
         };
     };
-    actualizar_13: {
+    actualizar_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -5924,7 +6281,7 @@ export interface operations {
             };
         };
     };
-    desactivar_12: {
+    desactivar_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -5944,7 +6301,7 @@ export interface operations {
             };
         };
     };
-    obtener_14: {
+    obtener_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -5966,7 +6323,7 @@ export interface operations {
             };
         };
     };
-    actualizar_14: {
+    actualizar_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -5992,7 +6349,7 @@ export interface operations {
             };
         };
     };
-    desactivar_13: {
+    desactivar_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -6031,6 +6388,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    directorio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RespaldoDirectorioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RespaldoEstado"];
+                };
             };
         };
     };
@@ -6571,6 +6952,127 @@ export interface operations {
     listar_3: {
         parameters: {
             query: {
+                q?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageImpresoraEtiquetaResponse"];
+                };
+            };
+        };
+    };
+    crear_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpresoraEtiquetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImpresoraEtiquetaResponse"];
+                };
+            };
+        };
+    };
+    zpl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtiquetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    vistaPrevia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtiquetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EtiquetaResponse"];
+                };
+            };
+        };
+    };
+    imprimir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impresoraId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EtiquetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EtiquetaImpresion"];
+                };
+            };
+        };
+    };
+    listar_4: {
+        parameters: {
+            query: {
                 tipo?: "AJUSTE" | "ENTRADA" | "SALIDA" | "TRANSFERENCIA";
                 estado?: "BORRADOR" | "APLICADO" | "ANULADO";
                 p: components["schemas"]["Pageable"];
@@ -6592,7 +7094,7 @@ export interface operations {
             };
         };
     };
-    crear_5: {
+    crear_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6658,7 +7160,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query: {
                 q?: string;
@@ -6681,7 +7183,7 @@ export interface operations {
             };
         };
     };
-    crear_6: {
+    crear_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6796,7 +7298,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_6: {
         parameters: {
             query: {
                 estado?: "FIRMADO" | "ENVIADO" | "EN_PROCESO" | "ACEPTADO" | "ACEPTADO_CONDICIONAL" | "RECHAZADO" | "ERROR_ENVIO";
@@ -7158,7 +7660,7 @@ export interface operations {
             };
         };
     };
-    crear_7: {
+    crear_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -7272,7 +7774,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query: {
                 q?: string;
@@ -7295,7 +7797,7 @@ export interface operations {
             };
         };
     };
-    crear_8: {
+    crear_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -7418,7 +7920,7 @@ export interface operations {
             };
         };
     };
-    crear_9: {
+    crear_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -7564,7 +8066,7 @@ export interface operations {
             };
         };
     };
-    listar_7: {
+    listar_8: {
         parameters: {
             query: {
                 q?: string;
@@ -7587,7 +8089,7 @@ export interface operations {
             };
         };
     };
-    crear_10: {
+    crear_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -7611,7 +8113,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_9: {
         parameters: {
             query: {
                 q?: string;
@@ -7634,7 +8136,7 @@ export interface operations {
             };
         };
     };
-    crear_11: {
+    crear_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -7658,7 +8160,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query: {
                 q?: string;
@@ -7681,7 +8183,7 @@ export interface operations {
             };
         };
     };
-    crear_12: {
+    crear_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -7705,7 +8207,7 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    listar_11: {
         parameters: {
             query: {
                 q?: string;
@@ -7728,7 +8230,7 @@ export interface operations {
             };
         };
     };
-    crear_13: {
+    crear_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7752,7 +8254,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_12: {
         parameters: {
             query: {
                 q?: string;
@@ -7775,7 +8277,7 @@ export interface operations {
             };
         };
     };
-    crear_14: {
+    crear_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7799,7 +8301,7 @@ export interface operations {
             };
         };
     };
-    listar_12: {
+    listar_13: {
         parameters: {
             query: {
                 q?: string;
@@ -7822,7 +8324,7 @@ export interface operations {
             };
         };
     };
-    crear_15: {
+    crear_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7846,7 +8348,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query: {
                 q?: string;
@@ -7869,7 +8371,7 @@ export interface operations {
             };
         };
     };
-    crear_16: {
+    crear_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -7893,7 +8395,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query: {
                 q?: string;
@@ -7916,7 +8418,7 @@ export interface operations {
             };
         };
     };
-    crear_17: {
+    crear_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -7940,7 +8442,7 @@ export interface operations {
             };
         };
     };
-    listar_15: {
+    listar_16: {
         parameters: {
             query: {
                 q?: string;
@@ -7963,7 +8465,7 @@ export interface operations {
             };
         };
     };
-    crear_18: {
+    crear_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -8207,7 +8709,7 @@ export interface operations {
             };
         };
     };
-    listar_16: {
+    listar_17: {
         parameters: {
             query: {
                 q?: string;
@@ -8230,7 +8732,7 @@ export interface operations {
             };
         };
     };
-    crear_19: {
+    crear_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -8302,7 +8804,7 @@ export interface operations {
             };
         };
     };
-    listar_17: {
+    listar_18: {
         parameters: {
             query: {
                 q?: string;
@@ -8325,7 +8827,7 @@ export interface operations {
             };
         };
     };
-    crear_20: {
+    crear_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -8419,7 +8921,47 @@ export interface operations {
             };
         };
     };
-    obtener_15: {
+    estado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RespaldoEstado"];
+                };
+            };
+        };
+    };
+    crear_22: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RespaldoResultado"];
+                };
+            };
+        };
+    };
+    obtener_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -8463,7 +9005,7 @@ export interface operations {
             };
         };
     };
-    obtener_16: {
+    obtener_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -8485,7 +9027,7 @@ export interface operations {
             };
         };
     };
-    obtener_17: {
+    obtener_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -8507,7 +9049,7 @@ export interface operations {
             };
         };
     };
-    obtener_18: {
+    obtener_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -8529,7 +9071,7 @@ export interface operations {
             };
         };
     };
-    obtener_19: {
+    obtener_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -8570,6 +9112,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TasaCambioTasa"];
+                };
+            };
+        };
+    };
+    tamanos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EtiquetaTamano"][];
                 };
             };
         };
@@ -8778,7 +9340,7 @@ export interface operations {
             };
         };
     };
-    obtener_20: {
+    obtener_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -8890,7 +9452,7 @@ export interface operations {
             };
         };
     };
-    obtener_21: {
+    obtener_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -8976,7 +9538,7 @@ export interface operations {
             };
         };
     };
-    obtener_22: {
+    obtener_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -9243,7 +9805,7 @@ export interface operations {
             };
         };
     };
-    obtener_23: {
+    obtener_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -9265,7 +9827,7 @@ export interface operations {
             };
         };
     };
-    obtener_24: {
+    obtener_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -9451,6 +10013,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthPerfilResponse"];
+                };
+            };
+        };
+    };
+    descargar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nombre: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
         };

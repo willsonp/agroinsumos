@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "@fontsource/roboto": "^5.3.0",
+    "jsbarcode": "^3.11.6",
     "material-symbols": "^0.48.3",
     "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",

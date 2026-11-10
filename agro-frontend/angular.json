@@ -37,7 +37,8 @@
               "src/styles.scss"
             ],
             "allowedCommonJsDependencies": [
-              "qrcode"
+              "qrcode",
+              "jsbarcode"
             ]
           },
           "configurations": {
