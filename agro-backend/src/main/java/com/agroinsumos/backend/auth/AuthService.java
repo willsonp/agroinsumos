@@ -36,15 +36,16 @@ public class AuthService {
     private final MenuService menus;
 
     public TokenResponse login(LoginRequest req, HttpServletRequest http) {
+        intentos.verificarIp(ip(http));
         try {
             authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(req.username().trim(), req.password()));
         } catch (BadCredentialsException e) {
-            intentos.fallido(req.username());
+            intentos.fallido(req.username(), ip(http));
             throw e;
         }
         Usuario u = usuarios.findByUsernameIgnoreCase(req.username().trim()).orElseThrow();
-        intentos.exitoso(u.getId());
+        intentos.exitoso(u.getId(), ip(http));
         return emitirTokens(u, http);
     }
 

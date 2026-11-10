@@ -97,7 +97,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
         var creado = mvc.perform(post("/api/v1/usuarios").header("Authorization", "Bearer " + admin)
                         .contentType("application/json").content("""
                                 {"datos":{"nombre":"Ana","apellidos":"Pérez","username":"ana","nivel":"SUPERVISOR",
-                                 "correo":"Ana@Agro.do"},"password":"SuperClave1"}"""))
+                                 "correo":"Ana@Agro.do"},"password":"SuperClave123"}"""))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.correo").value("ana@agro.do"))
                 .andReturn().getResponse().getContentAsString();
@@ -105,7 +105,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
 
         mvc.perform(post("/api/v1/usuarios").header("Authorization", "Bearer " + admin)
                         .contentType("application/json").content("""
-                                {"datos":{"nombre":"Otra","username":"ANA","nivel":"USUARIO"},"password":"SuperClave1"}"""))
+                                {"datos":{"nombre":"Otra","username":"ANA","nivel":"USUARIO"},"password":"SuperClave123"}"""))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("USERNAME_DUPLICADO"));
 
         // Menú (opciones sembradas por V8): asignar a Ana solo el punto de venta
@@ -116,7 +116,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$[?(@.codigo=='VENTAS_POS')].permitido").value(contains(true)))
                 .andExpect(jsonPath("$[?(@.codigo=='VENTAS_FACTURAS')].permitido").value(contains(false)));
 
-        String ana = login("ana", "SuperClave1");
+        String ana = login("ana", "SuperClave123");
         mvc.perform(get("/api/v1/auth/menu").header("Authorization", "Bearer " + ana))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.modulos", hasSize(1)))
@@ -126,7 +126,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
         mvc.perform(delete("/api/v1/usuarios/" + anaId).header("Authorization", "Bearer " + admin))
                 .andExpect(status().isNoContent());
         mvc.perform(post("/api/v1/auth/login").contentType("application/json")
-                .content("{\"username\":\"ana\",\"password\":\"SuperClave1\"}")).andExpect(status().isUnauthorized());
+                .content("{\"username\":\"ana\",\"password\":\"SuperClave123\"}")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -139,5 +139,37 @@ class AuthIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.code").value("VALIDACION"))
                 .andExpect(jsonPath("$.errores.password").exists())
                 .andExpect(jsonPath("['errores']['datos.username']").exists());
+    }
+
+    @Test
+    void desactivarOCambiarNivelInvalidaElTokenAlInstante() throws Exception {
+        long id = usuarioLegacy("cajero1", "clave", 'S');
+        String token = login("cajero1", "clave");
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+        // Le bajan el nivel: el token que dice SUPERVISOR deja de servir (debe renovarlo con el nivel actual)
+        jdbc.update("update usuario set nivel = 'U' where id = ?", id);
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("NO_AUTENTICADO"));
+        String nuevo = login("cajero1", "clave");
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + nuevo))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nivel").value("USUARIO"));
+        // Lo desactivan: el token vigente se rechaza de inmediato
+        jdbc.update("update usuario set estado = 'I' where id = ?", id);
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + nuevo)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void frenaLosIntentosFallidosPorIp() throws Exception {
+        usuarioLegacy("cajero1", "correcta", 'U');
+        for (int i = 0; i < 20; i++) {
+            String u = "inexistente" + i;   // distintos usuarios: el bloqueo por usuario no aplica, el de IP sí
+            mvc.perform(post("/api/v1/auth/login").with(r -> { r.setRemoteAddr("10.9.9.9"); return r; }).contentType("application/json")
+                    .content("{\"username\":\"" + u + "\",\"password\":\"mala\"}")).andExpect(status().isUnauthorized());
+        }
+        mvc.perform(post("/api/v1/auth/login").with(r -> { r.setRemoteAddr("10.9.9.9"); return r; }).contentType("application/json")
+                        .content("{\"username\":\"cajero1\",\"password\":\"correcta\"}"))
+                .andExpect(status().isTooManyRequests()).andExpect(jsonPath("$.code").value("DEMASIADOS_INTENTOS"));
+        // Desde otro equipo el usuario entra normalmente
+        login("cajero1", "correcta");
     }
 }

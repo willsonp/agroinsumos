@@ -1,4 +1,8 @@
 # Perfil de desarrollo local. NO usar en producción.
+springdoc:
+  api-docs.enabled: true
+  swagger-ui.enabled: true
+
 app:
   security:
     jwt:

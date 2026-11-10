@@ -15,9 +15,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import com.agroinsumos.backend.security.jwt.JwtConfig;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -58,7 +59,7 @@ public class SecurityConfig {
     /** Cadena 2: API REST sin estado, autenticada con Bearer JWT. */
     @Bean
     @Order(2)
-    SecurityFilterChain apiChain(HttpSecurity http, JwtAuthenticationConverter jwtConverter,
+    SecurityFilterChain apiChain(HttpSecurity http, JwtConfig.UsuarioVigenteJwtConverter jwtConverter,
                                  AuthenticationEntryPoint entryPoint, AccessDeniedHandler deniedHandler) throws Exception {
         http.csrf(c -> c.disable()) // API stateless con Bearer: sin cookies de sesión, CSRF no aplica
                 .cors(c -> {})
@@ -73,7 +74,10 @@ public class SecurityConfig {
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler))
                 .exceptionHandling(e -> e.authenticationEntryPoint(entryPoint).accessDeniedHandler(deniedHandler))
-                .headers(h -> h.contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors 'none'")));
+                .headers(h -> h
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
+                        .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)));
         return http.build();
     }
 
