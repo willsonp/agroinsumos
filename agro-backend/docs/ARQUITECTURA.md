@@ -400,11 +400,32 @@ en sus módulos).
 | Ventas | ventas por fecha (RptVentasResumidasPorFecha), detalle (RptVentasDetalle), por cliente (RptVentasResumidasPorCliente), comisiones por vendedor (RptComisionVendedor), ventas y utilidad por artículo (FrmConsultaUtilidad), utilidad por departamento (RptUtilidad_Resumen), devoluciones (RptResumenDevolucion) |
 | Cobros y caja | cobros por fecha y forma de pago (RptIngresosResumidoPorFecha), cobros detallados (RptIngresosDetallados), facturas y ND vencidas (RptFacturasVencidas), egresos de caja (RptEgresoCaja) |
 | Inventario | inventario valorizado (RptListadoArticuloInventarioXCosto), lista de precios (RptListadoPrecioArticulos), bajo el mínimo, artículos comprados por suplidor (RptArticulosPorSuplidor) |
-| Compras | compras por suplidor (RptEstadosTodosSuplidorRangoFecha), compras detalladas (RptCompraCompleta), pagos a suplidores (RptPagosPorFecha) |
+| Compras | compras por suplidor (RptEstadosTodosSuplidorRangoFecha), compras detalladas (RptCompraCompleta), pagos a suplidores (RptPagosPorFecha), **estado de cuenta de un suplidor** (RptEstadoCuentaSuplidor: saldo anterior + compras, notas y pagos con saldo acumulado; exige elegir el suplidor), **saldos de todos los suplidores** (anterior, cargos, abonos, saldo final) |
 
 Criterios: la venta neta descuenta las devoluciones; la utilidad usa el costo promedio al vender y descuenta lo devuelto;
 las comisiones se calculan sobre lo facturado sin ITBIS menos devoluciones (REVISAR si el negocio las paga sobre lo cobrado);
 los precios de venta se muestran con ITBIS.
+
+Estado de cuenta de suplidores: cargo = compra (total − retenciones ITBIS/ISR) y nota de débito; abono = nota de crédito y
+pago (en pesos, a la tasa del pago); los documentos anulados no aparecen. El saldo final coincide con el balance de las compras.
+
+## 5.11 Caja chica (fondo fijo)
+Migración `V19__caja_chica.sql` (opción `CAJA_CHICA` en el menú Caja). Sustituye `cajachica` del sistema anterior.
+
+- **Fondo** (`caja_chica`): nombre, responsable, monto fijo y cuenta contable (por defecto `CAJA_CHICA` → 110103). Al crearlo
+  se registra la **apertura**: cheque o transferencia desde una cuenta bancaria en pesos (queda en Banco, origen `CAJA_CHICA`)
+  o efectivo de la caja abierta del supervisor (egreso de caja). El monto del fondo no se cambia después.
+- **Vales de gasto**: concepto, beneficiario, monto, cuenta de gasto (por defecto `GASTOS_CAJA`). Con NCF exige RNC/cédula,
+  valida el formato y que ese NCF del suplidor no esté ya registrado (en caja chica o en compras); entra al **606**
+  (forma de pago 01) y su ITBIS se adelanta. No se puede gastar más que el saldo disponible.
+- **Anular vale** (supervisor): solo si aún no se repuso; el monto vuelve al saldo.
+- **Reposición** (supervisor): repone todos los vales pendientes por cheque, transferencia o efectivo y deja el fondo completo;
+  el detalle (vales, ITBIS, firmas) se imprime desde la pantalla.
+- **Arqueo**: efectivo contado contra el saldo del sistema; se guarda la diferencia como control.
+- **Contabilidad** (`FuenteCajaChica`): vale → Dr gasto + Dr ITBIS adelantado / Cr caja chica; apertura y reposición →
+  Dr caja chica / Cr banco o caja; vale anulado → reverso.
+- Endpoints: `/api/v1/caja/chica` (GET, POST), `/{id}` (PUT), `/{id}/movimientos`, `/{id}/gastos`, `/movimientos/{id}/anular`,
+  `/{id}/reposiciones`, `/reposiciones/{id}`, `/{id}/arqueos`.
 
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
@@ -460,6 +481,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `VENTAS_FACTURAS` | consultar facturas, devoluciones, XML/estado del e-CF | anular y devolver: **supervisor** |
 | `CAJA_SESION` | abrir, egresos, ingresos, cerrar mi caja | — |
 | `CAJA_SESIONES` | listado y arqueo de todas las cajas | **supervisor** |
+| `CAJA_CHICA` | consultar fondos, registrar vales y arqueos | crear/editar fondo, anular vale, reponer: **supervisor** |
 | `CXC_RECIBOS` | cobros, pendientes, notas de débito | anular recibo, emitir nota de débito: **supervisor** |
 | `CXC_ESTADO_CUENTA` | estado de cuenta | antigüedad: **supervisor** |
 | `INV_ARTICULOS` | crear/editar artículos, kardex | — |

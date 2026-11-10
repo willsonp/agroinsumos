@@ -126,6 +126,7 @@ public class CuentaContableService extends CrudService<CuentaContable, CuentaCon
             new Plantilla("1101", "Efectivo en caja y bancos", TipoCuenta.ACTIVO, "11"),
             new Plantilla("110101", "Caja general", TipoCuenta.ACTIVO, "1101", ClaveContable.CAJA),
             new Plantilla("110102", "Bancos", TipoCuenta.ACTIVO, "1101", ClaveContable.BANCO),
+            new Plantilla("110103", "Caja chica", TipoCuenta.ACTIVO, "1101", ClaveContable.CAJA_CHICA),
             new Plantilla("1102", "Cuentas por cobrar", TipoCuenta.ACTIVO, "11"),
             new Plantilla("110201", "Cuentas por cobrar clientes", TipoCuenta.ACTIVO, "1102", ClaveContable.CXC_CLIENTES),
             new Plantilla("110202", "Tarjetas de crédito por cobrar", TipoCuenta.ACTIVO, "1102", ClaveContable.TARJETAS_POR_COBRAR),

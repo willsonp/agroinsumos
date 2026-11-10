@@ -294,6 +294,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/caja/chica/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["actualizar_14"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banco/movimientos/{id}/contrapartida": {
         parameters: {
             query?: never;
@@ -319,7 +335,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_14"];
-        put: operations["actualizar_14"];
+        put: operations["actualizar_15"];
         post?: never;
         delete: operations["desactivar_13"];
         options?: never;
@@ -335,7 +351,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_15"];
-        put: operations["actualizar_15"];
+        put: operations["actualizar_16"];
         post?: never;
         delete: operations["desactivar_14"];
         options?: never;
@@ -384,7 +400,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_16"];
-        put: operations["actualizar_16"];
+        put: operations["actualizar_17"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1436,6 +1452,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/caja/chica": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_17"];
+        put?: never;
+        /** Crea el fondo y registra su apertura (cheque, transferencia o efectivo de la caja) */
+        post: operations["crear_20"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/caja/chica/{id}/reposiciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Repone lo gastado y deja el fondo completo */
+        post: operations["reponer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/caja/chica/{id}/gastos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Gasto (vale) pagado con la caja chica; con NCF va al 606 */
+        post: operations["gasto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/caja/chica/{id}/arqueos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["arqueos"];
+        put?: never;
+        post: operations["arqueo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/caja/chica/movimientos/{movId}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["anular_9"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banco/transferencias": {
         parameters: {
             query?: never;
@@ -1479,7 +1578,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_9"];
+        post: operations["anular_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1493,9 +1592,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_17"];
+        get: operations["listar_18"];
         put?: never;
-        post: operations["crear_20"];
+        post: operations["crear_21"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1543,9 +1642,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_18"];
+        get: operations["listar_19"];
         put?: never;
-        post: operations["crear_21"];
+        post: operations["crear_22"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1612,7 +1711,7 @@ export interface paths {
         get: operations["estado"];
         put?: never;
         /** Genera el respaldo de hoy (BK_<base>_<día>.sql) en la carpeta configurada */
-        post: operations["crear_22"];
+        post: operations["crear_23"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2404,6 +2503,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/caja/chica/{id}/movimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["movimientos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/caja/chica/reposiciones/{movId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detalle de una reposición (gastos incluidos) para imprimir */
+        get: operations["reposicion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banco/cuentas/{cuentaId}/conciliaciones": {
         parameters: {
             query?: never;
@@ -2724,12 +2856,12 @@ export interface components {
         };
         ConfigContableCambio: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
+            clave?: "CAJA" | "CAJA_CHICA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
             codigo?: string;
         };
         ConfigContableItem: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
+            clave?: "CAJA" | "CAJA_CHICA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
             descripcion?: string;
             codigo?: string;
             nombreCuenta?: string;
@@ -2915,6 +3047,35 @@ export interface components {
             nombre?: string;
             ubicacion?: string;
             principal?: boolean;
+            estado?: string;
+        };
+        CajaChicaFondoRequest: {
+            nombre: string;
+            /** Format: int64 */
+            responsableId?: number;
+            montoFondo: number;
+            cuentaContable?: string;
+            apertura?: components["schemas"]["CajaChicaOrigen"];
+        };
+        CajaChicaOrigen: {
+            forma: string;
+            /** Format: int64 */
+            cuentaBancariaId?: number;
+            referencia?: string;
+        };
+        CajaChicaFondoResponse: {
+            /** Format: int64 */
+            id?: number;
+            nombre?: string;
+            /** Format: int64 */
+            responsableId?: number;
+            responsable?: string;
+            montoFondo?: number;
+            saldo?: number;
+            porReponer?: number;
+            /** Format: int32 */
+            gastosPendientes?: number;
+            cuentaContable?: string;
             estado?: string;
         };
         MovimientoBancarioContrapartidaRequest: {
@@ -4125,6 +4286,64 @@ export interface components {
             /** Format: int64 */
             turnoId?: number;
         };
+        CajaChicaMovimientoResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            /** @enum {string} */
+            tipo?: "APERTURA" | "GASTO" | "REPOSICION";
+            concepto?: string;
+            beneficiario?: string;
+            rnc?: string;
+            ncf?: string;
+            monto?: number;
+            itbis?: number;
+            cuentaGasto?: string;
+            forma?: string;
+            /** Format: int64 */
+            reposicionId?: number;
+            /** @enum {string} */
+            estado?: "REGISTRADO" | "ANULADO";
+            motivoAnulacion?: string;
+        };
+        CajaChicaReposicion: {
+            reposicion?: components["schemas"]["CajaChicaMovimientoResponse"];
+            fondo?: components["schemas"]["CajaChicaFondoResponse"];
+            gastos?: components["schemas"]["CajaChicaMovimientoResponse"][];
+            itbis?: number;
+        };
+        CajaChicaGastoRequest: {
+            /** Format: date */
+            fecha?: string;
+            concepto: string;
+            beneficiario?: string;
+            rnc?: string;
+            ncf?: string;
+            tipoBienServicio?: string;
+            monto: number;
+            itbis?: number;
+            cuentaGasto?: string;
+        };
+        CajaChicaArqueoRequest: {
+            efectivoContado: number;
+            observacion?: string;
+        };
+        CajaChicaArqueo: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date-time */
+            fecha?: string;
+            efectivoContado?: number;
+            saldoSistema?: number;
+            diferencia?: number;
+            observacion?: string;
+        };
+        CajaChicaAnularRequest: {
+            motivo: string;
+        };
         MovimientoBancarioTransferenciaRequest: {
             /** Format: int64 */
             cuentaOrigenId: number;
@@ -4379,7 +4598,7 @@ export interface components {
             grupoNombre?: string;
             descripcion?: string;
             legado?: string;
-            filtros?: ("RANGO_FECHAS" | "FECHA_CORTE" | "CLIENTE" | "VENDEDOR" | "DEPARTAMENTO" | "ALMACEN" | "PROVEEDOR" | "CON_EXISTENCIA")[];
+            filtros?: ("RANGO_FECHAS" | "FECHA_CORTE" | "CLIENTE" | "VENDEDOR" | "DEPARTAMENTO" | "ALMACEN" | "PROVEEDOR" | "PROVEEDOR_REQUERIDO" | "CON_EXISTENCIA")[];
             columnas?: components["schemas"]["ReporteColumna"][];
         };
         ReporteResultado: {
@@ -6343,6 +6562,32 @@ export interface operations {
             };
         };
     };
+    actualizar_14: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaFondoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaFondoResponse"];
+                };
+            };
+        };
+    };
     contrapartida: {
         parameters: {
             query?: never;
@@ -6391,7 +6636,7 @@ export interface operations {
             };
         };
     };
-    actualizar_14: {
+    actualizar_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -6459,7 +6704,7 @@ export interface operations {
             };
         };
     };
-    actualizar_15: {
+    actualizar_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -6571,7 +6816,7 @@ export interface operations {
             };
         };
     };
-    actualizar_16: {
+    actualizar_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -8789,6 +9034,176 @@ export interface operations {
             };
         };
     };
+    listar_17: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaFondoResponse"][];
+                };
+            };
+        };
+    };
+    crear_20: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaFondoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaFondoResponse"];
+                };
+            };
+        };
+    };
+    reponer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaOrigen"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaReposicion"];
+                };
+            };
+        };
+    };
+    gasto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaGastoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaMovimientoResponse"];
+                };
+            };
+        };
+    };
+    arqueos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaArqueo"][];
+                };
+            };
+        };
+    };
+    arqueo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaArqueoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaArqueo"];
+                };
+            };
+        };
+    };
+    anular_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CajaChicaAnularRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaMovimientoResponse"];
+                };
+            };
+        };
+    };
     transferir: {
         parameters: {
             query?: never;
@@ -8863,7 +9278,7 @@ export interface operations {
             };
         };
     };
-    anular_9: {
+    anular_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -8889,7 +9304,7 @@ export interface operations {
             };
         };
     };
-    listar_17: {
+    listar_18: {
         parameters: {
             query: {
                 q?: string;
@@ -8912,7 +9327,7 @@ export interface operations {
             };
         };
     };
-    crear_20: {
+    crear_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -8984,7 +9399,7 @@ export interface operations {
             };
         };
     };
-    listar_18: {
+    listar_19: {
         parameters: {
             query: {
                 q?: string;
@@ -9007,7 +9422,7 @@ export interface operations {
             };
         };
     };
-    crear_21: {
+    crear_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -9121,7 +9536,7 @@ export interface operations {
             };
         };
     };
-    crear_22: {
+    crear_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -10220,6 +10635,53 @@ export interface operations {
                 };
                 content: {
                     "*/*": number[];
+                };
+            };
+        };
+    };
+    movimientos: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaMovimientoResponse"][];
+                };
+            };
+        };
+    };
+    reposicion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CajaChicaReposicion"];
                 };
             };
         };

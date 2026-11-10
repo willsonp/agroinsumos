@@ -18,6 +18,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Caja', icono: 'payments', opciones: [
     { codigo: 'CAJA_SESION', nombre: 'Mi caja', ruta: '/caja', icono: 'account_balance_wallet' },
     { codigo: 'CAJA_SESIONES', nombre: 'Supervisión de cajas', ruta: '/caja/sesiones', icono: 'fact_check', rol: 'SUPERVISOR' },
+    { codigo: 'CAJA_CHICA', nombre: 'Caja chica', ruta: '/caja/chica', icono: 'wallet' },
   ]},
   { nombre: 'Cuentas por Cobrar', icono: 'request_quote', opciones: [
     { codigo: 'CXC_RECIBOS', nombre: 'Cobros', ruta: '/cxc/cobros', icono: 'price_check' },
