@@ -43,7 +43,9 @@ public class MovimientoBancarioService {
                                    @Size(max = 40) String referencia, @Size(max = 100) String beneficiario,
                                    @NotBlank @Size(max = 200) String concepto, @NotNull @DecimalMin("0.01") BigDecimal monto,
                                    /** Solo DEPOSITO: el efectivo sale de la caja abierta del usuario. */
-                                   Boolean desdeCaja) {}
+                                   Boolean desdeCaja,
+                                   /** Cuenta contable de contrapartida (obligatoria para contabilizar cheques directos). */
+                                   @Size(max = 14) String cuentaContrapartida) {}
 
     public record TransferenciaRequest(@NotNull Long cuentaOrigenId, @NotNull Long cuentaDestinoId, LocalDate fecha,
                                        @NotNull @DecimalMin("0.01") BigDecimal monto, @NotBlank @Size(max = 200) String concepto,
@@ -51,14 +53,17 @@ public class MovimientoBancarioService {
 
     public record AnularRequest(@NotBlank @Size(max = 200) String motivo) {}
 
+    public record ContrapartidaRequest(@NotBlank @Size(max = 14) String cuentaContrapartida) {}
+
     public record Response(Long id, long numero, Long cuentaId, LocalDate fecha, TipoMovimientoBancario tipo, String referencia,
                            String beneficiario, String concepto, BigDecimal monto, BigDecimal montoConSigno,
                            MovimientoBancario.Estado estado, Long conciliacionId, String origenTipo, Long origenId,
-                           Long transferenciaParId, String motivoAnulacion) {
+                           Long transferenciaParId, String motivoAnulacion, String cuentaContrapartida) {
         public static Response de(MovimientoBancario m) {
             return new Response(m.getId(), m.getNumero(), m.getCuentaId(), m.getFecha(), m.getTipo(), m.getReferencia(),
                     m.getBeneficiario(), m.getConcepto(), m.getMonto(), m.montoConSigno(), m.getEstado(), m.getConciliacionId(),
-                    m.getOrigenTipo(), m.getOrigenId(), m.getTransferenciaParId(), m.getMotivoAnulacion());
+                    m.getOrigenTipo(), m.getOrigenId(), m.getTransferenciaParId(), m.getMotivoAnulacion(),
+                    m.getCuentaContrapartida());
         }
     }
 
@@ -68,6 +73,7 @@ public class MovimientoBancarioService {
     private final ConciliacionBancariaRepository conciliaciones;
     private final CajaService caja;
     private final NumeradorService numerador;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final Clock clock;
 
     @Value("${app.banco.permitir-sobregiro:false}")
@@ -86,6 +92,7 @@ public class MovimientoBancarioService {
         var sesion = desdeCaja ? caja.abiertaDe(user) : null;
         var m = registrar(user, r.cuentaId(), r.tipo(), r.fecha(), r.referencia(), r.beneficiario(), r.concepto(), r.monto(),
                 desdeCaja ? DEPOSITO_CAJA : MANUAL, desdeCaja ? sesion.getId() : null);
+        if (r.cuentaContrapartida() != null && !r.cuentaContrapartida().isBlank()) m.setCuentaContrapartida(r.cuentaContrapartida().trim());
         if (desdeCaja) {
             caja.registrar(sesion, CajaMovimiento.Tipo.EGRESO, FormaPago.EFECTIVO, r.monto(), "DEPOSITO_BANCO", m.getId(),
                     "Depósito bancario " + (m.getReferencia() == null ? "" : m.getReferencia()));
@@ -177,6 +184,27 @@ public class MovimientoBancarioService {
         }
         anularMovimiento(user, m, motivo);
         if (m.getTransferenciaParId() != null) anularMovimiento(user, cargar(user.companiaId(), m.getTransferenciaParId()), motivo);
+        return Response.de(m);
+    }
+
+    /** Completa la cuenta contable de un movimiento manual que aún no se ha contabilizado. */
+    @Transactional
+    public Response fijarContrapartida(AuthUser user, Long id, String codigo) {
+        var m = cargar(user.companiaId(), id);
+        if (m.getOrigenTipo() != null && !MANUAL.equals(m.getOrigenTipo())) {
+            throw new BusinessException("CONTRAPARTIDA_NO_APLICA", "La contrapartida solo se indica en movimientos manuales");
+        }
+        if (m.getEstado() != MovimientoBancario.Estado.REGISTRADO) throw new BusinessException("MOVIMIENTO_ANULADO", "El movimiento está anulado");
+        if (Boolean.TRUE.equals(jdbc.queryForObject("""
+                select exists(select 1 from asiento where compania_id = ? and origen_tipo = 'MOV_BANCO' and origen_id = ? and not reverso)""",
+                Boolean.class, user.companiaId(), id))) {
+            throw new BusinessException("MOVIMIENTO_CONTABILIZADO", "El movimiento ya está contabilizado");
+        }
+        Boolean detalle = jdbc.query("select acepta_movimiento and estado = 'A' from cuenta_contable where compania_id = ? and codigo = ?",
+                rs -> rs.next() ? rs.getBoolean(1) : null, user.companiaId(), codigo.trim());
+        if (detalle == null) throw new BusinessException("CUENTA_INEXISTENTE", "No existe la cuenta contable " + codigo);
+        if (!detalle) throw new BusinessException("CUENTA_DE_GRUPO", "La cuenta " + codigo + " es de grupo o está inactiva");
+        m.setCuentaContrapartida(codigo.trim());
         return Response.de(m);
     }
 

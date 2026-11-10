@@ -33,6 +33,12 @@ export const NAVEGACION: Modulo[] = [
     { codigo: 'BANCO_CONCILIACION', nombre: 'Conciliación', ruta: '/banco/conciliacion', icono: 'rule', rol: 'SUPERVISOR' },
     { codigo: 'BANCO_CUENTAS', nombre: 'Cuentas bancarias', ruta: '/banco/cuentas', icono: 'savings' },
   ]},
+  { nombre: 'Contabilidad', icono: 'calculate', opciones: [
+    { codigo: 'CONT_ASIENTOS', nombre: 'Asientos contables', ruta: '/contabilidad/asientos', icono: 'menu_book', rol: 'SUPERVISOR' },
+    { codigo: 'CONT_REPORTES', nombre: 'Estados financieros', ruta: '/contabilidad/reportes', icono: 'monitoring', rol: 'SUPERVISOR' },
+    { codigo: 'CONT_CATALOGO', nombre: 'Catálogo de cuentas', ruta: '/contabilidad/catalogo', icono: 'account_tree', rol: 'SUPERVISOR' },
+    { codigo: 'CONT_PERIODOS', nombre: 'Cierre de períodos', ruta: '/contabilidad/periodos', icono: 'lock_clock', rol: 'ADMIN' },
+  ]},
   { nombre: 'Catálogos', icono: 'menu_book', opciones: [
     { codigo: 'CAT_CLIENTES', nombre: 'Clientes', ruta: '/catalogos/clientes', icono: 'groups' },
     { codigo: 'CAT_PROVEEDORES', nombre: 'Proveedores', ruta: '/catalogos/proveedores', icono: 'storefront' },

@@ -246,6 +246,44 @@ datos con `docs/migracion-datos/04_banco.sql`).
 | `POST /api/v1/banco/transferencias` | transferencia entre cuentas propias |
 | `POST /api/v1/banco/conciliaciones/calcular` · `POST /conciliaciones` · `GET /cuentas/{id}/conciliaciones` | conciliación |
 
+## 5.5 Fase 6: Contabilidad
+Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y los reportes `tmpbalanza` / `tmpestado`
+(migración `V11__contabilidad.sql`, datos con `docs/migracion-datos/05_contabilidad.sql`).
+
+- **Catálogo** jerárquico (`cuenta_contable`: código, tipo, grupo, nivel). Solo las cuentas de detalle reciben movimientos;
+  al crear una subcuenta, su grupo deja de aceptar movimientos (si no los tiene). `POST /cuentas/plantilla` carga un catálogo base.
+- **Partida doble**: todo asiento (`asiento` + `asiento_linea`) se valida: débitos = créditos, cada línea un solo lado,
+  cuentas de detalle activas, período abierto. Auxiliar por línea (cliente/proveedor).
+- **Asientos automáticos por lotes** (`POST /asientos/generar?desde&hasta[&simular=true]`), idempotentes
+  (índice único por documento) y desacoplados de la operación: una cuenta mal configurada nunca impide facturar; el documento
+  queda listado como pendiente con el motivo. Cada tipo de documento es una estrategia `FuenteContable` (Open/Closed):
+
+  | Documento | Asiento |
+  |---|---|
+  | Factura | Dr CxC cliente / Cr Ingresos (cuenta del departamento) / Cr ITBIS por pagar; Dr Costo / Cr Inventario (departamento) |
+  | Devolución (e-CF 34) | Dr Devoluciones en ventas / Dr ITBIS por pagar / Cr CxC; reingreso: Dr Inventario / Cr Costo |
+  | Nota de débito (e-CF 33) | Dr CxC / Cr Otros ingresos / Cr ITBIS por pagar |
+  | Recibo | Dr Caja (efectivo neto, cheques) / Tarjetas por cobrar / Banco (transferencia) / CxC (saldo a favor) / retenciones sufridas; Cr CxC |
+  | Compra | Dr Inventario (departamento; incluye flete) o Gastos (servicios) / Dr ITBIS adelantado; Cr CxP / Cr ITBIS e ISR retenidos por pagar |
+  | Pago a suplidor | Dr CxP / Cr Caja o Banco (cuenta contable de la cuenta bancaria) |
+  | Banco (manuales) | depósito: Banco/Caja; ND: Gastos bancarios/Banco; NC: Banco/Ingresos financieros; cheque directo: contrapartida indicada/Banco; transferencia: Banco destino/Banco origen |
+  | Gasto de caja (e-CF 43) | Dr Gastos / Dr ITBIS adelantado / Cr Caja |
+
+  Prioridad de cuentas: la del departamento / cliente / proveedor / cuenta bancaria; si no tiene, la **cuenta por defecto**
+  (`cuenta_contable_config`, claves `CAJA`, `CXC_CLIENTES`, `ITBIS_POR_PAGAR`…; las cuentas `compania.cuenta_*` del legado se
+  copian aquí). Factura y compra de contado también pasan por CxC/CxP: el recibo o pago las salda.
+- **Anulaciones**: un documento anulado ya contabilizado genera un **reverso** en la siguiente corrida (fecha de la corrida,
+  nunca antes del original). Los automáticos no se anulan a mano (`ANULAR_DESDE_ORIGEN`); los manuales sí, si el período está abierto.
+- **Fecha de inicio contable** (`compania.fecha_inicio_contable`): los documentos anteriores no se contabilizan (su contabilidad
+  se migra del sistema anterior con el script 05).
+- **Cierre de períodos** mensual (`periodo_contable`): sin asientos, reversos ni anulaciones en meses cerrados; el admin puede reabrir.
+- **Reportes**: balanza de comprobación (saldo anterior, débitos, créditos, saldo final, acumulados a los grupos), estado de
+  resultados (ingresos − costos = utilidad bruta − gastos = utilidad neta), balance general (el resultado acumulado de las
+  cuentas de resultado se presenta dentro del capital, pues no hay asiento de cierre anual) y mayor por cuenta con saldo corrido.
+
+**Pendiente de definir con el contador:** asiento de cierre anual (traslado a resultados acumulados), sobrantes/faltantes
+de caja al cierre, descuento en ventas en cuenta separada (hoy el ingreso se registra neto de descuento) y moneda extranjera.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -309,6 +347,10 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `BANCO_CUENTAS` | crear/editar bancos y cuentas bancarias (la lectura es libre: se eligen al pagar/cobrar) | — |
 | `BANCO_MOVIMIENTOS` | depósitos, cheques, transferencias, notas de débito/crédito, anulación | **supervisor** |
 | `BANCO_CONCILIACION` | conciliación bancaria e historial | **supervisor** |
+| `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
+| `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
+| `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |
+| `CONT_PERIODOS` | cierre y reapertura de meses | **admin** |
 | `CAT_CLIENTES` / `CAT_PROVEEDORES` / `CAT_GENERALES` | escritura del catálogo | — |
 | `ECF_DOCUMENTOS` | listado, envío y consulta en la DGII | emisión directa: **admin** |
 | `ECF_SECUENCIAS` | ver secuencias | **supervisor**; registrar rangos: **admin** |

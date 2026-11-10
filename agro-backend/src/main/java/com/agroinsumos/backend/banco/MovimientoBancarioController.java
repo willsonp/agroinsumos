@@ -59,6 +59,14 @@ public class MovimientoBancarioController {
         return movimientos.anular(user, id, r.motivo());
     }
 
+    @Operation(summary = "Indica la cuenta contable de contrapartida de un movimiento manual aún no contabilizado")
+    @PutMapping("/movimientos/{id}/contrapartida")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('BANCO_MOVIMIENTOS','CONT_ASIENTOS')")
+    public MovimientoBancarioService.Response contrapartida(AuthUser user, @PathVariable Long id,
+                                                            @Valid @RequestBody MovimientoBancarioService.ContrapartidaRequest r) {
+        return movimientos.fijarContrapartida(user, id, r.cuentaContrapartida());
+    }
+
     @Operation(summary = "Vista previa de la conciliación con los movimientos marcados (no guarda)")
     @PostMapping("/conciliaciones/calcular")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('BANCO_CONCILIACION')")

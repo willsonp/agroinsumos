@@ -62,4 +62,6 @@ public class MovimientoBancario extends Auditable {
 
     /** Monto con signo: + entrada, - salida. */
     public BigDecimal montoConSigno() { return tipo.entrada() ? monto : monto.negate(); }
+    @Column(name = "cuenta_contrapartida", length = 14)
+    private String cuentaContrapartida;
 }
