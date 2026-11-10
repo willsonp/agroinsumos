@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -17,6 +17,7 @@ import { Notificacion } from '../../core/notificacion.service';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { CuentasBancarias } from '../../shared/cuentas-bancarias';
 import { params } from '../../shared/http';
+import { Cuenta, CuentasContables } from '../contabilidad/cuentas-contables';
 
 type Mov = S['MovimientoBancarioResponse'];
 type Tipo = Mov['tipo'];
@@ -74,6 +75,15 @@ const ORIGENES: Record<string, string> = {
               <mat-form-field><mat-label>Beneficiario</mat-label><input matInput [(ngModel)]="nuevo.beneficiario" /></mat-form-field>
             }
             <mat-form-field class="ancho-completo"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="nuevo.concepto" /></mat-form-field>
+            @if (f !== 'TRANSFERENCIA' && !(f === 'DEPOSITO' && nuevo.desdeCaja) && contables.detalle().length) {
+              <mat-form-field class="ancho-completo"><mat-label>Cuenta contable de contrapartida{{ f === 'CHEQUE' ? '' : ' (opcional)' }}</mat-label>
+                <mat-select [(ngModel)]="nuevo.contrapartida">
+                  <mat-option [value]="''">{{ f === 'CHEQUE' ? '— Indicar luego —' : 'La configurada por defecto' }}</mat-option>
+                  @for (c of contables.detalle(); track c.id) { <mat-option [value]="c.codigo">{{ c.codigo }} · {{ c.nombre }}</mat-option> }
+                </mat-select>
+                <mat-hint>Para el asiento contable{{ f === 'CHEQUE' ? ': un cheque directo necesita la cuenta del gasto o pasivo que paga' : '' }}</mat-hint>
+              </mat-form-field>
+            }
             @if (f === 'DEPOSITO') {
               <mat-checkbox class="ancho-completo" [(ngModel)]="nuevo.desdeCaja">Depositar efectivo de mi caja abierta (se registra la salida en la caja)</mat-checkbox>
             }
@@ -121,6 +131,10 @@ const ORIGENES: Record<string, string> = {
               </td></ng-container>
             <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let m">
+                @if (puedeRegistrar() && m.estado === 'REGISTRADO' && (!m.origenTipo || m.origenTipo === 'MANUAL') && contables.detalle().length) {
+                  <button mat-button (click)="contrapartida(m)" [title]="m.cuentaContrapartida ? 'Contrapartida: ' + m.cuentaContrapartida : 'Indicar la cuenta contable'">
+                    {{ m.cuentaContrapartida ?? 'Cuenta' }}</button>
+                }
                 @if (puedeRegistrar() && m.estado === 'REGISTRADO' && !m.conciliacionId && anulableManual(m)) {
                   <button mat-button (click)="anular(m)">Anular</button>
                 }
@@ -143,6 +157,7 @@ export class Movimientos {
   private readonly notif = inject(Notificacion);
   private readonly auth = inject(AuthService);
   protected readonly cuentas = inject(CuentasBancarias);
+  protected readonly contables = inject(CuentasContables);
   protected readonly etiqueta = CuentasBancarias.etiqueta;
   protected readonly tipos = TIPOS_MOVIMIENTO;
   protected readonly tiposLista = Object.entries(TIPOS_MOVIMIENTO);
@@ -165,6 +180,7 @@ export class Movimientos {
 
   constructor() {
     this.cuentas.cargar();
+    this.contables.cargar();
     this.cargar();
   }
 
@@ -209,7 +225,8 @@ export class Movimientos {
     }
     const req: S['MovimientoBancarioRegistrarRequest'] = { cuentaId: n.cuentaId!, tipo: f, fecha: n.fecha || undefined,
       referencia: n.referencia || undefined, beneficiario: f === 'CHEQUE' ? n.beneficiario || undefined : undefined,
-      concepto: n.concepto, monto: n.monto, desdeCaja: f === 'DEPOSITO' && n.desdeCaja };
+      concepto: n.concepto, monto: n.monto, desdeCaja: f === 'DEPOSITO' && n.desdeCaja,
+      cuentaContrapartida: n.contrapartida || undefined };
     this.http.post<Mov>('/api/v1/banco/movimientos', req).subscribe({ next: fin, error: (e) => this.notif.error(e) });
   }
 
@@ -224,8 +241,35 @@ export class Movimientos {
       });
   }
 
+  protected contrapartida(m: Mov): void {
+    this.dialog.open(ContrapartidaDialog, { data: { movimiento: m, cuentas: this.contables.detalle() } }).afterClosed().subscribe((codigo?: string) => {
+      if (!codigo) return;
+      this.http.put<Mov>(`/api/v1/banco/movimientos/${m.id}/contrapartida`, { cuentaContrapartida: codigo }).subscribe({
+        next: () => { this.notif.ok('Cuenta contable asignada'); this.cargar(); }, error: (e) => this.notif.error(e) });
+    });
+  }
+
   private vacio() {
     return { cuentaId: null as number | null, destinoId: null as number | null, fecha: '', monto: 0, referencia: '',
-      beneficiario: '', concepto: '', desdeCaja: false };
+      beneficiario: '', concepto: '', desdeCaja: false, contrapartida: '' };
   }
+}
+
+@Component({
+  selector: 'app-contrapartida-dialog',
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatSelectModule],
+  template: `
+    <h2 mat-dialog-title>Contrapartida contable</h2>
+    <mat-dialog-content style="min-width:min(460px,90vw)">
+      <p>{{ datos.movimiento.concepto }} · {{ datos.movimiento.referencia }}</p>
+      <mat-form-field style="width:100%"><mat-label>Cuenta</mat-label><mat-select [(ngModel)]="codigo">
+        @for (c of datos.cuentas; track c.id) { <mat-option [value]="c.codigo">{{ c.codigo }} · {{ c.nombre }}</mat-option> }
+      </mat-select></mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end"><button mat-button mat-dialog-close>Cancelar</button>
+      <button mat-flat-button [disabled]="!codigo" [mat-dialog-close]="codigo">Guardar</button></mat-dialog-actions>`,
+})
+export class ContrapartidaDialog {
+  protected readonly datos = inject<{ movimiento: Mov; cuentas: Cuenta[] }>(MAT_DIALOG_DATA);
+  protected codigo = this.datos.movimiento.cuentaContrapartida ?? '';
 }
