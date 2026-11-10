@@ -66,4 +66,14 @@ public class ArticuloController extends CrudController<ArticuloService.Request, 
         service.cargar(user.companiaId(), id);
         return movimientos.kardex(id, almacenId, PageRequest.of(page, Math.min(size, 200))).map(KardexResponse::de);
     }
+
+    @io.swagger.v3.oas.annotations.Operation(summary = "Artículos activos por texto, departamento y existencia (selección para etiquetas)")
+    @GetMapping("/seleccion")
+    @PreAuthorize("@permisos.tiene('INV_ETIQUETAS','INV_ARTICULOS')")
+    public org.springframework.data.domain.Page<ArticuloService.Response> seleccion(AuthUser user,
+            @RequestParam(required = false) String q, @RequestParam(required = false) Long departamentoId,
+            @RequestParam(defaultValue = "false") boolean conExistencia,
+            @org.springframework.data.web.PageableDefault(size = 50, sort = "nombre") org.springframework.data.domain.Pageable p) {
+        return service.seleccionar(user.companiaId(), q, departamentoId, conExistencia, p);
+    }
 }

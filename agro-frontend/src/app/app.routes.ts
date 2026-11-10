@@ -29,6 +29,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/cxc/financiamientos').then((m) => m.Financiamientos) },
       { path: 'inventario/etiquetas', title: 'Imprimir etiquetas', ...p('INV_ETIQUETAS'),
         loadComponent: () => import('./pages/inventario/etiquetas').then((m) => m.Etiquetas) },
+      { path: 'admin/empresa', title: 'Datos de la empresa', ...p('ADMIN_EMPRESA'),
+        loadComponent: () => import('./pages/admin/empresa').then((m) => m.Empresa) },
       { path: 'admin/respaldos', title: 'Respaldos', ...p('ADMIN_RESPALDOS'),
         loadComponent: () => import('./pages/admin/respaldos').then((m) => m.Respaldos) },
       { path: 'inventario/documentos', title: 'Ajustes y transferencias', ...p('INV_DOCUMENTOS'),

@@ -58,6 +58,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Administración', icono: 'admin_panel_settings', opciones: [
     { codigo: 'ADMIN_USUARIOS', nombre: 'Usuarios y permisos', ruta: '/admin/usuarios', icono: 'manage_accounts', rol: 'ADMIN' },
     { codigo: 'ADMIN_RESPALDOS', nombre: 'Respaldos', ruta: '/admin/respaldos', icono: 'backup', rol: 'ADMIN' },
+    { codigo: 'ADMIN_EMPRESA', nombre: 'Datos de la empresa', ruta: '/admin/empresa', icono: 'domain', rol: 'ADMIN' },
   ]},
 ];
 

@@ -359,8 +359,12 @@ Migración `V16__etiquetas_respaldos.sql`.
 **Etiquetas** (`/api/v1/inventario/etiquetas`, Inventario → Imprimir etiquetas):
 - Tamaños predefinidos (1.5×1, 2×1, 2.25×1.25, 3×2, 4×2 y 4×6 pulg.) o personalizado (15–120 × 10–200 mm); 203, 300 o
   600 dpi (8, 12 o 24 puntos/mm). Cantidad por artículo (1–1000; máximo 5,000 por trabajo, con `^PQ`).
-- Contenido: nombre (2 líneas, se recorta con "..."), precio con ITBIS de la lista elegida (opcional), código de barras y
-  su texto. Código: `codigo_barra`, si no la referencia, si no el número interno; EAN-13 / UPC-A si el dígito verificador es
+- Contenido: encabezado opcional con los datos de la empresa (nombre comercial, dirección y teléfono, de Administración →
+  Datos de la empresa; si dirección y teléfono no caben juntos van en dos líneas), nombre del artículo (2 líneas, se recorta
+  con "..."), precio con ITBIS **solo si se marca "Imprimir precio"** (por defecto no, para no reimprimir cuando cambian los
+  precios), código de barras y su texto.
+- Selección: pestaña con el catálogo (búsqueda, departamento, "solo con existencia", marcar página, cantidad por artículo o
+  igual a la existencia) que pasa los marcados a la lista de impresión (`GET /api/v1/inventario/articulos/seleccion`). Código: `codigo_barra`, si no la referencia, si no el número interno; EAN-13 / UPC-A si el dígito verificador es
   válido (`^BE`, `^BU`), si no Code 128 automático (`^BC`). Barras de hasta 0.5 mm por módulo según el ancho disponible.
 - `GeneradorZpl` calcula el diseño en puntos y lo convierte a ZPL II (`^CI28` UTF-8, fuente 0, `^FH` para escapar `^ ~ _`).
   El mismo diseño se envía al navegador, que lo dibuja en un canvas (JsBarcode) como **vista previa**.
@@ -447,6 +451,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `CXC_FINANCIAMIENTO` | planes, cuotas vencidas | crear plan, cobrar mora, cancelar: **supervisor** |
 | `INV_ETIQUETAS` | etiquetas ZPL (vista previa, .zpl, envío a impresora) e impresoras | — |
 | `ADMIN_RESPALDOS` | respaldos de la base de datos y su carpeta | **admin** |
+| `ADMIN_EMPRESA` | datos de la empresa (nombre comercial, dirección, teléfono…; el RNC no) | **admin** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |

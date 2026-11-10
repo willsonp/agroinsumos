@@ -92,6 +92,38 @@ class EtiquetasRespaldosIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void encabezadoConDatosDeLaEmpresaYSinPrecio() throws Exception {
+        var put = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/admin/empresa")
+                .header("Authorization", "Bearer " + admin).contentType("application/json").content("""
+                {"nombre":"AGROINSUMOS SRL","nombreComercial":"PV Agroinsumos","direccion":"Av. Duarte 1, Santiago","telefono":"809-555-0101"}"""))
+                .andReturn().getResponse();
+        assertThat(put.getStatus()).isEqualTo(200);
+        assertThat(mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/admin/empresa")
+                .header("Authorization", "Bearer " + bodeguero).contentType("application/json").content("{\"nombre\":\"X\"}"))
+                .andReturn().getResponse().getStatus()).isEqualTo(403);
+
+        String r = post(bodeguero, "/api/v1/inventario/etiquetas/vista-previa", """
+                {"anchoMm":57.2,"altoMm":31.8,"dpi":203,"mostrarEmpresa":true,"mostrarDireccion":true,"mostrarTelefono":true,
+                 "items":[{"articuloId":%d,"cantidad":1}]}""".formatted(urea), 200);
+        String zpl = JsonPath.read(r, "$.zpl");
+        assertThat(zpl).contains("^FDPV Agroinsumos^FS").contains("Tel. 809-555-0101").doesNotContain("RD$");
+        assertThat(JsonPath.<Object>read(r, "$.etiquetas[0].precio")).isNull();
+        List<String> textos = JsonPath.read(r, "$.etiquetas[0].diseno.elementos[?(@.tipo == 'TEXTO')].texto");
+        assertThat(textos.getFirst()).isEqualTo("PV Agroinsumos");
+        // Selección de artículos para la pestaña: por texto y solo con existencia
+        String sel = mvc.perform(get("/api/v1/inventario/articulos/seleccion?q=herb").header("Authorization", "Bearer " + bodeguero))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(sel, "$.content[*].nombre")).containsExactly("Herbicida glifosato 1 L");
+        String conExistencia = mvc.perform(get("/api/v1/inventario/articulos/seleccion?conExistencia=true").header("Authorization", "Bearer " + bodeguero))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<Integer>read(conExistencia, "$.totalElements")).isZero();
+        // Con todo y precio no cabe en 1.5 x 1: se informa
+        assertThat(code(post(bodeguero, "/api/v1/inventario/etiquetas/vista-previa", """
+                {"anchoMm":38.1,"altoMm":15,"dpi":203,"precio":"CONTADO","mostrarEmpresa":true,"mostrarDireccion":true,
+                 "items":[{"articuloId":%d,"cantidad":1}]}""".formatted(urea), 422))).isEqualTo("ETIQUETA_PEQUENA");
+    }
+
+    @Test
     void respaldoCompletoConNombreDelDia(@TempDir Path carpeta) throws Exception {
         post(supervisor, "/api/v1/admin/respaldos", "", 403);   // solo administrador
         put("/api/v1/admin/respaldos/directorio", "{\"directorio\":\"%s\"}".formatted(carpeta.toString().replace("\\", "\\\\")));

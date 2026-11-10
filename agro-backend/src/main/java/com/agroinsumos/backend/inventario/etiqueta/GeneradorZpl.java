@@ -29,7 +29,12 @@ public final class GeneradorZpl {
 
     public record Diseno(int anchoPuntos, int altoPuntos, int puntosPorMm, List<Elemento> elementos) {}
 
-    public record Contenido(String nombre, String precio, String codigo, boolean textoCodigo) {}
+    /** {@code encabezado}: líneas pequeñas al inicio (nombre de la empresa, dirección, teléfono). */
+    public record Contenido(List<String> encabezado, String nombre, String precio, String codigo, boolean textoCodigo) {
+        public Contenido(String nombre, String precio, String codigo, boolean textoCodigo) {
+            this(List.of(), nombre, precio, codigo, textoCodigo);
+        }
+    }
 
     /** Ancho medio de un carácter de la fuente 0 respecto a su alto (condensada). */
     private static final double ANCHO_CARACTER = 0.55;
@@ -53,6 +58,17 @@ public final class GeneradorZpl {
         for (int maxLineas = 2; maxLineas >= 0; maxLineas--) {
             List<Elemento> el = new ArrayList<>();
             int y = margen;
+            int he = clamp(Math.round(H * 0.085f), Math.round(1.6f * dp), Math.round(2.6f * dp));
+            int maxEnc = Math.max(4, (int) (w / (he * ANCHO_CARACTER)));
+            for (String linea : c.encabezado()) {
+                if (linea == null || linea.isBlank()) continue;
+                // "dirección · Tel." que no cabe en una línea se parte en dos
+                List<String> partes = linea.length() > maxEnc && linea.contains(" · ") ? List.of(linea.split(" · ")) : List.of(linea);
+                for (String parte : partes) {
+                    el.add(new Elemento("TEXTO", margen, y, w, he, partir(parte, maxEnc, 1).getFirst(), null, 0));
+                    y += Math.round(he * 1.12f);
+                }
+            }
             if (maxLineas > 0 && c.nombre() != null && !c.nombre().isBlank()) {
                 for (String linea : partir(c.nombre(), Math.max(4, (int) (w / (hn * ANCHO_CARACTER))), maxLineas)) {
                     el.add(new Elemento("TEXTO", margen, y, w, hn, linea, null, 0));
@@ -67,7 +83,7 @@ public final class GeneradorZpl {
             int altoBarras = H - margen - abajo - (y + gap);
             if (altoBarras < minBarras && maxLineas > 0) continue;
             if (altoBarras < minBarras) {
-                throw new BusinessException("ETIQUETA_PEQUENA", "El contenido no cabe en una etiqueta de " + f.anchoMm() + " × " + f.altoMm() + " mm; quite el precio o use una más alta");
+                throw new BusinessException("ETIQUETA_PEQUENA", "El contenido no cabe en una etiqueta de " + f.anchoMm() + " × " + f.altoMm() + " mm; quite datos (empresa, precio) o use una más alta");
             }
             int anchoBarras = (modulos - quietos(sim)) * modulo;
             el.add(new Elemento("BARRAS", (W - anchoBarras) / 2, y + gap, anchoBarras, altoBarras, datos, sim, modulo));
