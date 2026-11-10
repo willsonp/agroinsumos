@@ -54,13 +54,13 @@ ON CONFLICT (compania_id, clave) DO UPDATE SET ultimo = greatest(contador_docume
 SELECT f.nombre, f.monto_fondo, f.saldo, f.monto_fondo - f.saldo por_reponer, t.fecha ultimo_cuadre, t.saldo saldo_cuadre, v.monto vales_posteriores
 FROM caja_chica f, tmp_cuadre t, tmp_vales v WHERE f.compania_id = :cia;
 
--- 2) Saldo contable de la cuenta de caja chica según la contabilidad migrada (debe coincidir con el fondo − lo por reponer)
-SELECT c.codigo, c.nombre, coalesce(sum(l.debito - l.credito) FILTER (WHERE a.id IS NOT NULL), 0) saldo_contable
-FROM cuenta_contable c
-LEFT JOIN asiento_linea l ON l.cuenta_id = c.id
-LEFT JOIN asiento a ON a.id = l.asiento_id AND a.estado = 'REGISTRADO'
-WHERE c.compania_id = :cia
-  AND c.codigo = coalesce((SELECT codigo FROM cuenta_contable_config WHERE compania_id = :cia AND clave = 'CAJA_CHICA'), '110103')
-GROUP BY c.codigo, c.nombre;
+-- 2) Saldo contable de la cuenta de caja chica según la contabilidad migrada (debe coincidir con el fondo − lo por reponer).
+--    Si sale "NO EXISTE", cree la cuenta en el catálogo o asigne la clave CAJA_CHICA a una cuenta existente
+--    (Contabilidad > Catálogo > Cuentas por defecto); sin ella no se contabilizan los vales ni las reposiciones.
+SELECT x.codigo, coalesce(c.nombre, 'NO EXISTE EN EL CATÁLOGO') nombre,
+       coalesce((SELECT sum(l.debito - l.credito) FROM asiento_linea l JOIN asiento a ON a.id = l.asiento_id
+                  WHERE l.cuenta_id = c.id AND a.estado = 'REGISTRADO'), 0) saldo_contable
+FROM (SELECT coalesce((SELECT codigo FROM cuenta_contable_config WHERE compania_id = :cia AND clave = 'CAJA_CHICA'), '110103') codigo) x
+LEFT JOIN cuenta_contable c ON c.compania_id = :cia AND c.codigo = x.codigo;
 
 COMMIT;

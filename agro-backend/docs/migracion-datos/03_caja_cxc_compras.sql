@@ -39,6 +39,42 @@ JOIN recibo n ON n.id = r.norecibo
 CROSS JOIN LATERAL (VALUES ('EFECTIVO', r.pagoefectivo), ('TARJETA', r.pagotarjeta), ('CHEQUE', r.pagocheque)) x(forma, monto)
 WHERE coalesce(x.monto, 0) > 0;
 
+-- Pagos sin recibo en el sistema anterior (ventas de contado cobradas en caja, ajustes de balance): en el sistema
+-- nuevo toda factura se salda con un recibo, así que se crea uno por la diferencia (total - balance - recibos).
+-- Sin esto, el estado de cuenta mostraría las ventas de contado históricas como deuda del cliente.
+CREATE TEMP TABLE tmp_pago_caja AS
+SELECT f.id factura_id, f.cliente_id, f.fecha, f.usuario_id, f.total - f.balance - coalesce(a.aplicado, 0) monto,
+       lf.pagoefectivo, lf.pagotarjeta, lf.pagocheque,
+       row_number() OVER (ORDER BY f.fecha, f.id) + (SELECT coalesce(max(id), 0) FROM recibo) nuevo_id,
+       row_number() OVER (ORDER BY f.fecha, f.id) + (SELECT coalesce(max(numero), 0) FROM recibo WHERE compania_id = :cia) nuevo_numero
+FROM factura f
+JOIN legacy.factura lf ON lf.nofactura = f.id
+LEFT JOIN (SELECT a.documento_id, sum(a.monto + a.retencion_itbis + a.retencion_isr) aplicado
+             FROM recibo_aplicacion a JOIN recibo r ON r.id = a.recibo_id
+            WHERE r.estado = 'EMITIDO' AND a.documento_tipo = 'FACTURA' GROUP BY 1) a ON a.documento_id = f.id
+WHERE f.compania_id = :cia AND f.estado <> 'ANULADA' AND f.total - f.balance - coalesce(a.aplicado, 0) > 0.009;
+
+INSERT INTO recibo (id, compania_id, numero, fecha, cliente_id, concepto, total_aplicado, total_retenciones,
+                    total_recibido, devuelta, estado, usuario_id, actualizado_por)
+SELECT t.nuevo_id, :cia, t.nuevo_numero, t.fecha, t.cliente_id, 'Pago registrado en el sistema anterior (factura ' || t.factura_id || ')',
+       t.monto, 0, t.monto, 0, 'EMITIDO', t.usuario_id, 'migracion'
+FROM tmp_pago_caja t;
+
+INSERT INTO recibo_aplicacion (recibo_id, documento_tipo, documento_id, monto, retencion_itbis, retencion_isr)
+SELECT t.nuevo_id, 'FACTURA', t.factura_id, t.monto, 0, 0 FROM tmp_pago_caja t;
+
+-- Forma de pago: la registrada en la factura si cuadra con el monto; si no, efectivo
+INSERT INTO recibo_pago (recibo_id, forma_pago, monto)
+SELECT t.nuevo_id, x.forma, round(x.monto::numeric, 2)
+FROM tmp_pago_caja t
+CROSS JOIN LATERAL (VALUES ('EFECTIVO', t.pagoefectivo), ('TARJETA', t.pagotarjeta), ('CHEQUE', t.pagocheque)) x(forma, monto)
+WHERE coalesce(x.monto, 0) > 0
+  AND abs(coalesce(t.pagoefectivo, 0) + coalesce(t.pagotarjeta, 0) + coalesce(t.pagocheque, 0) - t.monto) <= 0.05
+UNION ALL
+SELECT t.nuevo_id, 'EFECTIVO', t.monto
+FROM tmp_pago_caja t
+WHERE abs(coalesce(t.pagoefectivo, 0) + coalesce(t.pagotarjeta, 0) + coalesce(t.pagocheque, 0) - t.monto) > 0.05;
+
 -- ---------------------------------------------------------------- Compras (CxP)
 WITH ncf AS (
   SELECT c.idcompra,
@@ -87,16 +123,39 @@ JOIN compra c ON c.id = d.idcompra
 JOIN articulo a ON a.id = d.articulo
 WHERE d.qty > 0;
 
+-- Pagos a suplidores del sistema anterior: no se migran uno a uno; se registra un pago por compra por lo ya pagado
+-- (total - retenciones - balance). Así el estado de cuenta del suplidor cuadra con el balance de sus compras.
+-- Llevan la fecha de la compra (anterior al inicio contable): no generan asientos ni movimientos de banco/caja.
+CREATE TEMP TABLE tmp_pago_prov AS
+SELECT c.id compra_id, c.proveedor_id, c.fecha, c.total - c.itbis_retenido - c.isr_retenido - c.balance monto,
+       row_number() OVER (ORDER BY c.fecha, c.id) + (SELECT coalesce(max(id), 0) FROM pago_proveedor) nuevo_id,
+       row_number() OVER (ORDER BY c.fecha, c.id) + (SELECT coalesce(max(numero), 0) FROM pago_proveedor WHERE compania_id = :cia) nuevo_numero
+FROM compra c
+WHERE c.compania_id = :cia AND c.estado <> 'ANULADA' AND c.actualizado_por = 'migracion'
+  AND c.total - c.itbis_retenido - c.isr_retenido - c.balance > 0.009;
+
+INSERT INTO pago_proveedor (id, compania_id, numero, fecha, proveedor_id, concepto, total, estado, actualizado_por)
+SELECT t.nuevo_id, :cia, t.nuevo_numero, t.fecha, t.proveedor_id, 'Pagado en el sistema anterior (compra ' || t.compra_id || ')',
+       t.monto, 'EMITIDO', 'migracion'
+FROM tmp_pago_prov t;
+
+INSERT INTO pago_proveedor_aplicacion (pago_id, compra_id, monto, monto_dop)
+SELECT t.nuevo_id, t.compra_id, t.monto, t.monto FROM tmp_pago_prov t;
+
+INSERT INTO pago_proveedor_forma (pago_id, forma_pago, monto, referencia)
+SELECT t.nuevo_id, 'TRANSFERENCIA', t.monto, 'SISTEMA ANTERIOR' FROM tmp_pago_prov t;
+
 -- ---------------------------------------------------------------- Contadores y secuencias
 INSERT INTO contador_documento (compania_id, clave, ultimo)
 VALUES (:cia, 'RECIBO', (SELECT coalesce(max(numero), 0) FROM recibo WHERE compania_id = :cia)),
-       (:cia, 'COMPRA', (SELECT coalesce(max(numero), 0) FROM compra WHERE compania_id = :cia))
+       (:cia, 'COMPRA', (SELECT coalesce(max(numero), 0) FROM compra WHERE compania_id = :cia)),
+       (:cia, 'PAGO_PROVEEDOR', (SELECT coalesce(max(numero), 0) FROM pago_proveedor WHERE compania_id = :cia))
 ON CONFLICT (compania_id, clave) DO UPDATE SET ultimo = excluded.ultimo;
 
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['recibo','recibo_aplicacion','recibo_pago','compra','compra_linea'] LOOP
+  FOREACH t IN ARRAY ARRAY['recibo','recibo_aplicacion','recibo_pago','compra','compra_linea','pago_proveedor','pago_proveedor_aplicacion','pago_proveedor_forma'] LOOP
     EXECUTE format('SELECT setval(pg_get_serial_sequence(%L, ''id''), coalesce((SELECT max(id) FROM %I), 1))', t, t);
   END LOOP;
 END $$;
@@ -124,5 +183,16 @@ FROM legacy.notadebito WHERE estado = 'A' AND balance > 0;
 -- 3) CxP: legacy vs nuevo
 SELECT (SELECT round(sum(balance)::numeric, 2) FROM legacy.facturacreditocxp WHERE estado = 'A') AS cxp_legacy,
        (SELECT sum(balance) FROM compra WHERE estado <> 'ANULADA') AS cxp_nuevo;
+
+-- 4) Suplidores cuyo balance de compras NO cuadra con (compras - pagos): revisar antes de salir en vivo
+SELECT p.id, p.nombre, b.balance_compras, e.estado_cuenta
+FROM proveedor p
+JOIN (SELECT proveedor_id, sum(balance) balance_compras FROM compra WHERE estado <> 'ANULADA' GROUP BY 1) b ON b.proveedor_id = p.id
+JOIN (SELECT c.proveedor_id, sum(c.total - c.itbis_retenido - c.isr_retenido) - coalesce(sum(a.pagado), 0) estado_cuenta
+        FROM compra c
+        LEFT JOIN (SELECT a.compra_id, sum(a.monto_dop) pagado FROM pago_proveedor_aplicacion a
+                     JOIN pago_proveedor pp ON pp.id = a.pago_id WHERE pp.estado = 'EMITIDO' GROUP BY 1) a ON a.compra_id = c.id
+       WHERE c.estado <> 'ANULADA' GROUP BY 1) e ON e.proveedor_id = p.id
+WHERE abs(b.balance_compras - e.estado_cuenta) > 0.01;
 
 COMMIT;
