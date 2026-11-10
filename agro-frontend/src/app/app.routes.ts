@@ -39,6 +39,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/banco/movimientos').then((m) => m.Movimientos) },
       { path: 'banco/conciliacion', title: 'Conciliación bancaria', ...p('BANCO_CONCILIACION'),
         loadComponent: () => import('./pages/banco/conciliacion').then((m) => m.Conciliacion) },
+      { path: 'banco/tasas', title: 'Tasas de cambio', ...p('BANCO_TASAS'),
+        loadComponent: () => import('./pages/banco/tasas').then((m) => m.Tasas) },
       { path: 'banco/cuentas', title: 'Cuentas bancarias', ...p('BANCO_CUENTAS'),
         loadComponent: () => import('./pages/banco/cuentas').then((m) => m.Cuentas) },
       { path: 'contabilidad/asientos', title: 'Asientos contables', ...p('CONT_ASIENTOS'),

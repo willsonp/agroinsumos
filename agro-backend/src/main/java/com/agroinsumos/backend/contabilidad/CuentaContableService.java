@@ -152,16 +152,19 @@ public class CuentaContableService extends CrudService<CuentaContable, CuentaCon
             new Plantilla("41", "Ingresos operacionales", TipoCuenta.INGRESO, "4"),
             new Plantilla("4101", "Ventas de mercancías", TipoCuenta.INGRESO, "41", ClaveContable.INGRESOS_VENTAS),
             new Plantilla("4102", "Devoluciones en ventas", TipoCuenta.INGRESO, "41", ClaveContable.DEVOLUCIONES_VENTAS),
+            new Plantilla("4103", "Descuentos en ventas", TipoCuenta.INGRESO, "41", ClaveContable.DESCUENTOS_VENTAS),
             new Plantilla("42", "Otros ingresos", TipoCuenta.INGRESO, "4"),
             new Plantilla("4201", "Otros ingresos", TipoCuenta.INGRESO, "42", ClaveContable.OTROS_INGRESOS),
             new Plantilla("4202", "Ingresos financieros", TipoCuenta.INGRESO, "42", ClaveContable.INGRESOS_FINANCIEROS),
             new Plantilla("4203", "Sobrantes de caja", TipoCuenta.INGRESO, "42", ClaveContable.SOBRANTES_CAJA),
+            new Plantilla("4204", "Ganancia cambiaria", TipoCuenta.INGRESO, "42", ClaveContable.GANANCIA_CAMBIARIA),
             new Plantilla("5", "COSTOS", TipoCuenta.COSTO, null),
             new Plantilla("5101", "Costo de mercancías vendidas", TipoCuenta.COSTO, "5", ClaveContable.COSTO_VENTAS),
             new Plantilla("6", "GASTOS", TipoCuenta.GASTO, null),
             new Plantilla("6101", "Gastos generales", TipoCuenta.GASTO, "6", ClaveContable.GASTOS_CAJA, ClaveContable.GASTOS_COMPRAS),
             new Plantilla("6102", "Gastos bancarios", TipoCuenta.GASTO, "6", ClaveContable.GASTOS_BANCARIOS),
-            new Plantilla("6103", "Faltantes de caja", TipoCuenta.GASTO, "6", ClaveContable.FALTANTES_CAJA));
+            new Plantilla("6103", "Faltantes de caja", TipoCuenta.GASTO, "6", ClaveContable.FALTANTES_CAJA),
+            new Plantilla("6104", "Pérdida cambiaria", TipoCuenta.GASTO, "6", ClaveContable.PERDIDA_CAMBIARIA));
 
     /**
      * Carga un catálogo base (estructura usual en RD) y la configuración de cuentas por defecto.

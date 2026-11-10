@@ -45,7 +45,7 @@ SELECT c.id, x.clave, trim(x.codigo) FROM compania c
 CROSS JOIN LATERAL (VALUES ('CAJA', c.cuenta_caja_general), ('ITBIS_RETENIDO_POR_CLIENTES', c.cuenta_itbis_retenido),
                            ('ISR_RETENIDO_POR_CLIENTES', c.cuenta_isr), ('DEVOLUCIONES_VENTAS', c.cuenta_devolucion),
                            ('ITBIS_ADELANTADO', c.cuenta_itbis_adelantado), ('ITBIS_POR_PAGAR', c.cuenta_itbis_venta),
-                           ('INGRESOS_VENTAS', c.cuenta_ingresos)) AS x(clave, codigo)
+                           ('INGRESOS_VENTAS', c.cuenta_ingresos), ('DESCUENTOS_VENTAS', c.cuenta_descuento_venta)) AS x(clave, codigo)
 WHERE c.id = :cia AND nullif(trim(x.codigo), '') IS NOT NULL
 ON CONFLICT (compania_id, clave) DO UPDATE SET codigo = excluded.codigo;
 

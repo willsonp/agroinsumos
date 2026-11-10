@@ -30,10 +30,10 @@ import { redondear } from '../../shared/http';
         <mat-form-field><mat-label>Transferencia</mat-label>
           <input matInput type="number" min="0" [ngModel]="transferencia()" (ngModelChange)="transferencia.set(+$event || 0)" /></mat-form-field>
         <mat-form-field><mat-label>Referencia transferencia</mat-label><input matInput [(ngModel)]="refTransferencia" /></mat-form-field>
-        @if (transferencia() > 0 && cuentas.activas().length) {
+        @if (transferencia() > 0 && cuentas.enPesos().length) {
           <mat-form-field class="ancho-completo"><mat-label>Transferencia recibida en</mat-label><mat-select [(ngModel)]="cuentaTransferencia">
             <mat-option [value]="null">Sin vincular al módulo Banco</mat-option>
-            @for (c of cuentas.activas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> }
+            @for (c of cuentas.enPesos(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> }
           </mat-select></mat-form-field>
         }
         <mat-form-field><mat-label>Cheque</mat-label>

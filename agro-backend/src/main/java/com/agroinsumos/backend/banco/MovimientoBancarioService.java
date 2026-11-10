@@ -45,11 +45,14 @@ public class MovimientoBancarioService {
                                    /** Solo DEPOSITO: el efectivo sale de la caja abierta del usuario. */
                                    Boolean desdeCaja,
                                    /** Cuenta contable de contrapartida (obligatoria para contabilizar cheques directos). */
-                                   @Size(max = 14) String cuentaContrapartida) {}
+                                   @Size(max = 14) String cuentaContrapartida,
+                                   /** Solo cuentas en otra moneda: pesos por unidad (vacío = tasa vigente). */
+                                   @DecimalMin("0.0001") BigDecimal tasaCambio) {}
 
+    /** {@code monto} en la moneda de la cuenta origen; entre monedas distintas se convierte a {@code tasaCambio}. */
     public record TransferenciaRequest(@NotNull Long cuentaOrigenId, @NotNull Long cuentaDestinoId, LocalDate fecha,
                                        @NotNull @DecimalMin("0.01") BigDecimal monto, @NotBlank @Size(max = 200) String concepto,
-                                       @Size(max = 40) String referencia) {}
+                                       @Size(max = 40) String referencia, @DecimalMin("0.0001") BigDecimal tasaCambio) {}
 
     public record AnularRequest(@NotBlank @Size(max = 200) String motivo) {}
 
@@ -58,12 +61,12 @@ public class MovimientoBancarioService {
     public record Response(Long id, long numero, Long cuentaId, LocalDate fecha, TipoMovimientoBancario tipo, String referencia,
                            String beneficiario, String concepto, BigDecimal monto, BigDecimal montoConSigno,
                            MovimientoBancario.Estado estado, Long conciliacionId, String origenTipo, Long origenId,
-                           Long transferenciaParId, String motivoAnulacion, String cuentaContrapartida) {
+                           Long transferenciaParId, String motivoAnulacion, String cuentaContrapartida, BigDecimal tasaCambio) {
         public static Response de(MovimientoBancario m) {
             return new Response(m.getId(), m.getNumero(), m.getCuentaId(), m.getFecha(), m.getTipo(), m.getReferencia(),
                     m.getBeneficiario(), m.getConcepto(), m.getMonto(), m.montoConSigno(), m.getEstado(), m.getConciliacionId(),
                     m.getOrigenTipo(), m.getOrigenId(), m.getTransferenciaParId(), m.getMotivoAnulacion(),
-                    m.getCuentaContrapartida());
+                    m.getCuentaContrapartida(), m.getTasaCambio());
         }
     }
 
@@ -74,6 +77,7 @@ public class MovimientoBancarioService {
     private final CajaService caja;
     private final NumeradorService numerador;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final com.agroinsumos.backend.moneda.TasaCambioService tasas;
     private final Clock clock;
 
     @Value("${app.banco.permitir-sobregiro:false}")
@@ -89,9 +93,12 @@ public class MovimientoBancarioService {
         if (desdeCaja && r.tipo() != TipoMovimientoBancario.DEPOSITO) {
             throw new BusinessException("TIPO_INVALIDO", "Solo un depósito puede salir de la caja");
         }
+        if (desdeCaja && !"DOP".equals(cargarCuenta(user.companiaId(), r.cuentaId()).getMoneda())) {
+            throw new BusinessException("CUENTA_OTRA_MONEDA", "El efectivo de la caja (pesos) solo se deposita en cuentas en pesos");
+        }
         var sesion = desdeCaja ? caja.abiertaDe(user) : null;
         var m = registrar(user, r.cuentaId(), r.tipo(), r.fecha(), r.referencia(), r.beneficiario(), r.concepto(), r.monto(),
-                desdeCaja ? DEPOSITO_CAJA : MANUAL, desdeCaja ? sesion.getId() : null);
+                desdeCaja ? DEPOSITO_CAJA : MANUAL, desdeCaja ? sesion.getId() : null, r.tasaCambio());
         if (r.cuentaContrapartida() != null && !r.cuentaContrapartida().isBlank()) m.setCuentaContrapartida(r.cuentaContrapartida().trim());
         if (desdeCaja) {
             caja.registrar(sesion, CajaMovimiento.Tipo.EGRESO, FormaPago.EFECTIVO, r.monto(), "DEPOSITO_BANCO", m.getId(),
@@ -109,10 +116,21 @@ public class MovimientoBancarioService {
         // Bloqueo en orden de id para evitar interbloqueos entre transferencias cruzadas
         bloquear(user.companiaId(), Math.min(r.cuentaOrigenId(), r.cuentaDestinoId()));
         bloquear(user.companiaId(), Math.max(r.cuentaOrigenId(), r.cuentaDestinoId()));
-        var salida = registrar(user, r.cuentaOrigenId(), TipoMovimientoBancario.TRANSFERENCIA_SALIDA, r.fecha(), r.referencia(),
-                null, r.concepto(), r.monto(), TRANSFERENCIA, null);
-        var entrada = registrar(user, r.cuentaDestinoId(), TipoMovimientoBancario.TRANSFERENCIA_ENTRADA, r.fecha(), r.referencia(),
-                null, r.concepto(), r.monto(), TRANSFERENCIA, null);
+        var origen = cargarCuenta(user.companiaId(), r.cuentaOrigenId());
+        var destino = cargarCuenta(user.companiaId(), r.cuentaDestinoId());
+        LocalDate f = r.fecha() != null ? r.fecha() : LocalDate.now(clock);
+        // Un mismo tipo de cambio para ambos lados: la transferencia no genera diferencia cambiaria
+        String extranjera = !"DOP".equals(origen.getMoneda()) ? origen.getMoneda() : destino.getMoneda();
+        BigDecimal tc = tasas.resolver(user.companiaId(), extranjera, f, r.tasaCambio());
+        BigDecimal montoDestino;
+        if (origen.getMoneda().equals(destino.getMoneda())) montoDestino = r.monto();
+        else if ("DOP".equals(origen.getMoneda())) montoDestino = r.monto().divide(tc, 2, java.math.RoundingMode.HALF_UP);
+        else if ("DOP".equals(destino.getMoneda())) montoDestino = r.monto().multiply(tc).setScale(2, java.math.RoundingMode.HALF_UP);
+        else throw new BusinessException("TRANSFERENCIA_INVALIDA", "Entre dos monedas extranjeras distintas, transfiera a través de una cuenta en pesos");
+        var salida = registrar(user, r.cuentaOrigenId(), TipoMovimientoBancario.TRANSFERENCIA_SALIDA, f, r.referencia(),
+                null, r.concepto(), r.monto(), TRANSFERENCIA, null, "DOP".equals(origen.getMoneda()) ? BigDecimal.ONE : tc);
+        var entrada = registrar(user, r.cuentaDestinoId(), TipoMovimientoBancario.TRANSFERENCIA_ENTRADA, f, r.referencia(),
+                null, r.concepto(), montoDestino, TRANSFERENCIA, null, "DOP".equals(destino.getMoneda()) ? BigDecimal.ONE : tc);
         salida.setTransferenciaParId(entrada.getId());
         entrada.setTransferenciaParId(salida.getId());
         return Response.de(salida);
@@ -126,6 +144,14 @@ public class MovimientoBancarioService {
     public MovimientoBancario registrar(AuthUser user, Long cuentaId, TipoMovimientoBancario tipo, LocalDate fecha,
                                        String referencia, String beneficiario, String concepto, BigDecimal monto,
                                        String origenTipo, Long origenId) {
+        return registrar(user, cuentaId, tipo, fecha, referencia, beneficiario, concepto, monto, origenTipo, origenId, null);
+    }
+
+    /** {@code monto} en la moneda de la cuenta; {@code tasa}: pesos por unidad (vacía = la vigente; 1 en cuentas en pesos). */
+    @Transactional
+    public MovimientoBancario registrar(AuthUser user, Long cuentaId, TipoMovimientoBancario tipo, LocalDate fecha,
+                                       String referencia, String beneficiario, String concepto, BigDecimal monto,
+                                       String origenTipo, Long origenId, BigDecimal tasa) {
         Long cia = user.companiaId();
         CuentaBancaria cuenta = bloquear(cia, cuentaId);
         if (!"A".equals(cuenta.getEstado())) throw new BusinessException("CUENTA_INACTIVA", "La cuenta " + cuenta.getNumero() + " está inactiva");
@@ -167,6 +193,7 @@ public class MovimientoBancarioService {
         m.setOrigenTipo(origenTipo);
         m.setOrigenId(origenId);
         m.setUsuarioId(user.usuarioId());
+        m.setTasaCambio("DOP".equals(cuenta.getMoneda()) ? BigDecimal.ONE : tasas.resolver(cia, cuenta.getMoneda(), f, tasa));
         try {
             return repo.saveAndFlush(m);
         } catch (DataIntegrityViolationException e) {
@@ -237,6 +264,11 @@ public class MovimientoBancarioService {
 
     private MovimientoBancario cargar(Long cia, Long id) {
         return repo.findByIdAndCompaniaId(id, cia).orElseThrow(() -> new NotFoundException("Movimiento bancario", id));
+    }
+
+    private CuentaBancaria cargarCuenta(Long cia, Long cuentaId) {
+        return cuentas.findById(cuentaId).filter(c -> c.getCompaniaId().equals(cia))
+                .orElseThrow(() -> new NotFoundException("Cuenta bancaria", cuentaId));
     }
 
     private CuentaBancaria bloquear(Long cia, Long cuentaId) {

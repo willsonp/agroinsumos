@@ -78,6 +78,7 @@ public class ReciboService {
     private final ClienteService clientes;
     private final CajaService caja;
     private final MovimientoBancarioService banco;
+    private final com.agroinsumos.backend.banco.CuentaBancariaRepository cuentasBancarias;
     private final NumeradorService numerador;
     private final Clock clock;
 
@@ -132,6 +133,11 @@ public class ReciboService {
             if (p.cuentaBancariaId() != null) {
                 if (p.forma() != FormaPago.TRANSFERENCIA) {
                     throw new BusinessException("CUENTA_NO_APLICA", "Solo las transferencias se acreditan directo a una cuenta bancaria; los cheques se depositan desde la caja");
+                }
+                var cuenta = cuentasBancarias.findById(p.cuentaBancariaId()).filter(x -> x.getCompaniaId().equals(cia))
+                        .orElseThrow(() -> new NotFoundException("Cuenta bancaria", p.cuentaBancariaId()));
+                if (!"DOP".equals(cuenta.getMoneda())) {
+                    throw new BusinessException("CUENTA_OTRA_MONEDA", "Los cobros en pesos se acreditan a cuentas en pesos (" + cuenta.getNombre() + " es en " + cuenta.getMoneda() + ")");
                 }
                 rp.setCuentaBancariaId(p.cuentaBancariaId());
             }

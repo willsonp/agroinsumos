@@ -459,7 +459,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/inventario/documentos": {
+    "/api/v1/monedas/tasas": {
         parameters: {
             query?: never;
             header?: never;
@@ -467,6 +467,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_2"];
+        put?: never;
+        post: operations["registrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/documentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
         put?: never;
         /** Crea un ajuste/entrada/salida/transferencia en BORRADOR (no mueve inventario) */
         post: operations["crear_3"];
@@ -516,7 +532,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post: operations["crear_4"];
         delete?: never;
@@ -567,7 +583,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         /** Genera, firma y guarda un e-CF (estado FIRMADO). No lo envía a la DGII */
         post: operations["emitir"];
@@ -654,7 +670,7 @@ export interface paths {
         get: operations["buscar_2"];
         put?: never;
         /** Nota de crédito (reduce la deuda; puede devolver mercancía) o de débito (la aumenta) de un suplidor */
-        post: operations["registrar"];
+        post: operations["registrar_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -767,7 +783,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         post: operations["crear_5"];
         delete?: never;
@@ -887,7 +903,7 @@ export interface paths {
         get: operations["buscar_4"];
         put?: never;
         /** Registra factura de suplidor: entra al inventario y actualiza costo promedio */
-        post: operations["registrar_1"];
+        post: operations["registrar_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -917,7 +933,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
         post: operations["crear_7"];
         delete?: never;
@@ -933,7 +949,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_8"];
         put?: never;
         post: operations["crear_8"];
         delete?: never;
@@ -949,7 +965,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_8"];
+        get: operations["listar_9"];
         put?: never;
         post: operations["crear_9"];
         delete?: never;
@@ -965,7 +981,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_9"];
+        get: operations["listar_10"];
         put?: never;
         post: operations["crear_10"];
         delete?: never;
@@ -981,7 +997,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_10"];
+        get: operations["listar_11"];
         put?: never;
         post: operations["crear_11"];
         delete?: never;
@@ -997,7 +1013,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_11"];
+        get: operations["listar_12"];
         put?: never;
         post: operations["crear_12"];
         delete?: never;
@@ -1013,7 +1029,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_12"];
+        get: operations["listar_13"];
         put?: never;
         post: operations["crear_13"];
         delete?: never;
@@ -1029,7 +1045,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_13"];
+        get: operations["listar_14"];
         put?: never;
         post: operations["crear_14"];
         delete?: never;
@@ -1045,7 +1061,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_14"];
+        get: operations["listar_15"];
         put?: never;
         post: operations["crear_15"];
         delete?: never;
@@ -1164,7 +1180,7 @@ export interface paths {
         get: operations["buscar_5"];
         put?: never;
         /** Depósito (opcionalmente del efectivo de la caja), cheque, nota de débito o de crédito */
-        post: operations["registrar_2"];
+        post: operations["registrar_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1194,7 +1210,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_15"];
+        get: operations["listar_16"];
         put?: never;
         post: operations["crear_16"];
         delete?: never;
@@ -1244,7 +1260,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_16"];
+        get: operations["listar_17"];
         put?: never;
         post: operations["crear_17"];
         delete?: never;
@@ -1359,6 +1375,23 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_17"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/monedas/tasas/vigente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tasa vigente de la moneda a la fecha (la última registrada en o antes de ella) */
+        get: operations["vigente"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1990,6 +2023,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/monedas/tasas/{moneda}/{fecha}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/fiscal/anulaciones/{id}": {
         parameters: {
             query?: never;
@@ -2187,12 +2236,12 @@ export interface components {
         };
         ConfigContableCambio: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS";
+            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
             codigo?: string;
         };
         ConfigContableItem: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS";
+            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS" | "DESCUENTOS_VENTAS" | "GANANCIA_CAMBIARIA" | "PERDIDA_CAMBIARIA";
             descripcion?: string;
             codigo?: string;
             nombreCuenta?: string;
@@ -2410,6 +2459,7 @@ export interface components {
             transferenciaParId?: number;
             motivoAnulacion?: string;
             cuentaContrapartida?: string;
+            tasaCambio?: number;
         };
         CuentaBancariaRequest: {
             /** Format: int64 */
@@ -2423,6 +2473,7 @@ export interface components {
             cuentaContable?: string;
             /** Format: int64 */
             proximoCheque?: number;
+            moneda?: string;
         };
         CuentaBancariaResponse: {
             /** Format: int64 */
@@ -2650,6 +2701,18 @@ export interface components {
             datos: components["schemas"]["UsuarioRequest"];
             password: string;
         };
+        TasaCambioRequest: {
+            moneda: string;
+            /** Format: date */
+            fecha?: string;
+            tasa: number;
+        };
+        TasaCambioTasa: {
+            moneda?: string;
+            /** Format: date */
+            fecha?: string;
+            tasa?: number;
+        };
         ComprobanteAnuladoRequest: {
             ncf: string;
             /** Format: date */
@@ -2784,6 +2847,8 @@ export interface components {
             concepto?: string;
             aplicaciones: components["schemas"]["PagoProveedorAplicacionRequest"][];
             formas: components["schemas"]["PagoRequest"][];
+            moneda?: string;
+            tasaCambio?: number;
         };
         PagoRequest: {
             /** @enum {string} */
@@ -2812,6 +2877,9 @@ export interface components {
             motivoAnulacion?: string;
             aplicaciones?: components["schemas"]["PagoProveedorAplicacionRequest"][];
             formas?: components["schemas"]["PagoRequest"][];
+            moneda?: string;
+            tasaCambio?: number;
+            diferenciaCambiaria?: number;
         };
         PagoProveedorAnularRequest: {
             motivo: string;
@@ -3120,6 +3188,8 @@ export interface components {
             tipoBienServicio?: string;
             tipoRetencionIsr?: string;
             emitirComprobanteCompras?: boolean;
+            moneda?: string;
+            tasaCambio?: number;
         };
         CompraLineaResponse: {
             /** Format: int64 */
@@ -3173,6 +3243,10 @@ export interface components {
             /** Format: int64 */
             ecfDocumentoId?: number;
             lineas?: components["schemas"]["CompraLineaResponse"][];
+            moneda?: string;
+            tasaCambio?: number;
+            totalMoneda?: number;
+            balanceMoneda?: number;
         };
         VentaContadoRequest: {
             factura: components["schemas"]["FacturaCrearFacturaRequest"];
@@ -3269,6 +3343,7 @@ export interface components {
             monto: number;
             concepto: string;
             referencia?: string;
+            tasaCambio?: number;
         };
         MovimientoBancarioRegistrarRequest: {
             /** Format: int64 */
@@ -3283,6 +3358,7 @@ export interface components {
             monto: number;
             desdeCaja?: boolean;
             cuentaContrapartida?: string;
+            tasaCambio?: number;
         };
         MovimientoBancarioAnularRequest: {
             motivo: string;
@@ -3675,6 +3751,8 @@ export interface components {
             balance?: number;
             /** Format: int32 */
             diasVencido?: number;
+            moneda?: string;
+            balanceMoneda?: number;
         };
         PagePagoProveedorResponse: {
             /** Format: int64 */
@@ -5718,6 +5796,52 @@ export interface operations {
     };
     listar_2: {
         parameters: {
+            query?: {
+                moneda?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TasaCambioTasa"][];
+                };
+            };
+        };
+    };
+    registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TasaCambioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TasaCambioTasa"];
+                };
+            };
+        };
+    };
+    listar_3: {
+        parameters: {
             query: {
                 tipo?: "AJUSTE" | "ENTRADA" | "SALIDA" | "TRANSFERENCIA";
                 estado?: "BORRADOR" | "APLICADO" | "ANULADO";
@@ -5806,7 +5930,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query: {
                 q?: string;
@@ -5944,7 +6068,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query: {
                 estado?: "FIRMADO" | "ENVIADO" | "EN_PROCESO" | "ACEPTADO" | "ACEPTADO_CONDICIONAL" | "RECHAZADO" | "ERROR_ENVIO";
@@ -6132,7 +6256,7 @@ export interface operations {
             };
         };
     };
-    registrar: {
+    registrar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6324,7 +6448,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_6: {
         parameters: {
             query: {
                 q?: string;
@@ -6570,7 +6694,7 @@ export interface operations {
             };
         };
     };
-    registrar_1: {
+    registrar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -6616,7 +6740,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query: {
                 q?: string;
@@ -6663,7 +6787,7 @@ export interface operations {
             };
         };
     };
-    listar_7: {
+    listar_8: {
         parameters: {
             query: {
                 q?: string;
@@ -6710,7 +6834,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_9: {
         parameters: {
             query: {
                 q?: string;
@@ -6757,7 +6881,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query: {
                 q?: string;
@@ -6804,7 +6928,7 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    listar_11: {
         parameters: {
             query: {
                 q?: string;
@@ -6851,7 +6975,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_12: {
         parameters: {
             query: {
                 q?: string;
@@ -6898,7 +7022,7 @@ export interface operations {
             };
         };
     };
-    listar_12: {
+    listar_13: {
         parameters: {
             query: {
                 q?: string;
@@ -6945,7 +7069,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query: {
                 q?: string;
@@ -6992,7 +7116,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query: {
                 q?: string;
@@ -7209,7 +7333,7 @@ export interface operations {
             };
         };
     };
-    registrar_2: {
+    registrar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -7259,7 +7383,7 @@ export interface operations {
             };
         };
     };
-    listar_15: {
+    listar_16: {
         parameters: {
             query: {
                 q?: string;
@@ -7354,7 +7478,7 @@ export interface operations {
             };
         };
     };
-    listar_16: {
+    listar_17: {
         parameters: {
             query: {
                 q?: string;
@@ -7555,6 +7679,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CotizacionResponse"];
+                };
+            };
+        };
+    };
+    vigente: {
+        parameters: {
+            query: {
+                moneda: string;
+                fecha?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TasaCambioTasa"];
                 };
             };
         };
@@ -8391,6 +8538,27 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthPerfilResponse"];
                 };
+            };
+        };
+    };
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moneda: string;
+                fecha: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

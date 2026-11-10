@@ -23,7 +23,9 @@ public class CuentaBancariaService extends CrudService<CuentaBancaria, CuentaBan
 
     public record Request(@NotNull Long bancoId, @NotBlank @Size(max = 30) String numero, @NotBlank @Size(max = 60) String nombre,
                           @Pattern(regexp = "CORRIENTE|AHORRO") String tipo, @NotNull BigDecimal saldoInicial,
-                          LocalDate fechaSaldoInicial, @Size(max = 12) String cuentaContable, @Min(1) Long proximoCheque) {}
+                          LocalDate fechaSaldoInicial, @Size(max = 12) String cuentaContable, @Min(1) Long proximoCheque,
+                          /** DOP por defecto; las cuentas en otra moneda deben tener su propia cuenta contable. */
+                          @Pattern(regexp = "[A-Z]{3}") String moneda) {}
 
     public record Response(Long id, Long bancoId, String banco, String numero, String nombre, String tipo, String moneda,
                            BigDecimal saldoInicial, LocalDate fechaSaldoInicial, String cuentaContable, long proximoCheque,
@@ -55,6 +57,10 @@ public class CuentaBancariaService extends CrudService<CuentaBancaria, CuentaBan
         if (c.getId() != null && c.getSaldoInicial().compareTo(r.saldoInicial()) != 0 && movimientos.countByCuentaId(c.getId()) > 0) {
             throw new BusinessException("CUENTA_CON_MOVIMIENTOS", "No se puede cambiar el saldo inicial de una cuenta con movimientos");
         }
+        String moneda = r.moneda() == null ? "DOP" : r.moneda();
+        if (c.getId() != null && !moneda.equals(c.getMoneda()) && movimientos.countByCuentaId(c.getId()) > 0) {
+            throw new BusinessException("CUENTA_CON_MOVIMIENTOS", "No se puede cambiar la moneda de una cuenta con movimientos");
+        }
     }
 
     @Override
@@ -68,6 +74,7 @@ public class CuentaBancariaService extends CrudService<CuentaBancaria, CuentaBan
                 : c.getFechaSaldoInicial() != null ? c.getFechaSaldoInicial() : LocalDate.now(clock));
         c.setCuentaContable(r.cuentaContable());
         if (r.proximoCheque() != null) c.setProximoCheque(r.proximoCheque());
+        c.setMoneda(r.moneda() == null ? "DOP" : r.moneda());
     }
 
     @Override

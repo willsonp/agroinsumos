@@ -42,24 +42,33 @@ public class PagoProveedorService {
 
     public record AplicacionRequest(@NotNull Long compraId, @NotNull @DecimalMin("0.01") BigDecimal monto) {}
 
+    /** En moneda extranjera: montos en esa moneda; {@code tasaCambio} vacía = la vigente hoy. */
     public record Request(@NotNull Long proveedorId, @Size(max = 200) String concepto,
-                          @NotEmpty List<@Valid AplicacionRequest> aplicaciones, @NotEmpty List<@Valid PagoRequest> formas) {}
+                          @NotEmpty List<@Valid AplicacionRequest> aplicaciones, @NotEmpty List<@Valid PagoRequest> formas,
+                          @Pattern(regexp = "[A-Z]{3}") String moneda, @DecimalMin("0.0001") BigDecimal tasaCambio) {
+
+        public Request(Long proveedorId, String concepto, List<AplicacionRequest> aplicaciones, List<PagoRequest> formas) {
+            this(proveedorId, concepto, aplicaciones, formas, null, null);
+        }
+    }
 
     public record AnularRequest(@NotBlank @Size(max = 200) String motivo) {}
 
     public record Response(Long id, long numero, LocalDate fecha, Long proveedorId, Long sesionCajaId, String concepto,
                            BigDecimal total, PagoProveedor.Estado estado, String motivoAnulacion,
-                           List<AplicacionRequest> aplicaciones, List<PagoRequest> formas) {
+                           List<AplicacionRequest> aplicaciones, List<PagoRequest> formas, String moneda,
+                           BigDecimal tasaCambio, BigDecimal diferenciaCambiaria) {
         static Response de(PagoProveedor p) {
             return new Response(p.getId(), p.getNumero(), p.getFecha(), p.getProveedorId(), p.getSesionCajaId(),
                     p.getConcepto(), p.getTotal(), p.getEstado(), p.getMotivoAnulacion(),
                     p.getAplicaciones().stream().map(a -> new AplicacionRequest(a.getCompraId(), a.getMonto())).toList(),
-                    p.getFormas().stream().map(f -> new PagoRequest(f.getFormaPago(), f.getMonto(), f.getReferencia(), f.getBanco(), f.getCuentaBancariaId())).toList());
+                    p.getFormas().stream().map(f -> new PagoRequest(f.getFormaPago(), f.getMonto(), f.getReferencia(), f.getBanco(), f.getCuentaBancariaId())).toList(),
+                    p.getMoneda(), p.getTasaCambio(), p.getDiferenciaCambiaria());
         }
     }
 
     public record CompraPendiente(Long id, long numero, String ncfProveedor, LocalDate fecha, LocalDate vencimiento,
-                                  BigDecimal aPagar, BigDecimal balance, int diasVencido) {}
+                                  BigDecimal aPagar, BigDecimal balance, int diasVencido, String moneda, BigDecimal balanceMoneda) {}
 
     public record Antiguedad(Long proveedorId, String proveedor, BigDecimal corriente, BigDecimal d1a30,
                              BigDecimal d31a60, BigDecimal d61a90, BigDecimal mas90, BigDecimal total) {}
@@ -70,6 +79,8 @@ public class PagoProveedorService {
     private final ProveedorService proveedores;
     private final CajaService caja;
     private final MovimientoBancarioService banco;
+    private final com.agroinsumos.backend.moneda.TasaCambioService tasas;
+    private final com.agroinsumos.backend.banco.CuentaBancariaRepository cuentasBancarias;
     private final NumeradorService numerador;
     private final JdbcTemplate jdbc;
     private final Clock clock;
@@ -85,29 +96,48 @@ public class PagoProveedorService {
         p.setProveedorId(proveedor.getId());
         p.setConcepto(r.concepto());
         p.setUsuarioId(user.usuarioId());
+        String moneda = r.moneda() == null ? "DOP" : r.moneda();
+        boolean ext = !"DOP".equals(moneda);
+        BigDecimal tc = tasas.resolver(cia, moneda, p.getFecha(), r.tasaCambio());
+        p.setMoneda(moneda);
+        p.setTasaCambio(tc);
 
-        BigDecimal aplicado = BigDecimal.ZERO;
+        BigDecimal aplicado = BigDecimal.ZERO, aplicadoDop = BigDecimal.ZERO;
         var vistas = new HashSet<Long>();
         for (var a : r.aplicaciones()) {
             if (!vistas.add(a.compraId())) throw new BusinessException("COMPRA_REPETIDA", "Compra repetida: " + a.compraId());
             Compra c = compraService.cargar(cia, a.compraId());
             if (!c.getProveedorId().equals(proveedor.getId())) throw new BusinessException("COMPRA_OTRO_PROVEEDOR", "La compra " + c.getNumero() + " es de otro suplidor");
             if (c.getEstado() == Compra.Estado.ANULADA) throw new BusinessException("COMPRA_ANULADA", "La compra " + c.getNumero() + " está anulada");
-            if (a.monto().compareTo(c.getBalance()) > 0) {
-                throw new BusinessException("MONTO_EXCEDE_BALANCE", "El pago a la compra " + c.getNumero() + " excede su balance RD$" + c.getBalance());
+            if (!c.getMoneda().equals(moneda)) {
+                throw new BusinessException("COMPRA_OTRA_MONEDA", "La compra " + c.getNumero() + " es en " + c.getMoneda() + "; el pago es en " + moneda);
             }
-            c.setBalance(c.getBalance().subtract(a.monto()));
-            if (c.getBalance().signum() == 0) c.setEstado(Compra.Estado.PAGADA);
+            BigDecimal pendiente = ext ? c.getBalanceMoneda() : c.getBalance();
+            if (a.monto().compareTo(pendiente) > 0) {
+                throw new BusinessException("MONTO_EXCEDE_BALANCE", "El pago a la compra " + c.getNumero() + " excede su balance " + moneda + " " + pendiente);
+            }
+            // Pesos históricos que rebaja: a la tasa de la compra (si salda la compra, todo lo que quede en pesos)
+            BigDecimal montoDop = !ext ? a.monto()
+                    : a.monto().compareTo(pendiente) == 0 ? c.getBalance()
+                    : a.monto().multiply(c.getTasaCambio()).setScale(2, java.math.RoundingMode.HALF_UP).min(c.getBalance());
+            c.setBalance(c.getBalance().subtract(montoDop));
+            if (ext) c.setBalanceMoneda(c.getBalanceMoneda().subtract(a.monto()));
+            if ((ext ? c.getBalanceMoneda() : c.getBalance()).signum() == 0) c.setEstado(Compra.Estado.PAGADA);
             var ap = new PagoProveedor.Aplicacion();
             ap.setPago(p);
             ap.setCompraId(c.getId());
             ap.setMonto(a.monto());
+            ap.setMontoDop(montoDop);
             p.getAplicaciones().add(ap);
             aplicado = aplicado.add(a.monto());
+            aplicadoDop = aplicadoDop.add(montoDop);
         }
         BigDecimal pagado = BigDecimal.ZERO, efectivo = BigDecimal.ZERO;
         for (var f : r.formas()) {
             if (f.forma() == FormaPago.SALDO_A_FAVOR) throw new BusinessException("FORMA_INVALIDA", "Forma de pago no válida para suplidores");
+            if (ext && (f.forma() == FormaPago.EFECTIVO || f.forma() == FormaPago.TARJETA)) {
+                throw new BusinessException("FORMA_INVALIDA", "Los pagos en " + moneda + " se hacen por cheque o transferencia");
+            }
             var fp = new PagoProveedor.Forma();
             fp.setPago(p);
             fp.setFormaPago(f.forma());
@@ -128,6 +158,9 @@ public class PagoProveedorService {
             throw new BusinessException("PAGO_NO_CUADRA", "Las formas de pago (RD$" + pagado + ") deben sumar lo aplicado (RD$" + aplicado + ")");
         }
         p.setTotal(aplicado);
+        BigDecimal pagadoDop = p.getFormas().stream().map(f -> f.getMonto().multiply(tc).setScale(2, java.math.RoundingMode.HALF_UP))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        p.setDiferenciaCambiaria(pagadoDop.subtract(aplicadoDop));
         var sesion = efectivo.signum() > 0 ? caja.abiertaDe(user) : null;
         if (sesion != null) p.setSesionCajaId(sesion.getId());
         repo.save(p);
@@ -138,8 +171,16 @@ public class PagoProveedorService {
         for (var fp : p.getFormas()) {
             if (fp.getCuentaBancariaId() == null) continue;
             var tipo = fp.getFormaPago() == FormaPago.CHEQUE ? TipoMovimientoBancario.CHEQUE : TipoMovimientoBancario.TRANSFERENCIA_SALIDA;
+            // La cuenta debe ser de la moneda del pago, o en pesos (se debita el equivalente a la tasa del pago)
+            var cuenta = cuentasBancarias.findById(fp.getCuentaBancariaId()).filter(x -> x.getCompaniaId().equals(cia))
+                    .orElseThrow(() -> new NotFoundException("Cuenta bancaria", fp.getCuentaBancariaId()));
+            BigDecimal montoBanco;
+            if (cuenta.getMoneda().equals(moneda)) montoBanco = fp.getMonto();
+            else if ("DOP".equals(cuenta.getMoneda())) montoBanco = fp.getMonto().multiply(tc).setScale(2, java.math.RoundingMode.HALF_UP);
+            else throw new BusinessException("CUENTA_OTRA_MONEDA", "La cuenta " + cuenta.getNombre() + " es en " + cuenta.getMoneda() + "; el pago es en " + moneda);
             var mov = banco.registrar(user, fp.getCuentaBancariaId(), tipo, p.getFecha(), fp.getReferencia(), proveedor.getNombre(),
-                    "Pago " + p.getNumero() + " a " + proveedor.getNombre(), fp.getMonto(), DOC_TIPO, p.getId());
+                    "Pago " + p.getNumero() + " a " + proveedor.getNombre(), montoBanco, DOC_TIPO, p.getId(),
+                    cuenta.getMoneda().equals("DOP") ? BigDecimal.ONE : tc);
             fp.setReferencia(mov.getReferencia());
         }
         return Response.de(p);
@@ -152,7 +193,8 @@ public class PagoProveedorService {
         if (p.getEstado() == PagoProveedor.Estado.ANULADO) throw new BusinessException("PAGO_ANULADO", "El pago ya está anulado");
         for (var a : p.getAplicaciones()) {
             Compra c = compraService.cargar(cia, a.getCompraId());
-            c.setBalance(c.getBalance().add(a.getMonto()));
+            c.setBalance(c.getBalance().add(a.getMontoDop()));
+            if (c.extranjera()) c.setBalanceMoneda(c.getBalanceMoneda().add(a.getMonto()));
             c.setEstado(Compra.Estado.REGISTRADA);
         }
         BigDecimal efectivo = p.getFormas().stream().filter(f -> f.getFormaPago() == FormaPago.EFECTIVO)
@@ -183,7 +225,8 @@ public class PagoProveedorService {
         LocalDate hoy = LocalDate.now(clock);
         return compras.pendientes(proveedorId).stream().map(c -> new CompraPendiente(c.getId(), c.getNumero(),
                 c.getNcfProveedor(), c.getFecha(), c.getFechaVencimiento(), c.aPagar(), c.getBalance(),
-                (int) Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(c.getFechaVencimiento(), hoy)))).toList();
+                (int) Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(c.getFechaVencimiento(), hoy)), c.getMoneda(),
+                c.getBalanceMoneda())).toList();
     }
 
     public List<Antiguedad> antiguedad(Long cia) {

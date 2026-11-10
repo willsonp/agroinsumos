@@ -14,5 +14,10 @@ export class CuentasBancarias {
       .subscribe({ next: (p) => this.activas.set(p.content.filter((c) => c.estado === 'A')), error: () => this.activas.set([]) });
   }
 
-  static etiqueta(c: S['CuentaBancariaResponse']): string { return `${c.banco} · ${c.nombre} (${c.numero})`; }
+  static etiqueta(c: S['CuentaBancariaResponse']): string {
+    return `${c.banco} · ${c.nombre} (${c.numero})` + (c.moneda && c.moneda !== 'DOP' ? ` · ${c.moneda}` : '');
+  }
+
+  /** Solo cuentas en pesos (cobros y depósitos de caja). */
+  enPesos(): S['CuentaBancariaResponse'][] { return this.activas().filter((c) => !c.moneda || c.moneda === 'DOP'); }
 }

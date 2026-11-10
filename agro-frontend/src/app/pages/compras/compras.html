@@ -10,12 +10,20 @@
         <mat-form-field><mat-label>Proveedor</mat-label><mat-select [(ngModel)]="f.proveedorId">
           @for (p of proveedores(); track p.id) { <mat-option [value]="p.id">{{ p.nombre }} @if (p.rncCedula) { · {{ p.rncCedula }} }</mat-option> }
         </mat-select></mat-form-field>
+        <mat-form-field><mat-label>Moneda de la factura</mat-label><mat-select [(ngModel)]="f.moneda" (selectionChange)="cambiarMoneda()">
+          @for (m of monedas; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+        </mat-select></mat-form-field>
+        @if (f.moneda !== 'DOP') {
+          <mat-form-field><mat-label>Tasa (RD$ por {{ f.moneda }})</mat-label><input matInput type="number" min="0" [(ngModel)]="f.tasa" />
+            <mat-hint>{{ f.tasa ? 'Total en pesos: ' + (totales().total * f.tasa | currency) : 'Registre la tasa del día en Banco → Tasas de cambio' }}</mat-hint></mat-form-field>
+        }
         <mat-form-field><mat-label>Condición</mat-label><mat-select [(ngModel)]="f.condicion">
           <mat-option value="CREDITO">Crédito</mat-option><mat-option value="CONTADO">Contado</mat-option></mat-select></mat-form-field>
         @if (f.condicion === 'CREDITO') { <mat-form-field><mat-label>Días de crédito</mat-label><input matInput type="number" [(ngModel)]="f.diasCredito" /></mat-form-field> }
         <mat-form-field><mat-label>Tipo de gasto (606)</mat-label><mat-select [(ngModel)]="f.tipoBienServicio">
           @for (t of tipos606; track t[0]) { <mat-option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</mat-option> }</mat-select></mat-form-field>
         <mat-checkbox class="ancho-completo" [(ngModel)]="f.emitir41">Suplidor informal sin comprobante: emitir e-CF 41 (Comprobante de Compras)</mat-checkbox>
+        @if (f.moneda !== 'DOP') { <p class="ancho-completo muted">Costos, flete y retenciones en {{ f.moneda }}; el inventario y los reportes fiscales quedan en pesos a la tasa indicada.</p> }
         @if (!f.emitir41) { <mat-form-field><mat-label>NCF del suplidor</mat-label><input matInput [(ngModel)]="f.ncf" placeholder="B0100000001 o E310000000001" /></mat-form-field> }
         <mat-form-field><mat-label>ITBIS retenido</mat-label><input matInput type="number" min="0" [(ngModel)]="f.itbisRetenido" /></mat-form-field>
         <mat-form-field><mat-label>ISR retenido</mat-label><input matInput type="number" min="0" [(ngModel)]="f.isrRetenido" /></mat-form-field>
@@ -48,9 +56,9 @@
       </div>
       <div class="fila" style="margin-top:12px">
         <span>Subtotal {{ totales().subtotal | currency }} · ITBIS {{ totales().itbis | currency }} · Flete {{ flete() | currency }}</span>
-        <span class="espaciador"></span><span class="total">{{ totales().total | currency }}</span>
+        <span class="espaciador"></span><span class="total">{{ totales().total | currency: f.moneda }}</span>
         <button mat-button (click)="nueva.set(false)">Cancelar</button>
-        <button mat-flat-button [disabled]="!f.proveedorId || !lineas().length" (click)="registrar()">Registrar compra</button>
+        <button mat-flat-button [disabled]="!f.proveedorId || !lineas().length || (f.moneda !== 'DOP' && !f.tasa)" (click)="registrar()">Registrar compra</button>
       </div>
     </div>
   }
@@ -61,8 +69,8 @@
       <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let c">{{ c.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
       <ng-container matColumnDef="proveedor"><th mat-header-cell *matHeaderCellDef>Proveedor</th><td mat-cell *matCellDef="let c">{{ nombreProveedor(c.proveedorId) }}</td></ng-container>
       <ng-container matColumnDef="ncf"><th mat-header-cell *matHeaderCellDef>Comprobante</th><td mat-cell *matCellDef="let c">{{ c.ncfProveedor ?? c.encfCompra }}</td></ng-container>
-      <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef class="num">Total</th><td mat-cell *matCellDef="let c" class="num">{{ c.total | currency }}</td></ng-container>
-      <ng-container matColumnDef="balance"><th mat-header-cell *matHeaderCellDef class="num">Por pagar</th><td mat-cell *matCellDef="let c" class="num">{{ c.balance | currency }}</td></ng-container>
+      <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef class="num">Total</th><td mat-cell *matCellDef="let c" class="num">{{ c.total | currency }}@if (c.moneda !== 'DOP') { <div class="muted">{{ c.totalMoneda | currency: c.moneda }} a {{ c.tasaCambio }}</div> }</td></ng-container>
+      <ng-container matColumnDef="balance"><th mat-header-cell *matHeaderCellDef class="num">Por pagar</th><td mat-cell *matCellDef="let c" class="num">@if (c.moneda !== 'DOP') { {{ c.balanceMoneda | currency: c.moneda }} } @else { {{ c.balance | currency }} }</td></ng-container>
       <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let c"><span class="chip" [class.ok]="c.estado === 'PAGADA'" [class.error]="c.estado === 'ANULADA'">{{ c.estado }}</span></td></ng-container>
       <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let c" style="white-space:nowrap">

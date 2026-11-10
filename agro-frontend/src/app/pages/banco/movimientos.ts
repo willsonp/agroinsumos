@@ -68,7 +68,11 @@ const ORIGENES: Record<string, string> = {
               </mat-select></mat-form-field>
             }
             <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="nuevo.fecha" /></mat-form-field>
-            <mat-form-field><mat-label>Monto</mat-label><input matInput type="number" min="0.01" [(ngModel)]="nuevo.monto" /></mat-form-field>
+            <mat-form-field><mat-label>Monto ({{ monedaDe(nuevo.cuentaId) }})</mat-label><input matInput type="number" min="0.01" [(ngModel)]="nuevo.monto" /></mat-form-field>
+            @if (requiereTasa()) {
+              <mat-form-field><mat-label>Tasa (RD$ por {{ monedaExtranjera() }})</mat-label><input matInput type="number" min="0" [(ngModel)]="nuevo.tasa" />
+                <mat-hint>{{ conversion() }}</mat-hint></mat-form-field>
+            }
             <mat-form-field><mat-label>{{ f === 'CHEQUE' ? 'No. cheque (vacío = automático)' : 'Referencia' }}</mat-label>
               <input matInput [(ngModel)]="nuevo.referencia" /></mat-form-field>
             @if (f === 'CHEQUE') {
@@ -84,7 +88,7 @@ const ORIGENES: Record<string, string> = {
                 <mat-hint>Para el asiento contable{{ f === 'CHEQUE' ? ': un cheque directo necesita la cuenta del gasto o pasivo que paga' : '' }}</mat-hint>
               </mat-form-field>
             }
-            @if (f === 'DEPOSITO') {
+            @if (f === 'DEPOSITO' && monedaDe(nuevo.cuentaId) === 'DOP') {
               <mat-checkbox class="ancho-completo" [(ngModel)]="nuevo.desdeCaja">Depositar efectivo de mi caja abierta (se registra la salida en la caja)</mat-checkbox>
             }
           </div>
@@ -109,7 +113,7 @@ const ORIGENES: Record<string, string> = {
           </mat-select></mat-form-field>
           <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="filtro.desde" (change)="cargar()" /></mat-form-field>
           <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="filtro.hasta" (change)="cargar()" /></mat-form-field>
-          @if (cuentaFiltrada(); as c) { <div class="saldo">Saldo en libros <strong>{{ c.saldo | currency }}</strong></div> }
+          @if (cuentaFiltrada(); as c) { <div class="saldo">Saldo en libros <strong>{{ c.saldo | currency: c.moneda }}</strong></div> }
         </div>
         <div class="tabla-contenedor">
           <table mat-table [dataSource]="pagina()?.content ?? []">
@@ -122,7 +126,8 @@ const ORIGENES: Record<string, string> = {
               <td mat-cell *matCellDef="let m">{{ m.concepto }}@if (m.beneficiario) { <div class="sub">{{ m.beneficiario }}</div> }
                 <div class="sub">{{ origenes[m.origenTipo] ?? m.origenTipo }}</div></td></ng-container>
             <ng-container matColumnDef="monto"><th mat-header-cell *matHeaderCellDef class="num">Monto</th>
-              <td mat-cell *matCellDef="let m" class="num" [class.negativo]="m.montoConSigno < 0">{{ m.montoConSigno | currency }}</td></ng-container>
+              <td mat-cell *matCellDef="let m" class="num" [class.negativo]="m.montoConSigno < 0">{{ m.montoConSigno | currency: monedaDe(m.cuentaId) }}
+                @if (m.tasaCambio !== 1) { <div class="sub">a {{ m.tasaCambio }}</div> }</td></ng-container>
             <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
               <td mat-cell *matCellDef="let m">
                 @if (m.estado === 'ANULADO') { <span class="chip" [title]="m.motivoAnulacion">Anulado</span> }
@@ -184,6 +189,32 @@ export class Movimientos {
     this.cargar();
   }
 
+  protected monedaDe(id?: number | null): string { return this.cuentas.activas().find((c) => c.id === id)?.moneda ?? 'DOP'; }
+
+  /** Moneda extranjera involucrada (la de la cuenta o, en transferencias, la de cualquiera de las dos). */
+  protected monedaExtranjera(): string | null {
+    const o = this.monedaDe(this.nuevo.cuentaId);
+    const d = this.formulario() === 'TRANSFERENCIA' ? this.monedaDe(this.nuevo.destinoId) : 'DOP';
+    return o !== 'DOP' ? o : d !== 'DOP' ? d : null;
+  }
+
+  protected requiereTasa(): boolean {
+    const o = this.monedaDe(this.nuevo.cuentaId);
+    if (this.formulario() === 'TRANSFERENCIA') return !!this.nuevo.destinoId && o !== this.monedaDe(this.nuevo.destinoId);
+    return o !== 'DOP';
+  }
+
+  protected conversion(): string {
+    const t = this.nuevo.tasa, m = this.nuevo.monto;
+    if (!t || !m) return 'Vacío = tasa registrada del día';
+    const o = this.monedaDe(this.nuevo.cuentaId);
+    if (this.formulario() === 'TRANSFERENCIA') {
+      const d = this.monedaDe(this.nuevo.destinoId);
+      return `Llega ${d} ${(o === 'DOP' ? m / t : m * t).toFixed(2)}`;
+    }
+    return `Equivale a RD$ ${(m * t).toFixed(2)}`;
+  }
+
   protected nombreCuenta(id?: number): string {
     const c = this.cuentas.activas().find((x) => x.id === id);
     return c ? `${c.banco} · ${c.numero}` : String(id ?? '');
@@ -219,14 +250,15 @@ export class Movimientos {
     };
     if (f === 'TRANSFERENCIA') {
       const req: S['MovimientoBancarioTransferenciaRequest'] = { cuentaOrigenId: n.cuentaId!, cuentaDestinoId: n.destinoId!,
-        fecha: n.fecha || undefined, monto: n.monto, concepto: n.concepto, referencia: n.referencia || undefined };
+        fecha: n.fecha || undefined, monto: n.monto, concepto: n.concepto, referencia: n.referencia || undefined,
+        tasaCambio: this.requiereTasa() ? n.tasa ?? undefined : undefined };
       this.http.post<Mov>('/api/v1/banco/transferencias', req).subscribe({ next: fin, error: (e) => this.notif.error(e) });
       return;
     }
     const req: S['MovimientoBancarioRegistrarRequest'] = { cuentaId: n.cuentaId!, tipo: f, fecha: n.fecha || undefined,
       referencia: n.referencia || undefined, beneficiario: f === 'CHEQUE' ? n.beneficiario || undefined : undefined,
       concepto: n.concepto, monto: n.monto, desdeCaja: f === 'DEPOSITO' && n.desdeCaja,
-      cuentaContrapartida: n.contrapartida || undefined };
+      cuentaContrapartida: n.contrapartida || undefined, tasaCambio: this.requiereTasa() ? n.tasa ?? undefined : undefined };
     this.http.post<Mov>('/api/v1/banco/movimientos', req).subscribe({ next: fin, error: (e) => this.notif.error(e) });
   }
 
@@ -251,7 +283,7 @@ export class Movimientos {
 
   private vacio() {
     return { cuentaId: null as number | null, destinoId: null as number | null, fecha: '', monto: 0, referencia: '',
-      beneficiario: '', concepto: '', desdeCaja: false, contrapartida: '' };
+      beneficiario: '', concepto: '', desdeCaja: false, contrapartida: '', tasa: null as number | null };
   }
 }
 

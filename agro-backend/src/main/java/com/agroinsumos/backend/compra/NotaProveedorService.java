@@ -113,8 +113,9 @@ public class NotaProveedorService {
             n.setDevuelveInventario(true);
         } else {
             if (r.subtotal() == null) throw new BusinessException("MONTO_REQUERIDO", "Indique el monto de la nota o las líneas devueltas");
-            n.setSubtotal(r.subtotal().setScale(2, RoundingMode.HALF_UP));
-            n.setItbis(r.itbis() == null ? BigDecimal.ZERO : r.itbis().setScale(2, RoundingMode.HALF_UP));
+            // Montos en la moneda de la compra; se guardan en pesos a la tasa de la compra
+            n.setSubtotal(r.subtotal().multiply(c.getTasaCambio()).setScale(2, RoundingMode.HALF_UP));
+            n.setItbis(r.itbis() == null ? BigDecimal.ZERO : r.itbis().multiply(c.getTasaCambio()).setScale(2, RoundingMode.HALF_UP));
         }
         n.setTotal(n.getSubtotal().add(n.getItbis()));
         if (n.getTotal().signum() <= 0) throw new BusinessException("MONTO_INVALIDO", "El total de la nota debe ser mayor que cero");
@@ -124,10 +125,10 @@ public class NotaProveedorService {
                 throw new BusinessException("NOTA_EXCEDE_BALANCE", "La nota de crédito (RD$" + n.getTotal()
                         + ") excede el balance pendiente de la compra (RD$" + c.getBalance() + ")");
             }
-            c.setBalance(c.getBalance().subtract(n.getTotal()));
+            ajustarBalance(c, n.getTotal().negate());
             if (c.getBalance().signum() == 0) c.setEstado(Compra.Estado.PAGADA);
         } else {
-            c.setBalance(c.getBalance().add(n.getTotal()));
+            ajustarBalance(c, n.getTotal());
             c.setEstado(Compra.Estado.REGISTRADA);
         }
         n.setNumero(numerador.siguiente(cia, DOC_TIPO));
@@ -150,7 +151,7 @@ public class NotaProveedorService {
         if (n.getEstado() == NotaProveedor.Estado.ANULADA) throw new BusinessException("NOTA_ANULADA", "La nota ya está anulada");
         Compra c = compras.cargar(cia, n.getCompraId());
         if (n.getTipo() == NotaProveedor.Tipo.CREDITO) {
-            c.setBalance(c.getBalance().add(n.getTotal()));
+            ajustarBalance(c, n.getTotal());
             if (c.getEstado() != Compra.Estado.ANULADA) c.setEstado(Compra.Estado.REGISTRADA);
             for (var l : n.getLineas()) {
                 inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
@@ -160,7 +161,7 @@ public class NotaProveedorService {
             if (c.getBalance().compareTo(n.getTotal()) < 0) {
                 throw new BusinessException("NOTA_PAGADA", "La nota de débito ya fue pagada; anule primero el pago");
             }
-            c.setBalance(c.getBalance().subtract(n.getTotal()));
+            ajustarBalance(c, n.getTotal().negate());
             if (c.getBalance().signum() == 0) c.setEstado(Compra.Estado.PAGADA);
         }
         n.setEstado(NotaProveedor.Estado.ANULADA);
@@ -190,6 +191,15 @@ public class NotaProveedorService {
                     ? "Una nota de crédito usa NCF B04 o e-CF 34" : "Una nota de débito usa NCF B03 o e-CF 33");
         }
         return v;
+    }
+
+    /** Ajusta el balance en pesos y, en compras en otra moneda, el balance en esa moneda (a la tasa de la compra). */
+    private static void ajustarBalance(Compra c, BigDecimal pesos) {
+        c.setBalance(c.getBalance().add(pesos));
+        if (c.extranjera()) {
+            c.setBalanceMoneda(c.getBalance().signum() == 0 ? BigDecimal.ZERO
+                    : c.getBalanceMoneda().add(pesos.divide(c.getTasaCambio(), 2, RoundingMode.HALF_UP)));
+        }
     }
 
     private static BigDecimal prorratear(BigDecimal monto, BigDecimal parte, BigDecimal total) {
