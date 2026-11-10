@@ -27,6 +27,7 @@ export const NAVEGACION: Modulo[] = [
   ]},
   { nombre: 'Compras', icono: 'local_shipping', opciones: [
     { codigo: 'COMPRAS_REGISTRO', nombre: 'Compras', ruta: '/compras', icono: 'add_shopping_cart', rol: 'SUPERVISOR' },
+    { codigo: 'COMPRAS_NOTAS', nombre: 'Notas de suplidores', ruta: '/compras/notas', icono: 'note_alt', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Banco', icono: 'account_balance', opciones: [
     { codigo: 'BANCO_MOVIMIENTOS', nombre: 'Movimientos bancarios', ruta: '/banco/movimientos', icono: 'swap_vert', rol: 'SUPERVISOR' },
@@ -47,7 +48,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Fiscal (DGII)', icono: 'gavel', opciones: [
     { codigo: 'ECF_DOCUMENTOS', nombre: 'Comprobantes electrónicos', ruta: '/fiscal/ecf', icono: 'verified' },
     { codigo: 'ECF_SECUENCIAS', nombre: 'Secuencias e-NCF', ruta: '/fiscal/secuencias', icono: 'pin', rol: 'SUPERVISOR' },
-    { codigo: 'FISCAL_FORMATOS', nombre: 'Formatos 606 / 607', ruta: '/fiscal/formatos', icono: 'description', rol: 'SUPERVISOR' },
+    { codigo: 'FISCAL_FORMATOS', nombre: 'Formatos 606 / 607 / 608', ruta: '/fiscal/formatos', icono: 'description', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Administración', icono: 'admin_panel_settings', opciones: [
     { codigo: 'ADMIN_USUARIOS', nombre: 'Usuarios y permisos', ruta: '/admin/usuarios', icono: 'manage_accounts', rol: 'ADMIN' },

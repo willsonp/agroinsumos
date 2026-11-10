@@ -284,6 +284,26 @@ Reemplaza `catalogo`, `entradadiario`, `cntcontabilidad`, `transaccionesconta` y
 **Pendiente de definir con el contador:** asiento de cierre anual (traslado a resultados acumulados), sobrantes/faltantes
 de caja al cierre, descuento en ventas en cuenta separada (hoy el ingreso se registra neto de descuento) y moneda extranjera.
 
+## 5.6 Fase 7: Formato 608 y notas de suplidores (CxP)
+Migración `V12__formato608_notas_proveedor.sql`.
+
+**Notas de crédito / débito de suplidores** (`nota_proveedor`, `/api/v1/cxp/notas`), siempre sobre una compra:
+- **Crédito** (NCF B04 / e-CF 34): reduce el balance de la compra (no puede excederlo). Con líneas es una **devolución
+  de mercancía**: la cantidad no puede superar lo comprado menos lo ya devuelto; el importe e ITBIS se prorratean de la
+  línea de compra y la mercancía sale del inventario al costo final de la compra. Sin líneas: descuento o rebaja (monto e ITBIS).
+- **Débito** (B03 / e-CF 33): aumenta el balance (cargos, intereses); la compra vuelve a estar pendiente y se paga con el pago a suplidores.
+- Anular: la NC devuelve el balance y reingresa la mercancía; la ND solo si su monto no se ha pagado (`NOTA_PAGADA`).
+  Una compra con notas vigentes no se anula (`COMPRA_CON_NOTAS`). NCF duplicado por suplidor: 409.
+- **606**: ambas notas se reportan con el NCF de la compra como *NCF modificado* (forma de pago 06 en NC, 04 en ND — REVISAR).
+- **Contabilidad** (`NOTA_PROVEEDOR`): NC Dr CxP / Cr Inventario (departamento) / Cr ITBIS adelantado; ND Dr Gastos de compras / Dr ITBIS adelantado / Cr CxP.
+- Las notas del sistema anterior no indicaban la compra: `06_notas_proveedor.sql` lista las que tienen balance para registrarlas a mano.
+
+**Formato 608** (`/api/v1/fiscal/608[/txt]`): `608|RNC|AAAAMM|cantidad` y una línea `NCF|AAAAMMDD|tipo` por comprobante.
+- Fuente principal: `comprobante_anulado` (`/api/v1/fiscal/anulaciones`), por **fecha de anulación**; tipos 01–10 de la DGII.
+  No se acepta un NCF usado en una factura vigente (`NCF_EN_USO`: se emite nota de crédito) ni un e-CF aceptado (`ECF_ACEPTADO`).
+- Además: facturas con NCF del sistema anterior anuladas sin nota de crédito (tipo 04, con advertencia) y advertencia por cada
+  e-CF rechazado sin anular: en facturación electrónica los e-NCF no usados se anulan en la Oficina Virtual (ANECF).
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -347,6 +367,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `BANCO_CUENTAS` | crear/editar bancos y cuentas bancarias (la lectura es libre: se eligen al pagar/cobrar) | — |
 | `BANCO_MOVIMIENTOS` | depósitos, cheques, transferencias, notas de débito/crédito, anulación | **supervisor** |
 | `BANCO_CONCILIACION` | conciliación bancaria e historial | **supervisor** |
+| `COMPRAS_NOTAS` | notas de crédito / débito de suplidores | **supervisor** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |
@@ -354,7 +375,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `CAT_CLIENTES` / `CAT_PROVEEDORES` / `CAT_GENERALES` | escritura del catálogo | — |
 | `ECF_DOCUMENTOS` | listado, envío y consulta en la DGII | emisión directa: **admin** |
 | `ECF_SECUENCIAS` | ver secuencias | **supervisor**; registrar rangos: **admin** |
-| `FISCAL_FORMATOS` | 606 / 607 | **supervisor** |
+| `FISCAL_FORMATOS` | 606 / 607 / 608 y registro de comprobantes anulados | **supervisor** |
 | `ADMIN_USUARIOS` | usuarios y permisos | **admin** (evita que alguien se auto-eleve) |
 
 **Perfil típico de cajero:** `VENTAS_POS` + `CAJA_SESION` (+ `CXC_RECIBOS` si cobra cuentas a crédito).

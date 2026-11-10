@@ -84,6 +84,33 @@ public class FormatosFiscalesService {
                     retIsr, Z, Z, Z, Z, formaPago, "COMPRA", ((Number) r.get("id")).longValue(), (String) r.get("nombre")));
         }
 
+        // ---- Notas de crédito / débito de suplidores (con el NCF de la compra como modificado)
+        var notas = jdbc.queryForList("""
+                select n.id, n.numero, n.tipo, n.fecha, n.ncf, n.subtotal, n.itbis, n.devuelve_inventario,
+                       coalesce(c.ncf_proveedor, c.encf_compra) ncf_modificado, c.tipo_bien_servicio, p.rnc_cedula, p.nombre,
+                       coalesce((select sum(l.importe) from compra_linea l join articulo a on a.id = l.articulo_id
+                                  where l.compra_id = c.id and a.tipo = 'B'), 0) bienes
+                  from nota_proveedor n join compra c on c.id = n.compra_id join proveedor p on p.id = n.proveedor_id
+                 where n.compania_id = ? and n.fecha between ? and ? and n.estado = 'EMITIDA'
+                 order by n.fecha, n.id
+                """, cia, desde, hasta);
+        for (var r : notas) {
+            String ncf = (String) r.get("ncf");
+            long numero = ((Number) r.get("numero")).longValue();
+            boolean credito = "CREDITO".equals(r.get("tipo"));
+            if (ncf == null) {
+                adv.add("Nota de " + (credito ? "crédito" : "débito") + " de suplidor " + numero + " sin NCF: no se reporta");
+                continue;
+            }
+            String rnc = (String) r.get("rnc_cedula");
+            BigDecimal subtotal = bd(r.get("subtotal")), itbis = bd(r.get("itbis"));
+            boolean bienes = Boolean.TRUE.equals(r.get("devuelve_inventario")) || bd(r.get("bienes")).signum() > 0;
+            // REVISAR: forma de pago de las notas (06 = nota de crédito; las de débito quedan a crédito)
+            lineas.add(new Formato606.Linea(rnc, tipoId(rnc), (String) r.get("tipo_bien_servicio"), ncf, (String) r.get("ncf_modificado"),
+                    fecha(r.get("fecha")), null, bienes ? Z : subtotal, bienes ? subtotal : Z, subtotal, itbis, Z, Z, Z, itbis, Z,
+                    null, Z, Z, Z, Z, Z, credito ? "06" : "04", "NOTA_PROVEEDOR", ((Number) r.get("id")).longValue(), (String) r.get("nombre")));
+        }
+
         // ---- Egresos de caja con comprobante (incluye e-CF 43 de gastos menores)
         var egresos = jdbc.queryForList("""
                 select e.id, e.numero, e.fecha, e.ncf, e.rnc, e.beneficiario, e.monto, e.itbis, e.tipo_bien_servicio,
@@ -260,6 +287,52 @@ public class FormatosFiscalesService {
                     o(l.propinaLegal()), o(l.efectivo()), o(l.chequeTransferencia()), o(l.tarjeta()), o(l.ventaCredito()),
                     o(l.bonos()), o(l.permuta()), o(l.otrasFormas())))
               .append("\r\n");
+        }
+        return sb.toString();
+    }
+
+    // =========================================================================================== 608
+    /**
+     * Comprobantes anulados del período: los registrados en comprobante_anulado (por fecha de anulación) y las
+     * facturas con NCF del sistema anterior anuladas sin nota de crédito (se informan con tipo 04, REVISAR).
+     */
+    public Formato608.Reporte formato608(Long cia, String periodo) {
+        YearMonth ym = periodo(periodo);
+        Date desde = Date.valueOf(ym.atDay(1)), hasta = Date.valueOf(ym.atEndOfMonth());
+        List<String> adv = new ArrayList<>();
+        List<Formato608.Linea> lineas = new ArrayList<>(jdbc.query("""
+                select id, ncf, fecha_comprobante, tipo_anulacion, motivo from comprobante_anulado
+                 where compania_id = ? and fecha_anulacion between ? and ? order by fecha_anulacion, ncf""",
+                (rs, i) -> new Formato608.Linea(rs.getString(2), rs.getDate(3).toLocalDate(), rs.getString(4),
+                        Formato608.TIPOS.get(rs.getString(4)), "REGISTRO", rs.getLong(1), rs.getString(5)), cia, desde, hasta));
+        var legado = jdbc.query("""
+                select f.id, f.ncf_legacy, f.fecha, f.numero from factura f
+                 where f.compania_id = ? and f.fecha between ? and ? and f.estado = 'ANULADA' and f.encf is null
+                   and f.ncf_legacy is not null
+                   and not exists (select 1 from devolucion d where d.factura_id = f.id)
+                   and not exists (select 1 from comprobante_anulado a where a.compania_id = f.compania_id and a.ncf = f.ncf_legacy)
+                 order by f.fecha, f.id""",
+                (rs, i) -> new Formato608.Linea(rs.getString(2), rs.getDate(3).toLocalDate(), "04", Formato608.TIPOS.get("04"),
+                        "FACTURA", rs.getLong(1), "Factura " + rs.getLong(4) + " anulada en el sistema anterior"), cia, desde, hasta);
+        if (!legado.isEmpty()) {
+            adv.add(legado.size() + " factura(s) del sistema anterior anuladas se informan con tipo 04 (Corrección de la información): "
+                    + "regístrelas en Comprobantes anulados si corresponde otro tipo");
+        }
+        lineas.addAll(legado);
+        jdbc.query("""
+                select encf from ecf_documento where compania_id = ? and estado = 'RECHAZADO' and fecha_emision between ? and ?
+                   and not exists (select 1 from comprobante_anulado a where a.compania_id = ecf_documento.compania_id and a.ncf = ecf_documento.encf)""",
+                rs -> { adv.add("e-NCF " + rs.getString(1) + " rechazado por la DGII: solicite su anulación (ANECF) en la Oficina Virtual"); },
+                cia, desde, hasta);
+        lineas.sort(Comparator.comparing(Formato608.Linea::fechaComprobante).thenComparing(Formato608.Linea::ncf));
+        return new Formato608.Reporte(rncEmpresa(cia), periodo, lineas, adv);
+    }
+
+    public String txt608(Formato608.Reporte rep) {
+        var sb = new StringBuilder();
+        sb.append("608|").append(rep.rnc()).append('|').append(rep.periodo()).append('|').append(rep.lineas().size()).append("\r\n");
+        for (var l : rep.lineas()) {
+            sb.append(String.join("|", l.ncf(), f(l.fechaComprobante()), l.tipoAnulacion())).append("\r\n");
         }
         return sb.toString();
     }

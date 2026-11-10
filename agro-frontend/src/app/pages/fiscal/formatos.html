@@ -5,6 +5,7 @@
       <mat-button-toggle-group [(ngModel)]="formato" (change)="generar()">
         <mat-button-toggle value="607">607 · Ventas</mat-button-toggle>
         <mat-button-toggle value="606">606 · Compras</mat-button-toggle>
+        <mat-button-toggle value="608">608 · Anulados</mat-button-toggle>
       </mat-button-toggle-group>
       <mat-form-field style="max-width:200px"><mat-label>Periodo</mat-label><input matInput type="month" [(ngModel)]="periodo" (change)="generar()" /></mat-form-field>
       @if (formato === '607') {
@@ -19,7 +20,29 @@
       @if (r.advertencias?.length) {
         <ul class="advertencias">@for (a of r.advertencias; track $index) { <li>{{ a }}</li> }</ul>
       }
-      @if (formato === '606') {
+      @if (formato === '608') {
+        <div class="kpis"><div><label>Comprobantes anulados</label>{{ r608().lineas?.length }}</div></div>
+        <div class="tabla-contenedor"><table class="tabla">
+          <tr><th>NCF</th><th>Fecha comprobante</th><th>Tipo de anulación</th><th>Origen</th><th>Motivo</th><th></th></tr>
+          @for (l of r608().lineas; track $index) {
+            <tr><td>{{ l.ncf }}</td><td>{{ l.fechaComprobante | date: 'dd/MM/yyyy' }}</td><td>{{ l.tipoAnulacion }} · {{ l.descripcionTipo }}</td>
+              <td>{{ l.origen === 'REGISTRO' ? 'Registrado' : 'Factura anterior' }}</td><td>{{ l.motivo }}</td>
+              <td>@if (l.origen === 'REGISTRO') { <button mat-button (click)="eliminarAnulacion(l.origenId!)">Quitar</button> }</td></tr>
+          } @empty { <tr><td colspan="6" class="muted">Sin comprobantes anulados en el periodo</td></tr> }
+        </table></div>
+        <h3>Registrar comprobante anulado</h3>
+        <p class="muted">NCF preimpresos o de serie B y e-NCF no utilizados. Un comprobante ya usado en una factura vigente no se anula: se emite nota de crédito.</p>
+        <div class="grid-anul">
+          <mat-form-field><mat-label>NCF</mat-label><input matInput [(ngModel)]="anul.ncf" maxlength="13" /></mat-form-field>
+          <mat-form-field><mat-label>Fecha del comprobante</mat-label><input matInput type="date" [(ngModel)]="anul.fechaComprobante" /></mat-form-field>
+          <mat-form-field><mat-label>Fecha de anulación</mat-label><input matInput type="date" [(ngModel)]="anul.fechaAnulacion" /></mat-form-field>
+          <mat-form-field><mat-label>Tipo de anulación</mat-label><mat-select [(ngModel)]="anul.tipoAnulacion">
+            @for (t of tiposAnulacion; track t[0]) { <mat-option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</mat-option> }
+          </mat-select></mat-form-field>
+          <mat-form-field class="motivo"><mat-label>Motivo</mat-label><input matInput [(ngModel)]="anul.motivo" maxlength="200" /></mat-form-field>
+          <button mat-flat-button class="registrar" [disabled]="!anul.ncf || !anul.fechaComprobante" (click)="registrarAnulacion()">Registrar</button>
+        </div>
+      } @else if (formato === '606') {
         <div class="kpis">
           <div><label>Registros</label>{{ r606().resumen?.registros }}</div>
           <div><label>Monto facturado</label>{{ r606().resumen?.totalFacturado | currency }}</div>

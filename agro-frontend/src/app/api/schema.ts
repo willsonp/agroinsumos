@@ -525,6 +525,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fiscal/anulaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comprobantes (NCF) registrados como anulados en el rango de fechas de anulación */
+        get: operations["anulaciones"];
+        put?: never;
+        /** Registra un NCF anulado (preimpreso, serie B o e-NCF no utilizado) para el 608 */
+        post: operations["anular_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ecf/secuencias": {
         parameters: {
             query?: never;
@@ -626,6 +644,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cxp/notas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["buscar_2"];
+        put?: never;
+        /** Nota de crédito (reduce la deuda; puede devolver mercancía) o de débito (la aumenta) de un suplidor */
+        post: operations["registrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxp/notas/{id}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["anular_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cxc/recibos": {
         parameters: {
             query?: never;
@@ -652,7 +703,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_3"];
+        post: operations["anular_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -749,7 +800,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_2"];
+        get: operations["buscar_3"];
         put?: never;
         /** Asiento manual (entrada de diario) */
         post: operations["crear_6"];
@@ -768,7 +819,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_4"];
+        post: operations["anular_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -799,10 +850,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_3"];
+        get: operations["buscar_4"];
         put?: never;
         /** Registra factura de suplidor: entra al inventario y actualiza costo promedio */
-        post: operations["registrar"];
+        post: operations["registrar_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -818,7 +869,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_5"];
+        post: operations["anular_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1076,10 +1127,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_4"];
+        get: operations["buscar_5"];
         put?: never;
         /** Depósito (opcionalmente del efectivo de la caja), cheque, nota de débito o de crédito */
-        post: operations["registrar_1"];
+        post: operations["registrar_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1095,7 +1146,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_6"];
+        post: operations["anular_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1333,6 +1384,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fiscal/608": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 608 (comprobantes anulados) del periodo AAAAMM */
+        get: operations["f608"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fiscal/608/txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["f608Txt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/fiscal/607": {
         parameters: {
             query?: never;
@@ -1473,6 +1557,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["pago"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxp/notas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1682,7 +1782,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_19"];
+        get: operations["obtener_20"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1698,7 +1798,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_20"];
+        get: operations["obtener_21"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1835,6 +1935,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fiscal/anulaciones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminarAnulacion"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2484,6 +2600,27 @@ export interface components {
             datos: components["schemas"]["UsuarioRequest"];
             password: string;
         };
+        ComprobanteAnuladoRequest: {
+            ncf: string;
+            /** Format: date */
+            fechaComprobante: string;
+            /** Format: date */
+            fechaAnulacion?: string;
+            tipoAnulacion: string;
+            motivo?: string;
+        };
+        ComprobanteAnuladoResponse: {
+            /** Format: int64 */
+            id?: number;
+            ncf?: string;
+            /** Format: date */
+            fechaComprobante?: string;
+            /** Format: date */
+            fechaAnulacion?: string;
+            tipoAnulacion?: string;
+            descripcionTipo?: string;
+            motivo?: string;
+        };
         EcfSecuenciaRequest: {
             /** Format: int32 */
             tipoEcf: number;
@@ -2627,6 +2764,61 @@ export interface components {
             formas?: components["schemas"]["PagoRequest"][];
         };
         PagoProveedorAnularRequest: {
+            motivo: string;
+        };
+        NotaProveedorLineaRequest: {
+            /** Format: int64 */
+            compraLineaId: number;
+            cantidad: number;
+        };
+        NotaProveedorRequest: {
+            /** @enum {string} */
+            tipo: "CREDITO" | "DEBITO";
+            /** Format: int64 */
+            compraId: number;
+            /** Format: date */
+            fecha?: string;
+            ncf?: string;
+            concepto: string;
+            subtotal?: number;
+            itbis?: number;
+            lineas?: components["schemas"]["NotaProveedorLineaRequest"][];
+        };
+        NotaProveedorLineaResponse: {
+            /** Format: int64 */
+            compraLineaId?: number;
+            /** Format: int64 */
+            articuloId?: number;
+            cantidad?: number;
+            importe?: number;
+            itbis?: number;
+        };
+        NotaProveedorResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** @enum {string} */
+            tipo?: "CREDITO" | "DEBITO";
+            /** Format: int64 */
+            proveedorId?: number;
+            /** Format: int64 */
+            compraId?: number;
+            /** Format: date */
+            fecha?: string;
+            ncf?: string;
+            concepto?: string;
+            subtotal?: number;
+            itbis?: number;
+            total?: number;
+            devuelveInventario?: boolean;
+            /** @enum {string} */
+            estado?: "EMITIDA" | "ANULADA";
+            motivoAnulacion?: string;
+            balanceCompra?: number;
+            lineas?: components["schemas"]["NotaProveedorLineaResponse"][];
+        };
+        NotaProveedorAnularRequest: {
             motivo: string;
         };
         ReciboAplicacionRequest: {
@@ -2847,6 +3039,8 @@ export interface components {
             emitirComprobanteCompras?: boolean;
         };
         CompraLineaResponse: {
+            /** Format: int64 */
+            id?: number;
             /** Format: int32 */
             linea?: number;
             /** Format: int64 */
@@ -3250,6 +3444,23 @@ export interface components {
             almacenId?: number;
             cantidad?: number;
         };
+        Formato608Linea: {
+            ncf?: string;
+            /** Format: date */
+            fechaComprobante?: string;
+            tipoAnulacion?: string;
+            descripcionTipo?: string;
+            origen?: string;
+            /** Format: int64 */
+            origenId?: number;
+            motivo?: string;
+        };
+        Formato608Reporte: {
+            rnc?: string;
+            periodo?: string;
+            lineas?: components["schemas"]["Formato608Linea"][];
+            advertencias?: string[];
+        };
         Formato607Linea: {
             rncCedula?: string;
             tipoId?: string;
@@ -3392,6 +3603,24 @@ export interface components {
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PagoProveedorResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            empty?: boolean;
+        };
+        PageNotaProveedorResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["NotaProveedorResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
@@ -5541,6 +5770,53 @@ export interface operations {
             };
         };
     };
+    anulaciones: {
+        parameters: {
+            query: {
+                desde: string;
+                hasta: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ComprobanteAnuladoResponse"][];
+                };
+            };
+        };
+    };
+    anular_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComprobanteAnuladoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ComprobanteAnuladoResponse"];
+                };
+            };
+        };
+    };
     secuencias: {
         parameters: {
             query?: never;
@@ -5749,6 +6025,80 @@ export interface operations {
             };
         };
     };
+    buscar_2: {
+        parameters: {
+            query: {
+                proveedorId?: number;
+                compraId?: number;
+                p: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageNotaProveedorResponse"];
+                };
+            };
+        };
+    };
+    registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotaProveedorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotaProveedorResponse"];
+                };
+            };
+        };
+    };
+    anular_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotaProveedorAnularRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotaProveedorResponse"];
+                };
+            };
+        };
+    };
     recibos: {
         parameters: {
             query: {
@@ -5799,7 +6149,7 @@ export interface operations {
             };
         };
     };
-    anular_3: {
+    anular_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5960,7 +6310,7 @@ export interface operations {
             };
         };
     };
-    buscar_2: {
+    buscar_3: {
         parameters: {
             query: {
                 desde?: string;
@@ -6011,7 +6361,7 @@ export interface operations {
             };
         };
     };
-    anular_4: {
+    anular_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6061,7 +6411,7 @@ export interface operations {
             };
         };
     };
-    buscar_3: {
+    buscar_4: {
         parameters: {
             query: {
                 proveedorId?: number;
@@ -6087,7 +6437,7 @@ export interface operations {
             };
         };
     };
-    registrar: {
+    registrar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6111,7 +6461,7 @@ export interface operations {
             };
         };
     };
-    anular_5: {
+    anular_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6700,7 +7050,7 @@ export interface operations {
             };
         };
     };
-    buscar_4: {
+    buscar_5: {
         parameters: {
             query: {
                 cuentaId?: number;
@@ -6726,7 +7076,7 @@ export interface operations {
             };
         };
     };
-    registrar_1: {
+    registrar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -6750,7 +7100,7 @@ export interface operations {
             };
         };
     };
-    anular_6: {
+    anular_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -7146,6 +7496,50 @@ export interface operations {
             };
         };
     };
+    f608: {
+        parameters: {
+            query: {
+                periodo: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Formato608Reporte"];
+                };
+            };
+        };
+    };
+    f608Txt: {
+        parameters: {
+            query: {
+                periodo: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
     f607: {
         parameters: {
             query: {
@@ -7344,6 +7738,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PagoProveedorResponse"];
+                };
+            };
+        };
+    };
+    obtener_19: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotaProveedorResponse"];
                 };
             };
         };
@@ -7613,7 +8029,7 @@ export interface operations {
             };
         };
     };
-    obtener_19: {
+    obtener_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -7635,7 +8051,7 @@ export interface operations {
             };
         };
     };
-    obtener_20: {
+    obtener_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -7822,6 +8238,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthPerfilResponse"];
                 };
+            };
+        };
+    };
+    eliminarAnulacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -64,7 +64,7 @@ public class CompraService {
                           /** true: el suplidor es informal y emitimos nosotros el Comprobante de Compras (e-CF 41). */
                           Boolean emitirComprobanteCompras) {}
 
-    public record LineaResponse(int linea, Long articuloId, BigDecimal cantidad, BigDecimal costoUnitario,
+    public record LineaResponse(Long id, int linea, Long articuloId, BigDecimal cantidad, BigDecimal costoUnitario,
                                 BigDecimal descuento, BigDecimal tasaItbis, BigDecimal importe, BigDecimal itbis,
                                 BigDecimal costoFinal) {}
 
@@ -81,13 +81,14 @@ public class CompraService {
                     c.getComentario(), c.getSubtotal(), c.getTotalDescuento(), c.getTotalItbis(), c.getFlete(), c.getTotal(),
                     c.getItbisRetenido(), c.getIsrRetenido(), c.aPagar(), c.getBalance(), c.getEstado(),
                     c.getTipoBienServicio(), c.getTipoRetencionIsr(), c.getEncfCompra(), c.getEcfDocumentoId(),
-                    c.getLineas().stream().map(l -> new LineaResponse(l.getLinea(), l.getArticuloId(), l.getCantidad(),
+                    c.getLineas().stream().map(l -> new LineaResponse(l.getId(), l.getLinea(), l.getArticuloId(), l.getCantidad(),
                             l.getCostoUnitario(), l.getDescuento(), l.getTasaItbis(), l.getImporte(), l.getItbis(),
                             l.getCostoFinal())).toList());
         }
     }
 
     private final CompraRepository repo;
+    private final NotaProveedorRepository notas;
     private final ProveedorService proveedores;
     private final AlmacenService almacenes;
     private final ArticuloService articulos;
@@ -210,6 +211,9 @@ public class CompraService {
         Long cia = user.companiaId();
         Compra c = cargar(cia, id);
         if (c.getEstado() == Compra.Estado.ANULADA) throw new BusinessException("COMPRA_ANULADA", "La compra ya está anulada");
+        if (notas.existsByCompraIdAndEstado(c.getId(), NotaProveedor.Estado.EMITIDA)) {
+            throw new BusinessException("COMPRA_CON_NOTAS", "La compra tiene notas de crédito/débito del suplidor; anúlelas primero");
+        }
         if (c.getBalance().compareTo(c.aPagar()) != 0) {
             throw new BusinessException("COMPRA_CON_PAGOS", "La compra tiene pagos aplicados; anule los pagos primero");
         }

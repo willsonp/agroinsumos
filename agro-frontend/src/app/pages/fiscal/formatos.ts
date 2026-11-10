@@ -7,31 +7,42 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
 import type { S } from '../../api/tipos';
 import { descargar, params } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 
-type Reporte = S['Formato606Reporte'] | S['Formato607Reporte'];
+type Reporte = S['Formato606Reporte'] | S['Formato607Reporte'] | S['Formato608Reporte'];
 
-/** Formatos de envío 606 (compras) y 607 (ventas) de la DGII. */
+const TIPOS_ANULACION: [string, string][] = [['01', 'Deterioro de factura preimpresa'], ['02', 'Errores de impresión (preimpresa)'],
+  ['03', 'Impresión defectuosa'], ['04', 'Corrección de la información'], ['05', 'Cambio de productos'], ['06', 'Devolución de productos'],
+  ['07', 'Omisión de productos'], ['08', 'Errores en secuencia de NCF'], ['09', 'Por cese de operaciones'], ['10', 'Pérdida o hurto de talonarios']];
+
+/** Formatos de envío 606 (compras), 607 (ventas) y 608 (comprobantes anulados) de la DGII. */
 @Component({
   selector: 'app-formatos',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule],
+  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule],
   templateUrl: './formatos.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; font-size: 13px; td, th { padding: 5px 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; white-space: nowrap; } }
     .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 12px 0;
       div { font: var(--mat-sys-title-large); } label { display: block; font: var(--mat-sys-label-medium); color: var(--mat-sys-on-surface-variant); } }
+    .grid-anul { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; align-items: start;
+      .motivo { grid-column: span 2; } .registrar { margin-top: 8px; justify-self: start; } }
+    @media (max-width: 600px) { .grid-anul .motivo { grid-column: auto; } }
     .advertencias { background: #fff1c2; border-radius: 8px; padding: 8px 16px; li { margin: 4px 0; } }`,
 })
 export class Formatos {
   private readonly http = inject(HttpClient);
   private readonly notif = inject(Notificacion);
-  protected formato: '606' | '607' = '607';
+  protected formato: '606' | '607' | '608' = '607';
   protected periodo = this.periodoAnterior();
   protected incluirEcf = true;
   protected readonly reporte = signal<Reporte | null>(null);
   protected readonly r606 = () => this.reporte() as S['Formato606Reporte'];
   protected readonly r607 = () => this.reporte() as S['Formato607Reporte'];
+  protected readonly r608 = () => this.reporte() as S['Formato608Reporte'];
+  protected readonly tiposAnulacion = TIPOS_ANULACION;
+  protected anul = this.anulacionVacia();
 
   constructor() { this.generar(); }
 
@@ -50,6 +61,21 @@ export class Formatos {
     this.http.get<Reporte>(`/api/v1/fiscal/${this.formato}`, { params: params({ periodo: this.aaaamm(), incluirEcf: this.formato === '607' ? this.incluirEcf : null }) })
       .subscribe({ next: (r) => this.reporte.set(r), error: (e) => this.notif.error(e) });
   }
+
+  protected registrarAnulacion(): void {
+    const a = this.anul;
+    this.http.post('/api/v1/fiscal/anulaciones', { ncf: a.ncf.trim().toUpperCase(), fechaComprobante: a.fechaComprobante,
+      fechaAnulacion: a.fechaAnulacion || undefined, tipoAnulacion: a.tipoAnulacion, motivo: a.motivo || undefined }).subscribe({
+      next: () => { this.notif.ok(`Comprobante ${a.ncf.toUpperCase()} registrado como anulado`); this.anul = this.anulacionVacia(); this.generar(); },
+      error: (e) => this.notif.error(e) });
+  }
+
+  protected eliminarAnulacion(id: number): void {
+    this.http.delete(`/api/v1/fiscal/anulaciones/${id}`).subscribe({
+      next: () => { this.notif.ok('Anulación quitada'); this.generar(); }, error: (e) => this.notif.error(e) });
+  }
+
+  private anulacionVacia() { return { ncf: '', fechaComprobante: '', fechaAnulacion: '', tipoAnulacion: '04', motivo: '' }; }
 
   protected txt(): void {
     const rep = this.reporte()!;
