@@ -105,6 +105,11 @@ class ReportesIntegrationTest extends IntegrationTestBase {
         var csv = mvc.perform(get("/api/v1/reportes/ventas-por-fecha/csv").header("Authorization", "Bearer " + admin)).andReturn().getResponse();
         String texto = csv.getContentAsString(StandardCharsets.UTF_8);
         assertThat(texto).startsWith("﻿Ventas resumidas por fecha").contains("Fecha,Facturas,Contado").contains("TOTAL");
+        // Inyección de fórmulas: un nombre que empieza con "=" sale como texto en Excel
+        jdbc.update("update proveedor set nombre = '=1+1 Cibao' where id = ?", proveedor);
+        String csvSaldos = mvc.perform(get("/api/v1/reportes/saldos-suplidores/csv").header("Authorization", "Bearer " + admin))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(csvSaldos).contains("'=1+1 Cibao").doesNotContain(",=1+1");
 
         // Rango inválido
         assertThat(JsonPath.<String>read(consultar(admin, "/api/v1/reportes/ventas-por-fecha?desde=2026-02-01&hasta=2026-01-01", 422), "$.code"))

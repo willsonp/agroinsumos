@@ -13,6 +13,13 @@ mvn spring-boot:run                         # perfil "dev": admin / Admin123!, a
                                             # secuencias e-NCF y certificado de PRUEBA para poder facturar
 ```
 
+Con el `.jar` (o desde el IDE) el perfil se indica explícitamente; **sin perfil el servidor no arranca** si falta
+`JWT_SECRET`, y nunca arranca fuera de `dev`/`test` con el secreto de desarrollo (es público en este repositorio):
+
+```bash
+java -jar target/agro-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=dev    # pruebas locales
+```
+
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - Pruebas (requieren la BD `agrodb_test`): `mvn test`
 
@@ -25,7 +32,9 @@ curl -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/json
 
 | Variable | Descripción |
 |---|---|
-| `SPRING_PROFILES_ACTIVE` | `prod` (o `prod,oauth2` para login social) |
+| `SPRING_PROFILES_ACTIVE` | `prod` (o `prod,oauth2` para login social). **Nunca `dev` en producción** |
+| `API_DOCS` | `true` para publicar Swagger / `/v3/api-docs` (desactivado por defecto fuera de `dev`) |
+| `FORWARD_HEADERS` | `native` si el backend está detrás de un proxy inverso (IP real del cliente para el freno de intentos) |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Conexión PostgreSQL |
 | `JWT_SECRET` | **Obligatorio**, ≥ 32 bytes aleatorios (`openssl rand -base64 48`) |
 | `CORS_ORIGINS` | Orígenes del frontend Angular, separados por coma (por defecto `http://localhost:4200`) |

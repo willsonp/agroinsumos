@@ -114,6 +114,8 @@ public class ReporteService {
     private static String csvCampo(Object v) {
         if (v == null) return "";
         String s = v instanceof LocalDate d ? DMY.format(d) : v instanceof BigDecimal b ? b.toPlainString() : v.toString();
+        // Inyección de fórmulas (OWASP CSV Injection): un texto que empieza con = + - @ se abriría como fórmula en Excel
+        if (v instanceof CharSequence && !s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
         return s.matches("[^,\"\\n\\r]*") ? s : "\"" + s.replace("\"", "\"\"") + "\"";
     }
 }

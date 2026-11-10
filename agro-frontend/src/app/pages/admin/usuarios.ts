@@ -71,7 +71,7 @@ export class Usuarios {
 
   protected password(u: Usuario): void {
     this.dialog.open(ConfirmarDialog, { data: { titulo: `Nueva contraseña para ${u.username}`, accion: 'Cambiar',
-      mensaje: 'Mínimo 8 caracteres. Se cerrarán las sesiones abiertas del usuario.', pedirMotivo: 'Nueva contraseña' } })
+      mensaje: 'Mínimo 12 caracteres. Se cerrarán las sesiones abiertas del usuario.', pedirMotivo: 'Nueva contraseña' } })
       .afterClosed().subscribe((p?: string) => p && this.http.put(`/api/v1/usuarios/${u.id}/password`, { passwordNueva: p }).subscribe({
         next: () => this.notif.ok('Contraseña actualizada'), error: (e) => this.notif.error(e) }));
   }
@@ -114,7 +114,7 @@ export class UsuarioDialog {
     nivel: [this.usuario?.nivel ?? 'USUARIO', Validators.required],
     nombre: [this.usuario?.nombre ?? '', Validators.required], apellidos: [this.usuario?.apellidos ?? ''],
     cedula: [this.usuario?.cedula ?? '', Validators.pattern(/^\d{11}$/)], correo: [this.usuario?.correo ?? '', Validators.email],
-    password: ['', this.usuario ? [] : [Validators.required, Validators.minLength(8)]],
+    password: ['', this.usuario ? [] : [Validators.required, Validators.minLength(12)]],
   });
 
   protected guardar(): void {

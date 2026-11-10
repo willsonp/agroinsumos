@@ -22,13 +22,13 @@ public final class UsuarioDtos {
 
     public record CrearUsuarioRequest(
             @NotNull @jakarta.validation.Valid UsuarioRequest datos,
-            @NotBlank @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") String password) {}
+            @NotBlank @Size(min = 12, max = 72, message = "La contraseña debe tener entre 12 y 72 caracteres") String password) {}
 
     public record CambiarPasswordRequest(
             @NotBlank String passwordActual,
-            @NotBlank @Size(min = 8, max = 72) String passwordNueva) {}
+            @NotBlank @Size(min = 12, max = 72, message = "La contraseña debe tener entre 12 y 72 caracteres") String passwordNueva) {}
 
-    public record ResetPasswordRequest(@NotBlank @Size(min = 8, max = 72) String passwordNueva) {}
+    public record ResetPasswordRequest(@NotBlank @Size(min = 12, max = 72, message = "La contraseña debe tener entre 12 y 72 caracteres") String passwordNueva) {}
 
     public record UsuarioResponse(Long id, String cedula, String nombre, String apellidos, String direccion,
                                   String username, Nivel nivel, String sexo, String correo, Integer turnoId,

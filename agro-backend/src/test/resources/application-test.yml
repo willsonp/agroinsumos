@@ -3,6 +3,9 @@ spring:
     url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/agrodb_test}
     username: ${TEST_DB_USER:agro}
     password: ${TEST_DB_PASSWORD:agro}
+springdoc:
+  api-docs.enabled: true
+
 app:
   respaldo:
     cron: "-"   # en pruebas no se ejecuta el respaldo automático

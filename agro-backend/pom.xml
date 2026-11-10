@@ -121,6 +121,10 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <!-- Solo "mvn spring-boot:run" usa el perfil de desarrollo; el .jar exige configurar el perfil -->
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

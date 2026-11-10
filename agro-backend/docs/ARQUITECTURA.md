@@ -515,3 +515,29 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `ADMIN_USUARIOS` | usuarios y permisos | **admin** (evita que alguien se auto-eleve) |
 
 **Perfil típico de cajero:** `VENTAS_POS` + `CAJA_SESION` (+ `CXC_RECIBOS` si cobra cuentas a crédito).
+
+## 9. Seguridad: verificación OWASP (Top 10 2021 / ASVS 4.0)
+Revisión del 10/11/2026. Objetivo: **ASVS nivel 2** (aplicación que maneja datos de negocio y fiscales).
+Estado: ✅ cumple · ⚠️ pendiente de despliegue/operación · ❌ no cumple.
+
+| OWASP Top 10 | Controles en la aplicación | Estado |
+|---|---|---|
+| A01 Control de acceso | Toda ruta `/api/**` exige JWT; `anyRequest().denyAll()` para lo no declarado. Cada endpoint declara `@PreAuthorize` (rol + opción de menú) y `CoberturaAutorizacionTest` falla si uno nuevo no lo hace. Los permisos se leen de la base en cada petición. Cada consulta filtra por la compañía del token (`findByIdAndCompaniaId`, `CrudService.cargar`): no se puede leer un documento de otra compañía cambiando el id. **Nuevo:** el JWT se contrasta con la base en cada petición (activo, no bloqueado, mismo nivel y compañía): desactivar o bajar el nivel a un usuario tiene efecto inmediato. | ✅ |
+| A02 Fallas criptográficas | Contraseñas con BCrypt (costo 12); los SHA-1 del sistema anterior se migran a BCrypt al primer inicio de sesión. JWT HS256 con secreto ≥ 32 bytes obligatorio. Refresh tokens aleatorios (256 bits) guardados solo como hash SHA-256. HSTS (1 año) cuando se sirve por HTTPS. | ✅ · ⚠️ servir **solo por HTTPS** |
+| A03 Inyección | JPA/JdbcTemplate con parámetros en todas las consultas; el SQL dinámico (reportes, fuentes contables) solo concatena constantes del código. XML de la DGII con parser endurecido contra XXE. Angular escapa todo lo que muestra (no se usa `innerHTML` ni `bypassSecurityTrust`). **Nuevo:** CSV/Excel neutraliza fórmulas (`=`, `+`, `-`, `@`). | ✅ |
+| A04 Diseño inseguro | Reglas de negocio en el servidor (saldos, límites de crédito, períodos cerrados, conciliaciones, NCF únicos), bloqueo optimista/pesimista en documentos, anulaciones solo por supervisor y con motivo. | ✅ |
+| A05 Configuración insegura | Errores sin traza ni mensaje interno (`ProblemDetail`); actuator solo `health,info`; CORS por lista de orígenes; cabeceras `X-Content-Type-Options`, `X-Frame-Options: DENY`, CSP `default-src 'none'`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`. **Nuevo:** ya no hay perfil `dev` por defecto; fuera de `dev`/`test` el servidor **no arranca** con el secreto JWT publicado en el repositorio y advierte si la base usa la contraseña por defecto; Swagger desactivado salvo `API_DOCS=true`. | ✅ · ⚠️ CSP del frontend en el servidor web |
+| A06 Componentes vulnerables | Spring Boot 4.0.9, Angular 22, driver PostgreSQL 42.7.14; `npm audit`: 0 vulnerabilidades. **Nuevo:** Dependabot (`.github/dependabot.yml`) revisa Maven y npm cada semana. | ✅ · ⚠️ activar alertas en GitHub |
+| A07 Identificación y autenticación | Bloqueo de usuario tras 5 intentos (15 min); mismo mensaje para usuario inexistente o clave errónea; refresh token rotativo con detección de reutilización (revoca la familia); cambio/reseteo de contraseña y desactivación cierran todas las sesiones; token de acceso de 15 min. **Nuevo:** freno por IP (20 fallos / 15 min → 429) y contraseñas de **mínimo 12 caracteres** (ASVS 2.1.1). | ✅ · ⚠️ MFA para administradores (ASVS L2 2.2.x) |
+| A08 Integridad de software y datos | e-CF firmados (XMLDSig) y validados contra el XSD; Flyway con migraciones versionadas e inmutables; respaldos escritos en temporal y renombrados. | ✅ |
+| A09 Registro y monitoreo | Usuario y fecha en cada documento y anulación; **nuevo:** log `SEGURIDAD` de inicios de sesión correctos y fallidos (usuario, IP), bloqueos, rechazos por IP y reutilización de refresh tokens. | ✅ · ⚠️ conservar/centralizar logs |
+| A10 SSRF | El servidor solo abre conexiones a las URLs de la DGII (configuración) y a impresoras ZPL registradas por un administrador, limitadas a los puertos 9100–9109. | ✅ |
+
+**Pendiente para producción (operación, no código):**
+1. Servir backend y frontend **solo por HTTPS** (certificado válido) detrás de nginx/IIS con `FORWARD_HEADERS=native`.
+2. En el servidor web del frontend: `Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' <url-api>; frame-ancestors 'none'`.
+3. `JWT_SECRET` propio (`openssl rand -base64 48`), contraseña fuerte para el usuario de PostgreSQL (SCRAM) y PostgreSQL sin
+   acceso desde fuera del servidor.
+4. Activar *Dependabot alerts* y *secret scanning* en GitHub (el repositorio es público: nunca subir `.p12` reales, respaldos ni `.env`).
+5. Guardar los logs al menos 90 días y revisar los eventos `SEGURIDAD`.
+6. Evaluar MFA (TOTP) para administradores y supervisores; es lo que falta para ASVS nivel 2 completo en autenticación.
