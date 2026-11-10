@@ -93,7 +93,7 @@ INSERT INTO compra (id, compania_id, numero, proveedor_id, fecha, ncf_proveedor,
 SELECT c.idcompra, :cia, c.idcompra, c.suplidor, coalesce(c.fecha, date '2000-01-01'), n.ncf,
        CASE WHEN upper(c.condicion) IN ('CR', 'C', 'E') THEN 'CREDITO' ELSE 'CONTADO' END,
        greatest(coalesce(c.dias, 0), 0),
-       coalesce(c.fechavence, coalesce(c.fecha, date '2000-01-01') + greatest(coalesce(c.dias, 0), 0)),
+       coalesce(c.fechavence, coalesce(c.fecha, date '2000-01-01') + greatest(coalesce(c.dias, 0), 0)::int),
        (SELECT id FROM almacen WHERE compania_id = :cia AND principal), c.ordennum::text, left(c.comentario, 300),
        greatest(round(coalesce(c.monto, 0)::numeric - coalesce(l.itbis, 0) - coalesce(c.flete, 0)::numeric, 2), 0),
        coalesce(l.descuento, 0), coalesce(l.itbis, 0), coalesce(c.flete, 0)::numeric,
@@ -194,5 +194,13 @@ JOIN (SELECT c.proveedor_id, sum(c.total - c.itbis_retenido - c.isr_retenido) - 
                      JOIN pago_proveedor pp ON pp.id = a.pago_id WHERE pp.estado = 'EMITIDO' GROUP BY 1) a ON a.compra_id = c.id
        WHERE c.estado <> 'ANULADA' GROUP BY 1) e ON e.proveedor_id = p.id
 WHERE abs(b.balance_compras - e.estado_cuenta) > 0.01;
+
+-- 5) Compras del sistema anterior que NO se migraron (suplidor inexistente o NCF repetido): registrarlas a mano
+SELECT c.idcompra, c.fecha, c.suplidor, round(c.monto::numeric, 2) monto, round(c.balance::numeric, 2) balance,
+       CASE WHEN NOT EXISTS (SELECT 1 FROM proveedor p WHERE p.id = c.suplidor) THEN 'suplidor ' || c.suplidor || ' no existe'
+            ELSE 'revisar' END motivo
+FROM legacy.compra c
+WHERE NOT EXISTS (SELECT 1 FROM compra n WHERE n.id = c.idcompra)
+ORDER BY c.fecha;
 
 COMMIT;

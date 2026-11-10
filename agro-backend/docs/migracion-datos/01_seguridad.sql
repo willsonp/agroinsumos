@@ -46,12 +46,14 @@ SELECT u.idusuario, coalesce(u.idcompania, 1), nullif(regexp_replace(u.cedula, '
             ELSE '{sha1legacy}' || u.idusuario || '$' || lower(trim(u.userpassw)) END,
        CASE WHEN upper(u.nivel) IN ('A','S','U','O') THEN upper(u.nivel) ELSE 'U' END,
        CASE WHEN upper(u.sexo) IN ('M','F') THEN upper(u.sexo) END,
-       nullif(lower(trim(u.correo)), ''), u.rutaimagen, coalesce(u.turno, 1),
+       CASE WHEN row_number() OVER (PARTITION BY nullif(lower(trim(u.correo)), '') ORDER BY u.idusuario) = 1
+            THEN nullif(lower(trim(u.correo)), '') END, u.rutaimagen, coalesce(u.turno, 1),
        CASE WHEN u.estado = 'A' THEN 'A' ELSE 'I' END, coalesce(u.actualizacion, now()), 'migracion'
 FROM legacy.usuario u;
 
--- Correos duplicados: se conserva el primero (el índice único lo exige)
--- (si falla el INSERT por uk_usuario_correo, limpie legacy.usuario.correo antes)
+-- Correos duplicados: se conserva en el primer usuario y queda vacío en los demás (el índice único lo exige).
+SELECT 'Correo repetido: quedó solo en el usuario ' || min(idusuario) AS aviso, lower(trim(correo)) correo, count(*) usuarios
+FROM legacy.usuario WHERE nullif(trim(correo), '') IS NOT NULL GROUP BY 2 HAVING count(*) > 1;
 
 -- 3) Menú: el catálogo de opciones es nuevo (V8__menu_opciones.sql, códigos del frontend web).
 --    Los nombres de componentes Swing (Obj_Contenedor / Nombre_ObjHijo) no tienen equivalente,

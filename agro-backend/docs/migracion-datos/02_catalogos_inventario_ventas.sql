@@ -162,7 +162,7 @@ INSERT INTO factura (id, compania_id, numero, fecha, condicion, dias_credito, fe
                      cliente_nombre, cliente_rnc, vendedor_id, almacen_id, tipo_precio, comentario,
                      monto_gravado, total_itbis, total, balance, ncf_legacy, estado, usuario_id, actualizado_por)
 SELECT f.nofactura, :cia, f.nofactura, coalesce(f.fecha, f.actualizacion::date, date '2000-01-01'),
-       CASE WHEN f.tipofactura = 'E' THEN 'CREDITO' ELSE 'CONTADO' END,
+       CASE WHEN upper(f.tipofactura) IN ('C', 'E') THEN 'CREDITO' ELSE 'CONTADO' END,   -- A = contado; C (o E en otras versiones) = crédito
        greatest(coalesce(f.condiciondias, 0), 0), f.fechavencimiento, f.idcliente,
        coalesce(nullif(trim(f.razonsocial), ''), nullif(trim(f.nombrecli), ''), c.nombre), c.rnc_cedula,
        v.id, (SELECT id FROM almacen WHERE compania_id = :cia AND principal), c.tipo_precio, left(f.comentario, 600),
@@ -211,7 +211,7 @@ END $$;
 SELECT 'clientes' AS entidad, (SELECT count(*) FROM legacy.clientex) AS legacy, (SELECT count(*) FROM cliente) AS nuevo
 UNION ALL SELECT 'articulos', (SELECT count(*) FROM legacy.articulo), (SELECT count(*) FROM articulo)
 UNION ALL SELECT 'facturas', (SELECT count(*) FROM legacy.factura), (SELECT count(*) FROM factura)
-UNION ALL SELECT 'CxC pendiente', (SELECT round(sum(balance)::numeric, 2) FROM legacy.factura WHERE estado <> 'N' AND tipofactura = 'E'),
+UNION ALL SELECT 'CxC pendiente', (SELECT round(sum(balance)::numeric, 2) FROM legacy.factura WHERE estado <> 'N' AND upper(tipofactura) IN ('C', 'E')),
                                   (SELECT sum(balance) FROM factura WHERE condicion = 'CREDITO' AND estado <> 'ANULADA');
 
 COMMIT;

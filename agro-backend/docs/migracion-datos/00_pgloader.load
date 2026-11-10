@@ -1,0 +1,19 @@
+-- =====================================================================
+-- Paso 0: copiar la base MySQL del sistema anterior al esquema "legacy" de PostgreSQL.
+-- Requisitos: la base nueva ya creada por el backend (Flyway V1..), MySQL/MariaDB con el respaldo restaurado
+--             y pgloader (https://pgloader.io). Ajuste usuario/clave/servidor y ejecute:
+--     pgloader 00_pgloader.load
+-- Los montos FLOAT/DOUBLE se convierten a NUMERIC (exactos): los scripts 01..08 redondean a 2 decimales.
+-- =====================================================================
+LOAD DATABASE
+  FROM mysql://usuario_mysql:clave_mysql@127.0.0.1/pv_agroinsumos
+  INTO postgresql://agro:clave_postgres@127.0.0.1/agrodb
+ WITH include drop, create tables, no foreign keys, create no indexes, downcase identifiers, workers = 4, concurrency = 1
+ SET PostgreSQL PARAMETERS maintenance_work_mem to '256MB'
+ CAST type int to integer drop typemod,
+      type datetime to timestamp drop default drop not null using zero-dates-to-null,
+      type date drop not null drop default using zero-dates-to-null,
+      type float to numeric drop typemod,
+      type double to numeric drop typemod,
+      type decimal to numeric keep typemod
+ ALTER SCHEMA 'pv_agroinsumos' RENAME TO 'legacy';
