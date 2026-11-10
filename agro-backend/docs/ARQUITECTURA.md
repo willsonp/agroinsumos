@@ -102,14 +102,15 @@ FIRMADO ─► POST /{id}/enviar (o tarea programada) ─► DGII ─► ENVIADO
 | 3 | Catálogos | zona, ciudad, unidad, turno, departamento, almacen, vendedor, clientex, proveedor, deta_localizador | FrmCiudad, FrmUnidad, FrmClientes, FrmProveedor, FrmDepartamento | ✅ Fase 2 |
 | 4 | Inventario | articulo, invalmacen, precio, ajuste(+detalle), transentsalida(+detalle) | FrmArticulos, FrmAjusteInventario, FrmEntradaYSalida, FrmMovimientoArticulo | ✅ Fase 2 |
 | 5 | Ventas / Facturación | factura, detalle_factura, cotizacion, devolucion (+detalles) | FrmFactura, FrmDevolucion | ✅ Fase 2 (**emite e-CF**) |
-| 5b | Ventas pendientes | facturapro (conduces), apartado, cuotas/financiamiento | FrmFactura (financiada) | Siguiente |
+| 5b | Ventas pendientes | facturapro (conduces), apartado, cuotas/financiamiento | FrmFactura (financiada) | ✅ Fase 8 |
 | 6 | Cuentas por cobrar | facturacredito, reciboingreso, detalle_recibo, notadebito | FrmReciboIngreso, FrmNotaDebitoCXC, FrmConsultaEstadoCuenteCXC, FrmConsultaAntiguedadSaldos | ✅ Fase 3 |
 | 7 | Compras / CxP | compra, deta_compra, pagocompra, deta_pago_compra, facturacreditocxp | FrmCompra, FrmPagoCompra, FrmConsultaAntiguedadSaldosCXP | ✅ Fase 3 |
-| 7b | CxP pendiente | notacreditocxp, notadebitocxp | FrmNotaCreditoCXP, FrmNotaDebitoCXP | Siguiente |
+| 7b | CxP: notas de suplidores | notacreditocxp, notadebitocxp | FrmNotaCreditoCXP, FrmNotaDebitoCXP | ✅ Fase 7 |
 | 10 | Formatos fiscales + e-CF 41/43 | gastos, tipogastos | FrmFormato606, FrmFormato607, FrmGastos | ✅ Fase 4 |
 | 8 | Caja | caja, cuadrecaja, detamonedascuadre, monedas, egresocaja, cajachica | FrmCaja, FrmArqueo, FrmEgresoCaja, FrmIngresoCaja, FrmCuadreCajaChica | ✅ Fase 3 |
-| 8b | Banco | banco, transaccionesbancarias, conciliacionbancaria | FrmBancos, FrmTransaccionesBanco, FrmConciliar | Siguiente |
-| 9 | Contabilidad | catalogo, entradadiario, transaccionesconta, cntcontabilidad, controlcuenta | Contabilidad/* | |
+| 8b | Banco | banco, transaccionesbancarias, conciliacionbancaria | FrmBancos, FrmTransaccionesBanco, FrmConciliar | ✅ Fase 5 |
+| 9 | Contabilidad | catalogo, entradadiario, transaccionesconta, cntcontabilidad, controlcuenta | Contabilidad/* | ✅ Fase 6 |
+| 10b | Formato 608, moneda extranjera | (nuevas) comprobante_anulado, tasa_cambio | — | ✅ Fases 7 y 9 |
 | — | No migrar | tmp* (18), probando, pruebaclase, clientex | variantes por cliente | Revisar con negocio |
 
 **Migración de datos:** pgloader copia MySQL a un esquema `legacy`, y un script por módulo (`docs/migracion-datos/NN_*.sql`)
@@ -334,6 +335,24 @@ Migración `V12__formato608_notas_proveedor.sql`.
 - Además: facturas con NCF del sistema anterior anuladas sin nota de crédito (tipo 04, con advertencia) y advertencia por cada
   e-CF rechazado sin anular: en facturación electrónica los e-NCF no usados se anulan en la Oficina Virtual (ANECF).
 
+## 5.8 Fase 8: Conduces, apartados y ventas financiadas
+Migración `V15__conduces_apartados_financiamiento.sql`; datos con `07_conduces_cuotas_apartados.sql`.
+
+- **Conduces** (`/api/v1/ventas/conduces`, opción `VENTAS_CONDUCES`): entrega de mercancía sin factura. Valida precios y
+  descuentos como la factura y descuenta el inventario al entregar. Uno o varios conduces abiertos del mismo cliente y
+  almacén se facturan juntos (e-CF a los precios del conduce, crédito o contado); la factura no vuelve a mover el inventario
+  (`factura.desde_conduce`). Anular (supervisor) solo conduces abiertos: la mercancía regresa. Se imprime con firmas.
+- **Apartados** (`/api/v1/ventas/apartados`, `VENTAS_APARTADOS`): el cliente separa mercancía con precios fijados. Cada abono
+  entra por la caja abierta (o banco) y aumenta su **saldo a favor** (anticipo). Saldado, se factura y se cobra con un recibo
+  de saldo a favor (sin caja); la mercancía sale al facturar. Cancelar (supervisor): devolver el efectivo desde la caja o
+  dejarlo como saldo a favor. Contabilidad (`ABONO_APARTADO`): Dr Caja/Tarjetas/Banco · Cr CxC del cliente.
+- **Ventas financiadas** (`/api/v1/cxc/financiamientos`, `CXC_FINANCIAMIENTO`): plan sobre una factura a crédito con saldo
+  (la inicial se cobra antes con un recibo normal). Interés total (%) sobre el saldo → nota de débito e-CF 33 exenta; cuotas
+  iguales (la última ajusta) semanales, quincenales o mensuales; la factura y la nota vencen con la última cuota.
+  Los cobros siguen siendo recibos a la factura y a la nota: lo cobrado después del plan se aplica a las cuotas en orden
+  (cálculo, sin tablas de saldo que mantener). **Mora**: % de lo pendiente de cada cuota vencida tras los días de gracia,
+  una vez por cuota, emitida como nota de débito (e-CF 33). Reporte de **cuotas vencidas** por cliente o zona con teléfono.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -399,6 +418,9 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `BANCO_CONCILIACION` | conciliación bancaria e historial | **supervisor** |
 | `COMPRAS_NOTAS` | notas de crédito / débito de suplidores | **supervisor** |
 | `BANCO_TASAS` | registrar / quitar tasas de cambio (la consulta es libre) | **supervisor** |
+| `VENTAS_CONDUCES` | conduces y su facturación | anular: **supervisor** |
+| `VENTAS_APARTADOS` | apartados y abonos, facturar | cancelar: **supervisor** |
+| `CXC_FINANCIAMIENTO` | planes, cuotas vencidas | crear plan, cobrar mora, cancelar: **supervisor** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |

@@ -66,6 +66,16 @@ public class FacturaService {
     @Transactional
     public Factura crearEntidad(Long companiaId, AuthUser usuario, CrearFacturaRequest r,
                                 boolean preciosAutorizados, Long cotizacionId) {
+        return crearEntidad(companiaId, usuario, r, preciosAutorizados, cotizacionId, false);
+    }
+
+    /**
+     * @param mercanciaEntregada true al facturar conduces: la mercancía ya salió del inventario con el conduce,
+     *                           así que la factura no vuelve a moverlo.
+     */
+    @Transactional
+    public Factura crearEntidad(Long companiaId, AuthUser usuario, CrearFacturaRequest r,
+                                boolean preciosAutorizados, Long cotizacionId, boolean mercanciaEntregada) {
         Cliente cliente = clientes.cargarActiva(companiaId, r.clienteId());
         var almacen = almacenes.resolver(companiaId, r.almacenId());
         TipoPrecio lista = r.tipoPrecio() != null ? r.tipoPrecio() : cliente.getTipoPrecio();
@@ -98,6 +108,7 @@ public class FacturaService {
         f.setNumeroOrden(r.numeroOrden());
         f.setUsuarioId(usuario.usuarioId());
         f.setCotizacionId(cotizacionId);
+        f.setDesdeConduce(mercanciaEntregada);
 
         BigDecimal descuentos = BigDecimal.ZERO;
         BigDecimal costo = BigDecimal.ZERO;
@@ -131,7 +142,7 @@ public class FacturaService {
         f.setCostoTotal(costo.setScale(2, RoundingMode.HALF_UP));
         repo.save(f);
 
-        for (LineaPreparada lp : lineas) {
+        for (LineaPreparada lp : mercanciaEntregada ? List.<LineaPreparada>of() : lineas) {
             inventario.mover(new InventarioService.Movimiento(lp.articulo(), almacen.getId(), TipoMovimiento.VENTA,
                     lp.cantidad(), lp.articulo().getCostoPromedio(), DOC_TIPO, f.getId()));
         }

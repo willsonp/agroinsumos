@@ -12,6 +12,8 @@ export const NAVEGACION: Modulo[] = [
     { codigo: 'VENTAS_POS', nombre: 'Punto de venta', ruta: '/ventas/pos', icono: 'shopping_cart' },
     { codigo: 'VENTAS_FACTURAS', nombre: 'Facturas', ruta: '/ventas/facturas', icono: 'receipt_long' },
     { codigo: 'VENTAS_COTIZACIONES', nombre: 'Cotizaciones', ruta: '/ventas/cotizaciones', icono: 'request_page' },
+    { codigo: 'VENTAS_CONDUCES', nombre: 'Conduces', ruta: '/ventas/conduces', icono: 'local_shipping' },
+    { codigo: 'VENTAS_APARTADOS', nombre: 'Apartados', ruta: '/ventas/apartados', icono: 'bookmark_added' },
   ]},
   { nombre: 'Caja', icono: 'payments', opciones: [
     { codigo: 'CAJA_SESION', nombre: 'Mi caja', ruta: '/caja', icono: 'account_balance_wallet' },
@@ -20,6 +22,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Cuentas por Cobrar', icono: 'request_quote', opciones: [
     { codigo: 'CXC_RECIBOS', nombre: 'Cobros', ruta: '/cxc/cobros', icono: 'price_check' },
     { codigo: 'CXC_ESTADO_CUENTA', nombre: 'Estado de cuenta', ruta: '/cxc/estado-cuenta', icono: 'account_balance' },
+    { codigo: 'CXC_FINANCIAMIENTO', nombre: 'Ventas financiadas', ruta: '/cxc/financiamientos', icono: 'event_repeat' },
   ]},
   { nombre: 'Inventario', icono: 'inventory_2', opciones: [
     { codigo: 'INV_ARTICULOS', nombre: 'Artículos', ruta: '/inventario/articulos', icono: 'category' },

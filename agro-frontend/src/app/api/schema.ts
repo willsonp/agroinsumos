@@ -443,6 +443,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ventas/conduces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["buscar_2"];
+        put?: never;
+        /** Conduce: entrega de mercancía sin factura (sale del inventario) */
+        post: operations["crear_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/conduces/{id}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["anular_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/conduces/facturar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Factura uno o varios conduces abiertos del mismo cliente (emite el e-CF) */
+        post: operations["facturar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/apartados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["buscar_3"];
+        put?: never;
+        /** Nuevo apartado (opcionalmente con el primer abono) */
+        post: operations["crear_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/apartados/{id}/facturar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Factura el apartado saldado y lo cobra con los abonos */
+        post: operations["facturar_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/apartados/{id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/apartados/{id}/abonos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abono (el efectivo, tarjeta o cheque entra por la caja abierta del usuario) */
+        post: operations["abonar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios": {
         parameters: {
             query?: never;
@@ -452,7 +569,7 @@ export interface paths {
         };
         get: operations["listar_1"];
         put?: never;
-        post: operations["crear_2"];
+        post: operations["crear_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -485,7 +602,7 @@ export interface paths {
         get: operations["listar_3"];
         put?: never;
         /** Crea un ajuste/entrada/salida/transferencia en BORRADOR (no mueve inventario) */
-        post: operations["crear_3"];
+        post: operations["crear_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -518,7 +635,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_2"];
+        post: operations["anular_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -534,7 +651,7 @@ export interface paths {
         };
         get: operations["listar_4"];
         put?: never;
-        post: operations["crear_4"];
+        post: operations["crear_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -552,7 +669,7 @@ export interface paths {
         get: operations["anulaciones"];
         put?: never;
         /** Registra un NCF anulado (preimpreso, serie B o e-NCF no utilizado) para el 608 */
-        post: operations["anular_3"];
+        post: operations["anular_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -667,7 +784,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_2"];
+        get: operations["buscar_4"];
         put?: never;
         /** Nota de crédito (reduce la deuda; puede devolver mercancía) o de débito (la aumenta) de un suplidor */
         post: operations["registrar_1"];
@@ -686,7 +803,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_4"];
+        post: operations["anular_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -719,7 +836,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_5"];
+        post: operations["anular_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -737,6 +854,56 @@ export interface paths {
         put?: never;
         /** Nota de débito al cliente (emite e-CF 33 referenciando la factura) */
         post: operations["notaDebito"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxc/financiamientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["buscar_5"];
+        put?: never;
+        /** Financia el saldo de una factura a crédito en cuotas (el interés se emite como e-CF 33 exento) */
+        post: operations["crear_7"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxc/financiamientos/{id}/mora": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Emite la nota de débito por la mora de las cuotas vencidas */
+        post: operations["mora"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxc/financiamientos/{id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelar_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -785,7 +952,7 @@ export interface paths {
         };
         get: operations["listar_6"];
         put?: never;
-        post: operations["crear_5"];
+        post: operations["crear_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -850,10 +1017,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_3"];
+        get: operations["buscar_6"];
         put?: never;
         /** Asiento manual (entrada de diario) */
-        post: operations["crear_6"];
+        post: operations["crear_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -869,7 +1036,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_6"];
+        post: operations["anular_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -900,7 +1067,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_4"];
+        get: operations["buscar_7"];
         put?: never;
         /** Registra factura de suplidor: entra al inventario y actualiza costo promedio */
         post: operations["registrar_2"];
@@ -919,7 +1086,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_7"];
+        post: operations["anular_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -935,7 +1102,7 @@ export interface paths {
         };
         get: operations["listar_7"];
         put?: never;
-        post: operations["crear_7"];
+        post: operations["crear_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -951,7 +1118,7 @@ export interface paths {
         };
         get: operations["listar_8"];
         put?: never;
-        post: operations["crear_8"];
+        post: operations["crear_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -967,7 +1134,7 @@ export interface paths {
         };
         get: operations["listar_9"];
         put?: never;
-        post: operations["crear_9"];
+        post: operations["crear_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -983,7 +1150,7 @@ export interface paths {
         };
         get: operations["listar_10"];
         put?: never;
-        post: operations["crear_10"];
+        post: operations["crear_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -999,7 +1166,7 @@ export interface paths {
         };
         get: operations["listar_11"];
         put?: never;
-        post: operations["crear_11"];
+        post: operations["crear_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1015,7 +1182,7 @@ export interface paths {
         };
         get: operations["listar_12"];
         put?: never;
-        post: operations["crear_12"];
+        post: operations["crear_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1031,7 +1198,7 @@ export interface paths {
         };
         get: operations["listar_13"];
         put?: never;
-        post: operations["crear_13"];
+        post: operations["crear_16"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1047,7 +1214,7 @@ export interface paths {
         };
         get: operations["listar_14"];
         put?: never;
-        post: operations["crear_14"];
+        post: operations["crear_17"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1063,7 +1230,7 @@ export interface paths {
         };
         get: operations["listar_15"];
         put?: never;
-        post: operations["crear_15"];
+        post: operations["crear_18"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1177,7 +1344,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["buscar_5"];
+        get: operations["buscar_8"];
         put?: never;
         /** Depósito (opcionalmente del efectivo de la caja), cheque, nota de débito o de crédito */
         post: operations["registrar_3"];
@@ -1196,7 +1363,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["anular_8"];
+        post: operations["anular_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1212,7 +1379,7 @@ export interface paths {
         };
         get: operations["listar_16"];
         put?: never;
-        post: operations["crear_16"];
+        post: operations["crear_19"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1262,7 +1429,7 @@ export interface paths {
         };
         get: operations["listar_17"];
         put?: never;
-        post: operations["crear_17"];
+        post: operations["crear_20"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1375,6 +1542,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_17"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/conduces/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_18"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/apartados/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1558,7 +1757,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_18"];
+        get: operations["obtener_20"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1639,7 +1838,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_19"];
+        get: operations["obtener_21"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1688,6 +1887,39 @@ export interface paths {
             cookie?: never;
         };
         get: operations["notaDebito_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxc/financiamientos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_22"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cxc/financiamientos/vencidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuotas vencidas de los planes activos (por cliente o zona) */
+        get: operations["vencidas"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1865,7 +2097,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_20"];
+        get: operations["obtener_23"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1881,7 +2113,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_21"];
+        get: operations["obtener_24"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2697,6 +2929,141 @@ export interface components {
             /** Format: int64 */
             almacenId?: number;
         };
+        ConduceRequest: {
+            /** Format: int64 */
+            clienteId: number;
+            /** @enum {string} */
+            tipoPrecio?: "CONTADO" | "CREDITO" | "MAYOR";
+            /** Format: int64 */
+            almacenId?: number;
+            /** Format: int64 */
+            vendedorId?: number;
+            comentario?: string;
+            lugarEntrega?: string;
+            lineas: components["schemas"]["LineaVentaRequest"][];
+        };
+        ConduceLineaResponse: {
+            /** Format: int32 */
+            linea?: number;
+            /** Format: int64 */
+            articuloId?: number;
+            descripcion?: string;
+            unidad?: string;
+            cantidad?: number;
+            precioUnitario?: number;
+            descuentoPorcentaje?: number;
+        };
+        ConduceResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            /** Format: int64 */
+            clienteId?: number;
+            cliente?: string;
+            /** Format: int64 */
+            almacenId?: number;
+            /** @enum {string} */
+            tipoPrecio?: "CONTADO" | "CREDITO" | "MAYOR";
+            comentario?: string;
+            lugarEntrega?: string;
+            totalEstimado?: number;
+            /** @enum {string} */
+            estado?: "ABIERTO" | "FACTURADO" | "ANULADO";
+            /** Format: int64 */
+            facturaId?: number;
+            motivoAnulacion?: string;
+            lineas?: components["schemas"]["ConduceLineaResponse"][];
+        };
+        ConduceAnularRequest: {
+            motivo: string;
+        };
+        ConduceFacturarRequest: {
+            conduceIds: number[];
+            /** @enum {string} */
+            condicion: "CONTADO" | "CREDITO";
+            /** Format: int32 */
+            diasCredito?: number;
+            /** Format: int32 */
+            tipoEcf?: number;
+            comentario?: string;
+        };
+        ApartadoRequest: {
+            /** Format: int64 */
+            clienteId: number;
+            concepto: string;
+            /** Format: date */
+            fechaLimite?: string;
+            /** @enum {string} */
+            tipoPrecio?: "CONTADO" | "CREDITO" | "MAYOR";
+            lineas: components["schemas"]["LineaVentaRequest"][];
+            abonoInicial?: components["schemas"]["PagoRequest"];
+        };
+        PagoRequest: {
+            /** @enum {string} */
+            forma: "EFECTIVO" | "TARJETA" | "CHEQUE" | "TRANSFERENCIA" | "SALDO_A_FAVOR";
+            monto: number;
+            referencia?: string;
+            banco?: string;
+            /** Format: int64 */
+            cuentaBancariaId?: number;
+        };
+        ApartadoAbonoResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date */
+            fecha?: string;
+            /** @enum {string} */
+            tipo?: "ABONO" | "DEVOLUCION";
+            /** @enum {string} */
+            forma?: "EFECTIVO" | "TARJETA" | "CHEQUE" | "TRANSFERENCIA" | "SALDO_A_FAVOR";
+            monto?: number;
+            referencia?: string;
+        };
+        ApartadoLineaResponse: {
+            /** Format: int32 */
+            linea?: number;
+            /** Format: int64 */
+            articuloId?: number;
+            descripcion?: string;
+            cantidad?: number;
+            precioUnitario?: number;
+            descuentoPorcentaje?: number;
+        };
+        ApartadoResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            /** Format: int64 */
+            clienteId?: number;
+            cliente?: string;
+            concepto?: string;
+            total?: number;
+            abonado?: number;
+            pendiente?: number;
+            /** Format: date */
+            fechaLimite?: string;
+            /** @enum {string} */
+            estado?: "ABIERTO" | "FACTURADO" | "CANCELADO";
+            /** Format: int64 */
+            facturaId?: number;
+            motivoCancelacion?: string;
+            lineas?: components["schemas"]["ApartadoLineaResponse"][];
+            abonos?: components["schemas"]["ApartadoAbonoResponse"][];
+        };
+        ApartadoFacturarRequest: {
+            /** Format: int32 */
+            tipoEcf?: number;
+        };
+        ApartadoCancelarRequest: {
+            motivo: string;
+            devolverDinero: boolean;
+        };
         UsuarioCrearUsuarioRequest: {
             datos: components["schemas"]["UsuarioRequest"];
             password: string;
@@ -2849,15 +3216,6 @@ export interface components {
             formas: components["schemas"]["PagoRequest"][];
             moneda?: string;
             tasaCambio?: number;
-        };
-        PagoRequest: {
-            /** @enum {string} */
-            forma: "EFECTIVO" | "TARJETA" | "CHEQUE" | "TRANSFERENCIA" | "SALDO_A_FAVOR";
-            monto: number;
-            referencia?: string;
-            banco?: string;
-            /** Format: int64 */
-            cuentaBancariaId?: number;
         };
         PagoProveedorResponse: {
             /** Format: int64 */
@@ -3028,6 +3386,76 @@ export interface components {
             ecfDocumentoId?: number;
             /** @enum {string} */
             estado?: "EMITIDA" | "PAGADA";
+        };
+        FinanciamientoRequest: {
+            /** Format: int64 */
+            facturaId: number;
+            tasaInteres: number;
+            /** Format: int32 */
+            cantidadCuotas: number;
+            /** Format: int32 */
+            frecuenciaDias: number;
+            /** Format: date */
+            primeraCuota?: string;
+            moraPorcentaje?: number;
+            /** Format: int32 */
+            diasGracia?: number;
+        };
+        FinanciamientoCuotaEstado: {
+            /** Format: int32 */
+            numero?: number;
+            /** Format: date */
+            vencimiento?: string;
+            monto?: number;
+            pagado?: number;
+            pendiente?: number;
+            /** Format: int32 */
+            diasAtraso?: number;
+            vencida?: boolean;
+            moraPorCobrar?: number;
+            moraCobrada?: boolean;
+        };
+        FinanciamientoResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            /** Format: int64 */
+            facturaId?: number;
+            /** Format: int64 */
+            facturaNumero?: number;
+            encf?: string;
+            /** Format: int64 */
+            clienteId?: number;
+            cliente?: string;
+            pagadoPrevio?: number;
+            capital?: number;
+            tasaInteres?: number;
+            interes?: number;
+            /** Format: int64 */
+            notaDebitoId?: number;
+            /** Format: int32 */
+            cantidadCuotas?: number;
+            /** Format: int32 */
+            frecuenciaDias?: number;
+            moraPorcentaje?: number;
+            /** Format: int32 */
+            diasGracia?: number;
+            /** @enum {string} */
+            estado?: "ACTIVO" | "CANCELADO";
+            totalPlan?: number;
+            cobrado?: number;
+            pendiente?: number;
+            /** Format: int32 */
+            cuotasVencidas?: number;
+            montoVencido?: number;
+            moraPorCobrar?: number;
+            cuotas?: components["schemas"]["FinanciamientoCuotaEstado"][];
+        };
+        FinanciamientoCancelarRequest: {
+            motivo: string;
         };
         CierreAnualResultado: {
             /** Format: int32 */
@@ -3510,6 +3938,42 @@ export interface components {
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
+        PageConduceResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["ConduceResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            empty?: boolean;
+        };
+        PageApartadoResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["ApartadoResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            empty?: boolean;
+        };
         PageUsuarioResponse: {
             /** Format: int64 */
             totalElements?: number;
@@ -3818,6 +4282,46 @@ export interface components {
             numberOfElements?: number;
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        PageFinanciamientoResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["FinanciamientoResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            empty?: boolean;
+        };
+        FinanciamientoCuotaVencida: {
+            /** Format: int64 */
+            planId?: number;
+            /** Format: int64 */
+            planNumero?: number;
+            /** Format: int64 */
+            clienteId?: number;
+            cliente?: string;
+            telefono?: string;
+            /** Format: int64 */
+            zonaId?: number;
+            /** Format: int64 */
+            facturaNumero?: number;
+            /** Format: int32 */
+            cuota?: number;
+            /** Format: date */
+            vencimiento?: string;
+            /** Format: int32 */
+            diasAtraso?: number;
+            pendiente?: number;
+            moraPorCobrar?: number;
         };
         EstadoCuentaDocumentoPendiente: {
             tipo?: string;
@@ -5747,6 +6251,230 @@ export interface operations {
             };
         };
     };
+    buscar_2: {
+        parameters: {
+            query: {
+                clienteId?: number;
+                estado?: "ABIERTO" | "FACTURADO" | "ANULADO";
+                p: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageConduceResponse"];
+                };
+            };
+        };
+    };
+    crear_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConduceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConduceResponse"];
+                };
+            };
+        };
+    };
+    anular_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConduceAnularRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConduceResponse"];
+                };
+            };
+        };
+    };
+    facturar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConduceFacturarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacturaResponse"];
+                };
+            };
+        };
+    };
+    buscar_3: {
+        parameters: {
+            query: {
+                clienteId?: number;
+                estado?: "ABIERTO" | "FACTURADO" | "CANCELADO";
+                p: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageApartadoResponse"];
+                };
+            };
+        };
+    };
+    crear_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApartadoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApartadoResponse"];
+                };
+            };
+        };
+    };
+    facturar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApartadoFacturarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacturaResponse"];
+                };
+            };
+        };
+    };
+    cancelar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApartadoCancelarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApartadoResponse"];
+                };
+            };
+        };
+    };
+    abonar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PagoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApartadoResponse"];
+                };
+            };
+        };
+    };
     listar_1: {
         parameters: {
             query: {
@@ -5770,7 +6498,7 @@ export interface operations {
             };
         };
     };
-    crear_2: {
+    crear_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5864,7 +6592,7 @@ export interface operations {
             };
         };
     };
-    crear_3: {
+    crear_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5910,7 +6638,7 @@ export interface operations {
             };
         };
     };
-    anular_2: {
+    anular_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5953,7 +6681,7 @@ export interface operations {
             };
         };
     };
-    crear_4: {
+    crear_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6000,7 +6728,7 @@ export interface operations {
             };
         };
     };
-    anular_3: {
+    anular_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -6232,7 +6960,7 @@ export interface operations {
             };
         };
     };
-    buscar_2: {
+    buscar_4: {
         parameters: {
             query: {
                 proveedorId?: number;
@@ -6280,7 +7008,7 @@ export interface operations {
             };
         };
     };
-    anular_4: {
+    anular_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6356,7 +7084,7 @@ export interface operations {
             };
         };
     };
-    anular_5: {
+    anular_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6402,6 +7130,102 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["NotaDebitoResponse"];
+                };
+            };
+        };
+    };
+    buscar_5: {
+        parameters: {
+            query: {
+                clienteId?: number;
+                estado?: "ACTIVO" | "CANCELADO";
+                p: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageFinanciamientoResponse"];
+                };
+            };
+        };
+    };
+    crear_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanciamientoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanciamientoResponse"];
+                };
+            };
+        };
+    };
+    mora: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanciamientoResponse"];
+                };
+            };
+        };
+    };
+    cancelar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanciamientoCancelarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanciamientoResponse"];
                 };
             };
         };
@@ -6471,7 +7295,7 @@ export interface operations {
             };
         };
     };
-    crear_5: {
+    crear_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6567,7 +7391,7 @@ export interface operations {
             };
         };
     };
-    buscar_3: {
+    buscar_6: {
         parameters: {
             query: {
                 desde?: string;
@@ -6594,7 +7418,7 @@ export interface operations {
             };
         };
     };
-    crear_6: {
+    crear_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -6618,7 +7442,7 @@ export interface operations {
             };
         };
     };
-    anular_6: {
+    anular_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6668,7 +7492,7 @@ export interface operations {
             };
         };
     };
-    buscar_4: {
+    buscar_7: {
         parameters: {
             query: {
                 proveedorId?: number;
@@ -6718,7 +7542,7 @@ export interface operations {
             };
         };
     };
-    anular_7: {
+    anular_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6763,7 +7587,7 @@ export interface operations {
             };
         };
     };
-    crear_7: {
+    crear_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -6810,7 +7634,7 @@ export interface operations {
             };
         };
     };
-    crear_8: {
+    crear_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -6857,7 +7681,7 @@ export interface operations {
             };
         };
     };
-    crear_9: {
+    crear_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -6904,7 +7728,7 @@ export interface operations {
             };
         };
     };
-    crear_10: {
+    crear_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -6951,7 +7775,7 @@ export interface operations {
             };
         };
     };
-    crear_11: {
+    crear_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -6998,7 +7822,7 @@ export interface operations {
             };
         };
     };
-    crear_12: {
+    crear_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -7045,7 +7869,7 @@ export interface operations {
             };
         };
     };
-    crear_13: {
+    crear_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -7092,7 +7916,7 @@ export interface operations {
             };
         };
     };
-    crear_14: {
+    crear_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -7139,7 +7963,7 @@ export interface operations {
             };
         };
     };
-    crear_15: {
+    crear_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -7307,7 +8131,7 @@ export interface operations {
             };
         };
     };
-    buscar_5: {
+    buscar_8: {
         parameters: {
             query: {
                 cuentaId?: number;
@@ -7357,7 +8181,7 @@ export interface operations {
             };
         };
     };
-    anular_8: {
+    anular_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -7406,7 +8230,7 @@ export interface operations {
             };
         };
     };
-    crear_16: {
+    crear_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -7501,7 +8325,7 @@ export interface operations {
             };
         };
     };
-    crear_17: {
+    crear_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -7679,6 +8503,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CotizacionResponse"];
+                };
+            };
+        };
+    };
+    obtener_18: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConduceResponse"];
+                };
+            };
+        };
+    };
+    obtener_19: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApartadoResponse"];
                 };
             };
         };
@@ -7910,7 +8778,7 @@ export interface operations {
             };
         };
     };
-    obtener_18: {
+    obtener_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -8022,7 +8890,7 @@ export interface operations {
             };
         };
     };
-    obtener_19: {
+    obtener_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -8104,6 +8972,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["NotaDebitoResponse"];
+                };
+            };
+        };
+    };
+    obtener_22: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanciamientoResponse"];
+                };
+            };
+        };
+    };
+    vencidas: {
+        parameters: {
+            query?: {
+                fecha?: string;
+                clienteId?: number;
+                zonaId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanciamientoCuotaVencida"][];
                 };
             };
         };
@@ -8329,7 +9243,7 @@ export interface operations {
             };
         };
     };
-    obtener_20: {
+    obtener_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -8351,7 +9265,7 @@ export interface operations {
             };
         };
     };
-    obtener_21: {
+    obtener_24: {
         parameters: {
             query?: never;
             header?: never;
