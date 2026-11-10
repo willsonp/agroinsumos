@@ -72,7 +72,7 @@ public class CxcController {
 
     @Operation(summary = "Documentos con balance pendiente del cliente (para armar el recibo)")
     @GetMapping("/clientes/{clienteId}/pendientes")
-    @PreAuthorize("@permisos.tiene('CXC_RECIBOS','CXC_ESTADO_CUENTA')")
+    @PreAuthorize("@permisos.tiene('CXC_RECIBOS','CXC_ESTADO_CUENTA','CXC_FINANCIAMIENTO')")
     public List<EstadoCuentaService.DocumentoPendiente> pendientes(AuthUser user, @PathVariable Long clienteId) {
         return estadoCuenta.pendientes(user.companiaId(), clienteId);
     }

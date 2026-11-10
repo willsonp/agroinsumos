@@ -20,7 +20,7 @@ interface Linea { cuentaId: number | null; descripcion: string; debito: number; 
 
 export const ORIGENES_CONTABLES: Record<string, string> = {
   FACTURA: 'Factura', DEVOLUCION: 'Devolución', NOTA_DEBITO: 'Nota de débito', RECIBO: 'Recibo', COMPRA: 'Compra',
-  PAGO_PROVEEDOR: 'Pago a suplidor', NOTA_PROVEEDOR: 'Nota de suplidor', MOV_BANCO: 'Banco', EGRESO_CAJA: 'Gasto de caja', CIERRE_CAJA: 'Sobrante/faltante de caja', CIERRE_ANUAL: 'Cierre del ejercicio',
+  PAGO_PROVEEDOR: 'Pago a suplidor', NOTA_PROVEEDOR: 'Nota de suplidor', MOV_BANCO: 'Banco', EGRESO_CAJA: 'Gasto de caja', CIERRE_CAJA: 'Sobrante/faltante de caja', ABONO_APARTADO: 'Abono de apartado', CIERRE_ANUAL: 'Cierre del ejercicio',
 };
 
 /** Diario general: asientos manuales y generación de los automáticos. */

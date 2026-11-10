@@ -76,6 +76,8 @@ public class Factura extends Auditable {
     private Long ecfDocumentoId;
     @Column(name = "ncf_legacy", length = 19)
     private String ncfLegacy;
+    @Column(name = "desde_conduce", nullable = false)
+    private boolean desdeConduce;
     @Column(name = "cotizacion_id")
     private Long cotizacionId;
     @Enumerated(EnumType.STRING)
