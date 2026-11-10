@@ -33,6 +33,12 @@ springdoc:
   swagger-ui.path: /swagger-ui.html
 
 app:
+  # Respaldo DIARIO de la base (pg_dump): BK_<base>_<día del mes>.sql. Cada hora (min. 15) se genera si aún no existe el
+  # de hoy. La carpeta también se cambia desde Administración → Respaldos. cron "-" desactiva el automático.
+  respaldo:
+    directorio: ${RESPALDO_DIRECTORIO:${user.home}/agro-respaldos}
+    cron: ${RESPALDO_CRON:0 15 * * * *}
+    pg-dump: ${PG_DUMP:pg_dump}
   security:
     jwt:
       # >= 32 bytes. En producción SIEMPRE por variable de entorno.

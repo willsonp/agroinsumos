@@ -353,6 +353,30 @@ Migración `V15__conduces_apartados_financiamiento.sql`; datos con `07_conduces_
   (cálculo, sin tablas de saldo que mantener). **Mora**: % de lo pendiente de cada cuota vencida tras los días de gracia,
   una vez por cuota, emitida como nota de débito (e-CF 33). Reporte de **cuotas vencidas** por cliente o zona con teléfono.
 
+## 5.9 Etiquetas ZPL y respaldos diarios
+Migración `V16__etiquetas_respaldos.sql`.
+
+**Etiquetas** (`/api/v1/inventario/etiquetas`, Inventario → Imprimir etiquetas):
+- Tamaños predefinidos (1.5×1, 2×1, 2.25×1.25, 3×2, 4×2 y 4×6 pulg.) o personalizado (15–120 × 10–200 mm); 203, 300 o
+  600 dpi (8, 12 o 24 puntos/mm). Cantidad por artículo (1–1000; máximo 5,000 por trabajo, con `^PQ`).
+- Contenido: nombre (2 líneas, se recorta con "..."), precio con ITBIS de la lista elegida (opcional), código de barras y
+  su texto. Código: `codigo_barra`, si no la referencia, si no el número interno; EAN-13 / UPC-A si el dígito verificador es
+  válido (`^BE`, `^BU`), si no Code 128 automático (`^BC`). Barras de hasta 0.5 mm por módulo según el ancho disponible.
+- `GeneradorZpl` calcula el diseño en puntos y lo convierte a ZPL II (`^CI28` UTF-8, fuente 0, `^FH` para escapar `^ ~ _`).
+  El mismo diseño se envía al navegador, que lo dibuja en un canvas (JsBarcode) como **vista previa**.
+- Salida: descarga `etiquetas.zpl` o envío RAW por TCP a una impresora registrada (`impresora_etiqueta`, solo puertos
+  9100–9109, para que el servidor no se pueda usar para conectarse a otros servicios).
+
+**Respaldos** (`/api/v1/admin/respaldos`, Administración → Respaldos, solo administrador):
+- `pg_dump` en texto plano con `--clean --if-exists --no-owner --no-privileges`: estructura y datos, restaurable con
+  `psql -d <base> -f BK_<base>_NN.sql`. Nombre `BK_<base>_<día del mes>.sql` como en el sistema anterior (hasta 31 archivos;
+  cada día reemplaza el del mismo día del mes anterior). Se escribe en un temporal y se renombra (nunca queda un archivo a medias).
+- **Diario automático**: cada hora (minuto 15, hora de RD) se genera el del día si aún no existe, así no se pierde el día
+  aunque el servidor estuviera apagado a una hora fija (`app.respaldo.cron`, `"-"` lo desactiva). También "Crear respaldo ahora".
+- Carpeta: `app.respaldo.directorio` (`RESPALDO_DIRECTORIO`) o la configurada en pantalla (ruta absoluta con permiso de
+  escritura, guardada en `parametro_sistema`). Se listan y descargan los respaldos para copiarlos a otra ubicación.
+  Recomendado: una unidad externa o de red, y copiar periódicamente fuera del servidor.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -421,6 +445,8 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `VENTAS_CONDUCES` | conduces y su facturación | anular: **supervisor** |
 | `VENTAS_APARTADOS` | apartados y abonos, facturar | cancelar: **supervisor** |
 | `CXC_FINANCIAMIENTO` | planes, cuotas vencidas | crear plan, cobrar mora, cancelar: **supervisor** |
+| `INV_ETIQUETAS` | etiquetas ZPL (vista previa, .zpl, envío a impresora) e impresoras | — |
+| `ADMIN_RESPALDOS` | respaldos de la base de datos y su carpeta | **admin** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |
