@@ -376,6 +376,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/empresa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_16"];
+        put: operations["actualizar_16"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ventas/facturas": {
         parameters: {
             query?: never;
@@ -1610,7 +1626,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_16"];
+        get: operations["obtener_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1642,7 +1658,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_17"];
+        get: operations["obtener_18"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1658,7 +1674,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_18"];
+        get: operations["obtener_19"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1674,7 +1690,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_19"];
+        get: operations["obtener_20"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1690,7 +1706,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_20"];
+        get: operations["obtener_21"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1758,6 +1774,23 @@ export interface paths {
         };
         /** Existencia por almacén */
         get: operations["existencias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventario/articulos/seleccion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Artículos activos por texto, departamento y existencia (selección para etiquetas) */
+        get: operations["seleccion"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1890,7 +1923,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_21"];
+        get: operations["obtener_22"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1971,7 +2004,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_22"];
+        get: operations["obtener_23"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2035,7 +2068,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_23"];
+        get: operations["obtener_24"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2230,7 +2263,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_24"];
+        get: operations["obtener_25"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2246,7 +2279,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_25"];
+        get: operations["obtener_26"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2930,6 +2963,26 @@ export interface components {
             respaldoDeHoy?: boolean;
             respaldos?: components["schemas"]["RespaldoArchivo"][];
         };
+        CompaniaRequest: {
+            nombre: string;
+            nombreComercial?: string;
+            direccion?: string;
+            telefono?: string;
+            /** Format: email */
+            correo?: string;
+            sitioWeb?: string;
+        };
+        CompaniaResponse: {
+            /** Format: int64 */
+            id?: number;
+            nombre?: string;
+            nombreComercial?: string;
+            rnc?: string;
+            direccion?: string;
+            telefono?: string;
+            correo?: string;
+            sitioWeb?: string;
+        };
         FacturaCrearFacturaRequest: {
             /** Format: int64 */
             clienteId: number;
@@ -3286,6 +3339,9 @@ export interface components {
             precio?: "CONTADO" | "CREDITO" | "MAYOR";
             mostrarNombre?: boolean;
             mostrarCodigo?: boolean;
+            mostrarEmpresa?: boolean;
+            mostrarDireccion?: boolean;
+            mostrarTelefono?: boolean;
             items: components["schemas"]["EtiquetaItem"][];
         };
         Etiqueta: {
@@ -4135,10 +4191,10 @@ export interface components {
             estado?: "EMITIDA" | "PAGADA" | "ANULADA";
         };
         PageFacturaResumen: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4169,10 +4225,10 @@ export interface components {
             unsorted?: boolean;
         };
         PageDevolucionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4187,10 +4243,10 @@ export interface components {
             empty?: boolean;
         };
         PageCotizacionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4205,10 +4261,10 @@ export interface components {
             empty?: boolean;
         };
         PageConduceResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4223,10 +4279,10 @@ export interface components {
             empty?: boolean;
         };
         PageApartadoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4241,10 +4297,10 @@ export interface components {
             empty?: boolean;
         };
         PageUsuarioResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4259,10 +4315,10 @@ export interface components {
             empty?: boolean;
         };
         PageImpresoraEtiquetaResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4282,10 +4338,10 @@ export interface components {
             altoMm?: number;
         };
         PageDocumentoInventarioResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4300,10 +4356,10 @@ export interface components {
             empty?: boolean;
         };
         PageArticuloResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4334,10 +4390,10 @@ export interface components {
             usuario?: string;
         };
         PageArticuloKardexResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4468,10 +4524,10 @@ export interface components {
             itbisPorAdelantar?: number;
         };
         PageEcfResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4508,10 +4564,10 @@ export interface components {
             balanceMoneda?: number;
         };
         PagePagoProveedorResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4526,10 +4582,10 @@ export interface components {
             empty?: boolean;
         };
         PageNotaProveedorResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4555,10 +4611,10 @@ export interface components {
             total?: number;
         };
         PageReciboResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4573,10 +4629,10 @@ export interface components {
             empty?: boolean;
         };
         PageFinanciamientoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4769,10 +4825,10 @@ export interface components {
             cerradoPor?: number;
         };
         PageCuentaContableResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4787,10 +4843,10 @@ export interface components {
             empty?: boolean;
         };
         PageAsientoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4805,10 +4861,10 @@ export interface components {
             empty?: boolean;
         };
         PageCompraResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4823,10 +4879,10 @@ export interface components {
             empty?: boolean;
         };
         PageZonaResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4841,10 +4897,10 @@ export interface components {
             empty?: boolean;
         };
         PageVendedorResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4859,10 +4915,10 @@ export interface components {
             empty?: boolean;
         };
         PageUnidadResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4877,10 +4933,10 @@ export interface components {
             empty?: boolean;
         };
         PageTurnoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4895,10 +4951,10 @@ export interface components {
             empty?: boolean;
         };
         PageProveedorResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4913,10 +4969,10 @@ export interface components {
             empty?: boolean;
         };
         PageDepartamentoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4931,10 +4987,10 @@ export interface components {
             empty?: boolean;
         };
         PageClienteResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4949,10 +5005,10 @@ export interface components {
             empty?: boolean;
         };
         PageCiudadResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4967,10 +5023,10 @@ export interface components {
             empty?: boolean;
         };
         PageAlmacenResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -4985,10 +5041,10 @@ export interface components {
             empty?: boolean;
         };
         PageCajaSesionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -5008,10 +5064,10 @@ export interface components {
             conteo?: components["schemas"]["CajaConteoItem"][];
         };
         PageMovimientoBancarioResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -5026,10 +5082,10 @@ export interface components {
             empty?: boolean;
         };
         PageCuentaBancariaResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -5044,10 +5100,10 @@ export interface components {
             empty?: boolean;
         };
         PageBancoResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -6411,6 +6467,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RespaldoEstado"];
+                };
+            };
+        };
+    };
+    obtener_16: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompaniaResponse"];
+                };
+            };
+        };
+    };
+    actualizar_16: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompaniaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CompaniaResponse"];
                 };
             };
         };
@@ -8961,7 +9061,7 @@ export interface operations {
             };
         };
     };
-    obtener_16: {
+    obtener_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -9005,7 +9105,7 @@ export interface operations {
             };
         };
     };
-    obtener_17: {
+    obtener_18: {
         parameters: {
             query?: never;
             header?: never;
@@ -9027,7 +9127,7 @@ export interface operations {
             };
         };
     };
-    obtener_18: {
+    obtener_19: {
         parameters: {
             query?: never;
             header?: never;
@@ -9049,7 +9149,7 @@ export interface operations {
             };
         };
     };
-    obtener_19: {
+    obtener_20: {
         parameters: {
             query?: never;
             header?: never;
@@ -9071,7 +9171,7 @@ export interface operations {
             };
         };
     };
-    obtener_20: {
+    obtener_21: {
         parameters: {
             query?: never;
             header?: never;
@@ -9180,6 +9280,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ArticuloExistenciaResponse"][];
+                };
+            };
+        };
+    };
+    seleccion: {
+        parameters: {
+            query: {
+                q?: string;
+                departamentoId?: number;
+                conExistencia?: boolean;
+                p: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageArticuloResponse"];
                 };
             };
         };
@@ -9340,7 +9465,7 @@ export interface operations {
             };
         };
     };
-    obtener_21: {
+    obtener_22: {
         parameters: {
             query?: never;
             header?: never;
@@ -9452,7 +9577,7 @@ export interface operations {
             };
         };
     };
-    obtener_22: {
+    obtener_23: {
         parameters: {
             query?: never;
             header?: never;
@@ -9538,7 +9663,7 @@ export interface operations {
             };
         };
     };
-    obtener_23: {
+    obtener_24: {
         parameters: {
             query?: never;
             header?: never;
@@ -9805,7 +9930,7 @@ export interface operations {
             };
         };
     };
-    obtener_24: {
+    obtener_25: {
         parameters: {
             query?: never;
             header?: never;
@@ -9827,7 +9952,7 @@ export interface operations {
             };
         };
     };
-    obtener_25: {
+    obtener_26: {
         parameters: {
             query?: never;
             header?: never;

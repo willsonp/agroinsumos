@@ -45,9 +45,11 @@ public class EtiquetaService {
     public record Request(@NotNull @DecimalMin("15") @DecimalMax("120") BigDecimal anchoMm,
                           @NotNull @DecimalMin("10") @DecimalMax("200") BigDecimal altoMm,
                           @NotNull Integer dpi,
-                          /** Lista de precio a mostrar (con ITBIS); vacío = sin precio. */
+                          /** Lista de precio a imprimir (con ITBIS); vacío = sin precio (por defecto: los precios cambian). */
                           TipoPrecio precio,
                           Boolean mostrarNombre, Boolean mostrarCodigo,
+                          /** Encabezado con los datos de la empresa. */
+                          Boolean mostrarEmpresa, Boolean mostrarDireccion, Boolean mostrarTelefono,
                           @NotEmpty @Size(max = 200) List<@Valid Item> items) {}
 
     public record Etiqueta(Long articuloId, String nombre, String codigo, GeneradorZpl.Simbologia simbologia, String precio,
@@ -59,12 +61,14 @@ public class EtiquetaService {
 
     private final ArticuloService articulos;
     private final ImpresoraEtiquetaService impresoras;
+    private final com.agroinsumos.backend.compania.CompaniaService companias;
 
     public Response generar(Long cia, Request r) {
         if (r.dpi() != 203 && r.dpi() != 300 && r.dpi() != 600) throw new BusinessException("DPI_INVALIDO", "Resolución: 203, 300 o 600 dpi");
         int total = r.items().stream().mapToInt(Item::cantidad).sum();
         if (total > 5000) throw new BusinessException("DEMASIADAS_ETIQUETAS", "Máximo 5,000 etiquetas por trabajo");
         var formato = new GeneradorZpl.Formato(r.anchoMm(), r.altoMm(), r.dpi());
+        List<String> encabezado = encabezado(cia, r);
         var zpl = new StringBuilder();
         List<Etiqueta> res = new ArrayList<>();
         for (var it : r.items()) {
@@ -72,7 +76,7 @@ public class EtiquetaService {
             String codigo = codigo(a);
             String precio = r.precio() == null ? null : moneda(a.precio(r.precio())
                     .multiply(BigDecimal.ONE.add(a.tasaItbis().movePointLeft(2))).setScale(2, RoundingMode.HALF_UP));
-            var diseno = GeneradorZpl.disenar(formato, new GeneradorZpl.Contenido(
+            var diseno = GeneradorZpl.disenar(formato, new GeneradorZpl.Contenido(encabezado,
                     Boolean.FALSE.equals(r.mostrarNombre()) ? null : a.getNombre(), precio, codigo, !Boolean.FALSE.equals(r.mostrarCodigo())));
             zpl.append(GeneradorZpl.zpl(diseno, it.cantidad()));
             res.add(new Etiqueta(a.getId(), a.getNombre(), codigo, GeneradorZpl.simbologia(codigo), precio, it.cantidad(), diseno));
@@ -96,6 +100,21 @@ public class EtiquetaService {
                     + imp.getPuerto() + "): " + e.getMessage());
         }
         return new Impresion(gen.totalEtiquetas(), imp.getNombre(), bytes.length);
+    }
+
+    /** Nombre comercial (o razón social) en una línea; dirección y teléfono juntos en otra. */
+    private List<String> encabezado(Long cia, Request r) {
+        boolean empresa = Boolean.TRUE.equals(r.mostrarEmpresa()), dir = Boolean.TRUE.equals(r.mostrarDireccion()),
+                tel = Boolean.TRUE.equals(r.mostrarTelefono());
+        if (!empresa && !dir && !tel) return List.of();
+        var c = companias.cargar(cia);
+        List<String> res = new ArrayList<>();
+        if (empresa) res.add(c.getNombreComercial() != null ? c.getNombreComercial() : c.getNombre());
+        List<String> detalle = new ArrayList<>();
+        if (dir && c.getDireccion() != null) detalle.add(c.getDireccion());
+        if (tel && c.getTelefono() != null) detalle.add("Tel. " + c.getTelefono());
+        if (!detalle.isEmpty()) res.add(String.join(" · ", detalle));
+        return res;
     }
 
     /** Código de barras del artículo: código de barras, si no la referencia, si no el número interno. */

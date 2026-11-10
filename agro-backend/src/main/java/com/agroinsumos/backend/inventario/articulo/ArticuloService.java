@@ -54,6 +54,10 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
     @Override protected String recurso() { return "Artículo"; }
     @Override protected Page<Articulo> buscar(Long c, String q, Pageable p) { return repo.buscar(c, q, p); }
 
+    public Page<Response> seleccionar(Long cia, String q, Long departamentoId, boolean conExistencia, Pageable p) {
+        return repo.seleccionar(cia, q == null || q.isBlank() ? null : q.trim(), departamentoId, conExistencia, p).map(this::respuesta);
+    }
+
     @Override
     protected Articulo nueva(Long companiaId) {
         var a = new Articulo();

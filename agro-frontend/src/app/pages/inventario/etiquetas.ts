@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import JsBarcode from 'jsbarcode';
 import type { Pagina, S } from '../../api/tipos';
 import { Notificacion } from '../../core/notificacion.service';
@@ -41,12 +42,50 @@ const IMPRESORAS: CatalogoConfig = {
 @Component({
   selector: 'app-etiquetas',
   imports: [DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatTabsModule, ArticuloBuscador, CatalogoCrud],
+    MatSelectModule, MatTabsModule, MatPaginatorModule, ArticuloBuscador, CatalogoCrud],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Imprimir etiquetas</h1></div>
-      <mat-tab-group (selectedIndexChange)="$event === 0 && cargarImpresoras()">
-        <mat-tab label="Etiquetas">
+      <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="cambiarPestana($event)">
+        <mat-tab label="Seleccionar artículos">
+          <div class="tarjeta">
+            <div class="fila">
+              <mat-form-field style="flex:1 1 260px"><mat-label>Buscar (nombre, código o referencia)</mat-label>
+                <input matInput [(ngModel)]="filtro.q" (keyup.enter)="buscar()" /></mat-form-field>
+              <mat-form-field><mat-label>Departamento</mat-label><mat-select [(ngModel)]="filtro.departamentoId" (selectionChange)="buscar()">
+                <mat-option [value]="null">Todos</mat-option>
+                @for (d of departamentos(); track d.id) { <mat-option [value]="d.id">{{ d.nombre }}</mat-option> }</mat-select></mat-form-field>
+              <mat-checkbox [(ngModel)]="filtro.conExistencia" (change)="buscar()">Solo con existencia</mat-checkbox>
+              <button mat-stroked-button (click)="buscar()">Buscar</button>
+            </div>
+            <table class="tabla">
+              <thead><tr>
+                <th><mat-checkbox [checked]="todosMarcados()" [indeterminate]="algunoMarcado() && !todosMarcados()" (change)="marcarPagina($event.checked)" aria-label="Seleccionar la página" /></th>
+                <th>Artículo</th><th>Código</th><th class="num">Existencia</th><th class="num">Precio contado</th><th class="num">Etiquetas</th></tr></thead>
+              <tbody>
+                @for (a of catalogo()?.content ?? []; track a.id) {
+                  <tr [class.marcado]="marcados()[a.id!] !== undefined">
+                    <td><mat-checkbox [checked]="marcados()[a.id!] !== undefined" (change)="marcar(a, $event.checked)" [aria-label]="'Seleccionar ' + a.nombre" /></td>
+                    <td>{{ a.nombre }}@if (enLista(a)) { <span class="chip ok">en la lista</span> }</td>
+                    <td>{{ a.codigoBarra || a.referencia || '(número interno)' }}</td>
+                    <td class="num">{{ a.existencia | number: '1.0-3' }}</td>
+                    <td class="num">{{ a.precioContadoConItbis | number: '1.2-2' }}</td>
+                    <td class="num">@if (marcados()[a.id!] !== undefined) {
+                      <input class="celda" type="number" min="1" max="1000" [ngModel]="marcados()[a.id!]" (ngModelChange)="cantidadMarcada(a, +$event)"
+                        [attr.aria-label]="'Etiquetas de ' + a.nombre" /> }</td>
+                  </tr>
+                } @empty { <tr><td colspan="6" class="muted">Sin artículos con ese filtro</td></tr> }
+              </tbody>
+            </table>
+            <div class="fila">
+              <mat-paginator [length]="catalogo()?.totalElements ?? 0" [pageSize]="50" (page)="buscar($event)" />
+              <span class="espaciador"></span>
+              <mat-checkbox [(ngModel)]="segunExistencia">Cantidad = existencia</mat-checkbox>
+              <button mat-flat-button [disabled]="!cantidadMarcados()" (click)="agregarMarcados()">Agregar {{ cantidadMarcados() }} a la lista</button>
+            </div>
+          </div>
+        </mat-tab>
+        <mat-tab [label]="'Etiquetas (' + items().length + ')'">
           <div class="tarjeta">
             <h2>1. Artículos y cantidades</h2>
             <app-articulo-buscador (elegido)="agregar($event)" />
@@ -81,11 +120,22 @@ const IMPRESORAS: CatalogoConfig = {
               </mat-button-toggle-group>
             </div>
             <div class="fila" style="margin-top:8px">
-              <mat-form-field><mat-label>Precio en la etiqueta</mat-label><mat-select [(ngModel)]="precio">
-                <mat-option [value]="null">Sin precio</mat-option><mat-option value="CONTADO">Contado (con ITBIS)</mat-option>
-                <mat-option value="CREDITO">Crédito (con ITBIS)</mat-option><mat-option value="MAYOR">Por mayor (con ITBIS)</mat-option></mat-select></mat-form-field>
               <mat-checkbox [(ngModel)]="mostrarNombre">Nombre del artículo</mat-checkbox>
               <mat-checkbox [(ngModel)]="mostrarCodigo">Código legible bajo las barras</mat-checkbox>
+              <mat-checkbox [(ngModel)]="imprimirPrecio">Imprimir precio</mat-checkbox>
+              @if (imprimirPrecio) {
+                <mat-form-field style="width:200px"><mat-label>Lista de precio</mat-label><mat-select [(ngModel)]="lista">
+                  <mat-option value="CONTADO">Contado (con ITBIS)</mat-option><mat-option value="CREDITO">Crédito (con ITBIS)</mat-option>
+                  <mat-option value="MAYOR">Por mayor (con ITBIS)</mat-option></mat-select></mat-form-field>
+              }
+            </div>
+            <div class="fila">
+              <span>Datos de la empresa:</span>
+              <mat-checkbox [(ngModel)]="mostrarEmpresa">Nombre</mat-checkbox>
+              <mat-checkbox [(ngModel)]="mostrarDireccion" [disabled]="!empresa()?.direccion">Dirección</mat-checkbox>
+              <mat-checkbox [(ngModel)]="mostrarTelefono" [disabled]="!empresa()?.telefono">Teléfono</mat-checkbox>
+              @if (empresa(); as e) { <span class="muted">{{ e.nombreComercial || e.nombre }}@if (e.direccion) { · {{ e.direccion }} }@if (e.telefono) { · Tel. {{ e.telefono }} }
+                @if (!e.direccion || !e.telefono) { — complete los datos en Administración → Datos de la empresa } </span> }
               <span class="espaciador"></span>
               <button mat-flat-button [disabled]="!items().length" (click)="vistaPrevia()"><span class="material-symbols-outlined">visibility</span> Vista previa</button>
             </div>
@@ -106,7 +156,7 @@ const IMPRESORAS: CatalogoConfig = {
                   </figure>
                 }
               </div>
-              <p class="muted">La vista previa usa una fuente parecida a la de la impresora; el texto impreso puede variar ligeramente.</p>
+              <p class="muted">Sin precio impreso no hay que reimprimir cuando los precios cambian. La vista previa usa una fuente parecida a la de la impresora; el texto impreso puede variar ligeramente.</p>
               <div class="fila">
                 <button mat-stroked-button (click)="verZpl.set(!verZpl())">{{ verZpl() ? 'Ocultar' : 'Ver' }} código ZPL</button>
                 <button mat-stroked-button (click)="descargarZpl()"><span class="material-symbols-outlined">download</span> Descargar .zpl</button>
@@ -135,6 +185,7 @@ const IMPRESORAS: CatalogoConfig = {
     figure { margin: 0; } figure img { display: block; border: 1px solid var(--mat-sys-outline); border-radius: 6px; background: #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,.2); max-width: 100%; }
     figcaption { font-size: .85em; margin-top: 4px; color: var(--mat-sys-on-surface-variant); }
+    tr.marcado td { background: var(--mat-sys-surface-container); } .chip { margin-left: 6px; }
     .zpl { width: 100%; min-height: 160px; font-family: monospace; font-size: 12px; }`,
 })
 export class Etiquetas {
@@ -152,7 +203,21 @@ export class Etiquetas {
   protected anchoMm = 50.8;
   protected altoMm = 25.4;
   protected dpi = 203;
-  protected precio: 'CONTADO' | 'CREDITO' | 'MAYOR' | null = 'CONTADO';
+  protected imprimirPrecio = false;
+  protected lista: 'CONTADO' | 'CREDITO' | 'MAYOR' = 'CONTADO';
+  protected mostrarEmpresa = false;
+  protected mostrarDireccion = false;
+  protected mostrarTelefono = false;
+  protected segunExistencia = false;
+  protected filtro = { q: '', departamentoId: null as number | null, conExistencia: false };
+  protected readonly pestana = signal(0);
+  protected readonly empresa = signal<S['CompaniaResponse'] | null>(null);
+  protected readonly departamentos = signal<{ id: number; nombre: string }[]>([]);
+  protected readonly catalogo = signal<Pagina<S['ArticuloResponse']> | null>(null);
+  /** Artículos marcados en la pestaña de selección → cantidad de etiquetas. */
+  protected readonly marcados = signal<Record<number, number>>({});
+  private readonly articulosMarcados = new Map<number, S['ArticuloResponse']>();
+  protected readonly cantidadMarcados = computed(() => Object.keys(this.marcados()).length);
   protected mostrarNombre = true;
   protected mostrarCodigo = true;
   protected tamanoReal = false;
@@ -160,7 +225,51 @@ export class Etiquetas {
 
   constructor() {
     this.http.get<S['EtiquetaTamano'][]>('/api/v1/inventario/etiquetas/tamanos').subscribe((t) => this.tamanos.set(t));
+    this.http.get<S['CompaniaResponse']>('/api/v1/admin/empresa').subscribe((e) => this.empresa.set(e));
+    this.http.get<Pagina<{ id: number; nombre: string }>>('/api/v1/catalogos/departamentos', { params: params({ size: 200, sort: 'nombre' }) })
+      .subscribe((p) => this.departamentos.set(p.content));
     this.cargarImpresoras();
+    this.buscar();
+  }
+
+  protected cambiarPestana(i: number): void {
+    this.pestana.set(i);
+    if (i === 1) this.cargarImpresoras();
+  }
+
+  protected buscar(e?: PageEvent): void {
+    this.http.get<Pagina<S['ArticuloResponse']>>('/api/v1/inventario/articulos/seleccion', { params: params({ q: this.filtro.q,
+      departamentoId: this.filtro.departamentoId, conExistencia: this.filtro.conExistencia, page: e?.pageIndex ?? 0, size: 50 }) })
+      .subscribe({ next: (p) => this.catalogo.set(p), error: (err) => this.notif.error(err) });
+  }
+
+  protected enLista(a: S['ArticuloResponse']): boolean { return this.items().some((i) => i.articulo.id === a.id); }
+  private cantidadInicial(a: S['ArticuloResponse']): number {
+    return this.segunExistencia ? Math.max(1, Math.min(1000, Math.floor(a.existencia ?? 1))) : 1;
+  }
+
+  protected marcar(a: S['ArticuloResponse'], si: boolean): void {
+    const m = { ...this.marcados() };
+    if (si) { m[a.id!] = this.cantidadInicial(a); this.articulosMarcados.set(a.id!, a); } else { delete m[a.id!]; this.articulosMarcados.delete(a.id!); }
+    this.marcados.set(m);
+  }
+  protected cantidadMarcada(a: S['ArticuloResponse'], v: number): void { this.marcados.set({ ...this.marcados(), [a.id!]: Math.max(1, Math.min(1000, v || 1)) }); }
+  protected todosMarcados(): boolean { const c = this.catalogo()?.content ?? []; return c.length > 0 && c.every((a) => this.marcados()[a.id!] !== undefined); }
+  protected algunoMarcado(): boolean { return (this.catalogo()?.content ?? []).some((a) => this.marcados()[a.id!] !== undefined); }
+  protected marcarPagina(si: boolean): void { for (const a of this.catalogo()?.content ?? []) this.marcar(a, si); }
+
+  /** Pasa los marcados a la lista de impresión (los que ya estaban se actualizan) y abre la pestaña Etiquetas. */
+  protected agregarMarcados(): void {
+    const lista = [...this.items()];
+    for (const [id, cantidad] of Object.entries(this.marcados())) {
+      const a = this.articulosMarcados.get(+id)!;
+      const i = lista.findIndex((x) => x.articulo.id === a.id);
+      if (i >= 0) lista[i] = { ...lista[i], cantidad }; else lista.push({ articulo: a, cantidad });
+    }
+    this.items.set(lista);
+    this.notif.ok(`${this.cantidadMarcados()} artículo(s) en la lista de impresión`);
+    this.marcados.set({}); this.articulosMarcados.clear();
+    this.pestana.set(1);
   }
 
   protected cargarImpresoras(): void {
@@ -188,8 +297,9 @@ export class Etiquetas {
   protected quitar(i: number): void { this.items.set(this.items().filter((_, j) => j !== i)); }
 
   private peticion(): S['EtiquetaRequest'] {
-    return { anchoMm: this.anchoMm, altoMm: this.altoMm, dpi: this.dpi, precio: this.precio ?? undefined, mostrarNombre: this.mostrarNombre,
-      mostrarCodigo: this.mostrarCodigo, items: this.items().map((i) => ({ articuloId: i.articulo.id!, cantidad: i.cantidad })) };
+    return { anchoMm: this.anchoMm, altoMm: this.altoMm, dpi: this.dpi, precio: this.imprimirPrecio ? this.lista : undefined,
+      mostrarNombre: this.mostrarNombre, mostrarCodigo: this.mostrarCodigo, mostrarEmpresa: this.mostrarEmpresa,
+      mostrarDireccion: this.mostrarDireccion, mostrarTelefono: this.mostrarTelefono, items: this.items().map((i) => ({ articuloId: i.articulo.id!, cantidad: i.cantidad })) };
   }
 
   protected vistaPrevia(): void {

@@ -32,6 +32,9 @@ public class Compania extends Auditable {
     @Column(length = 100)
     private String correo;
 
+    @Column(length = 30)
+    private String telefono;
+
     @Column(name = "sitio_web", length = 100)
     private String sitioWeb;
 
