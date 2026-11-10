@@ -92,5 +92,7 @@ public class PagoProveedor extends Auditable {
         private String referencia;
         @Column(length = 45)
         private String banco;
+        @Column(name = "cuenta_bancaria_id")
+        private Long cuentaBancariaId;
     }
 }

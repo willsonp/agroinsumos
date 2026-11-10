@@ -5,13 +5,15 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { CuentasBancarias } from '../../shared/cuentas-bancarias';
 import type { S } from '../../api/tipos';
 import { redondear } from '../../shared/http';
 
 /** Cobro en caja: varias formas de pago a la vez; la devuelta solo sale del efectivo. */
 @Component({
   selector: 'app-pago-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, FormsModule, CurrencyPipe],
+  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, CurrencyPipe],
   template: `
     <h2 mat-dialog-title>Cobrar {{ total | currency }}</h2>
     <mat-dialog-content class="contenido">
@@ -28,6 +30,12 @@ import { redondear } from '../../shared/http';
         <mat-form-field><mat-label>Transferencia</mat-label>
           <input matInput type="number" min="0" [ngModel]="transferencia()" (ngModelChange)="transferencia.set(+$event || 0)" /></mat-form-field>
         <mat-form-field><mat-label>Referencia transferencia</mat-label><input matInput [(ngModel)]="refTransferencia" /></mat-form-field>
+        @if (transferencia() > 0 && cuentas.activas().length) {
+          <mat-form-field class="ancho-completo"><mat-label>Transferencia recibida en</mat-label><mat-select [(ngModel)]="cuentaTransferencia">
+            <mat-option [value]="null">Sin vincular al módulo Banco</mat-option>
+            @for (c of cuentas.activas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> }
+          </mat-select></mat-form-field>
+        }
         <mat-form-field><mat-label>Cheque</mat-label>
           <input matInput type="number" min="0" [ngModel]="cheque()" (ngModelChange)="cheque.set(+$event || 0)" /></mat-form-field>
         @if (disponibleAFavor > 0) {
@@ -65,6 +73,13 @@ export class PagoDialog {
   protected readonly cheque = signal(0);
   protected autorizacion = '';
   protected refTransferencia = '';
+  protected readonly cuentas = inject(CuentasBancarias);
+  protected readonly etiqueta = CuentasBancarias.etiqueta;
+  protected cuentaTransferencia: number | null = null;
+
+  constructor() {
+    this.cuentas.cargar();
+  }
 
   private readonly noEfectivo = computed(() => this.tarjeta() + this.transferencia() + this.cheque() + this.saldoAFavor());
   protected readonly recibido = computed(() => redondear(this.efectivo() + this.noEfectivo()));
@@ -78,7 +93,8 @@ export class PagoDialog {
     const pagos: S['PagoRequest'][] = [];
     if (this.efectivo() > 0) pagos.push({ forma: 'EFECTIVO', monto: this.efectivo() });
     if (this.tarjeta() > 0) pagos.push({ forma: 'TARJETA', monto: this.tarjeta(), referencia: this.autorizacion || undefined });
-    if (this.transferencia() > 0) pagos.push({ forma: 'TRANSFERENCIA', monto: this.transferencia(), referencia: this.refTransferencia || undefined });
+    if (this.transferencia() > 0) pagos.push({ forma: 'TRANSFERENCIA', monto: this.transferencia(), referencia: this.refTransferencia || undefined,
+      cuentaBancariaId: this.cuentaTransferencia ?? undefined });
     if (this.cheque() > 0) pagos.push({ forma: 'CHEQUE', monto: this.cheque() });
     if (this.saldoAFavor() > 0) pagos.push({ forma: 'SALDO_A_FAVOR', monto: this.saldoAFavor() });
     this.ref.close(pagos);

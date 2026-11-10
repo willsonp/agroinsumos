@@ -219,6 +219,33 @@ POST /ventas/facturas
 5. e-CF 43 sin ITBIS.
 6. **Obligatorio:** validar los TXT con la *Herramienta de Pre-validación de Formatos de Envío* de la DGII antes de remitirlos.
 
+## 5.4 Fase 5: Banco
+Reemplaza `banco`, `detallebanco`, `transaccionesbancarias` y `conciliacionbancaria` (migración `V10__banco.sql`,
+datos con `docs/migracion-datos/04_banco.sql`).
+
+- **Saldo en libros** = saldo inicial + entradas − salidas de los movimientos vigentes (sustituye al proc. `Balance_CuentaBanco`,
+  que recalculaba todo el historial). Tipos: depósito, cheque, transferencia enviada/recibida, nota de débito, nota de crédito.
+- **Cheques**: numeración automática por cuenta (`proximo_cheque`); si se escribe un número mayor, la secuencia avanza.
+  Índice único `(cuenta, número)` aunque el cheque se anule → `CHEQUE_DUPLICADO` (409).
+- **Sin sobregiro**: las salidas validan el saldo (`app.banco.permitir-sobregiro=true` lo desactiva). La cuenta se bloquea
+  (`SELECT … FOR UPDATE`) durante el registro; las transferencias bloquean ambas cuentas en orden de id.
+- **Depósito desde la caja**: registra el depósito y el egreso de efectivo en la caja abierta del usuario; anularlo devuelve el efectivo.
+- **Integración**: un pago a suplidor por cheque/transferencia con `cuentaBancariaId` genera el movimiento (el No. de cheque
+  vuelve en la referencia de la forma de pago); un recibo por **transferencia** con `cuentaBancariaId` genera la entrada.
+  Los cheques recibidos de clientes pasan por la caja y se depositan después. Estos movimientos solo se anulan anulando el
+  pago o recibo (`ANULAR_DESDE_ORIGEN`). Sin `cuentaBancariaId` el comportamiento anterior se mantiene (no se toca el banco).
+- **Conciliación**: se marcan los movimientos que aparecen en el estado de cuenta; los no marcados quedan en tránsito.
+  `saldo conciliado = libros − depósitos en tránsito + cheques/débitos en tránsito`; solo se cierra si es igual al saldo del banco
+  (`CONCILIACION_NO_CUADRA`). Después del corte no se registran movimientos con fecha igual o anterior (`PERIODO_CONCILIADO`)
+  ni se anulan los conciliados (`MOVIMIENTO_CONCILIADO`: se registra un movimiento inverso).
+
+| Endpoint | Uso |
+|---|---|
+| `/api/v1/banco/bancos`, `/api/v1/banco/cuentas` | catálogos (CRUD) |
+| `GET/POST /api/v1/banco/movimientos`, `POST /movimientos/{id}/anular` | movimientos manuales |
+| `POST /api/v1/banco/transferencias` | transferencia entre cuentas propias |
+| `POST /api/v1/banco/conciliaciones/calcular` · `POST /conciliaciones` · `GET /cuentas/{id}/conciliaciones` | conciliación |
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -279,6 +306,9 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `INV_DOCUMENTOS` | ajustes por conteo, entradas, salidas, transferencias | **supervisor** |
 | `VENTAS_COTIZACIONES` | cotizaciones (también con `VENTAS_POS` o `VENTAS_FACTURAS`) | — |
 | `COMPRAS_REGISTRO` | compras, pagos a suplidores, CxP | **supervisor** |
+| `BANCO_CUENTAS` | crear/editar bancos y cuentas bancarias (la lectura es libre: se eligen al pagar/cobrar) | — |
+| `BANCO_MOVIMIENTOS` | depósitos, cheques, transferencias, notas de débito/crédito, anulación | **supervisor** |
+| `BANCO_CONCILIACION` | conciliación bancaria e historial | **supervisor** |
 | `CAT_CLIENTES` / `CAT_PROVEEDORES` / `CAT_GENERALES` | escritura del catálogo | — |
 | `ECF_DOCUMENTOS` | listado, envío y consulta en la DGII | emisión directa: **admin** |
 | `ECF_SECUENCIAS` | ver secuencias | **supervisor**; registrar rangos: **admin** |
