@@ -1,0 +1,63 @@
+<div class="pagina pos">
+  @if (procesando()) { <mat-progress-bar mode="indeterminate" class="progreso" /> }
+  @if (cajaAbierta() === false) {
+    <div class="tarjeta aviso">
+      <span class="material-symbols-outlined">lock</span>
+      Su caja está cerrada: puede preparar la venta, pero para cobrar debe abrirla.
+      <a mat-flat-button routerLink="/caja">Abrir caja</a>
+    </div>
+  }
+  <div class="columnas">
+    <section class="tarjeta carrito">
+      <app-articulo-buscador (elegido)="agregar($event)" />
+      <div class="tabla-contenedor">
+        <table class="lineas">
+          <thead><tr><th>Artículo</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Desc. %</th><th class="num">Importe</th><th></th></tr></thead>
+          <tbody>
+            @for (l of lineas(); track l.articulo.id; let i = $index) {
+              <tr>
+                <td>{{ l.articulo.nombre }}<div class="muted pequeno">{{ l.articulo.codigoBarra }}</div></td>
+                <td class="num"><input class="celda" type="number" min="0" step="1" [ngModel]="l.cantidad"
+                                       (ngModelChange)="cambiar(i, 'cantidad', +$event)" aria-label="Cantidad" /></td>
+                <td class="num">{{ precio(l) | currency }}</td>
+                <td class="num"><input class="celda" type="number" min="0" max="100" [ngModel]="l.descuentoPorcentaje"
+                                       (ngModelChange)="cambiar(i, 'descuentoPorcentaje', +$event)" aria-label="Descuento" /></td>
+                <td class="num">{{ importe(l) | currency }}</td>
+                <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar" matTooltip="Quitar">
+                  <span class="material-symbols-outlined">delete</span></button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="vacio muted">Escanee o busque un artículo para comenzar</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="tarjeta resumen">
+      <app-cliente-selector [(cliente)]="cliente" />
+      @if (cliente(); as c) {
+        <div class="muted pequeno">
+          {{ comprobante() }} · Lista {{ lista() }}@if (c.exentoItbis) { · Exento de ITBIS }
+          @if ((c.saldoAFavor ?? 0) > 0) { <br />Saldo a favor: {{ c.saldoAFavor | currency }} }
+        </div>
+      }
+      <div class="totales">
+        <div><span>Subtotal</span><span>{{ totales().subtotal | currency }}</span></div>
+        @if (totales().descuento > 0) { <div><span>Descuentos</span><span>-{{ totales().descuento | currency }}</span></div> }
+        <div><span>ITBIS</span><span>{{ totales().itbis | currency }}</span></div>
+        <div class="total"><span>Total</span><span>{{ totales().total | currency }}</span></div>
+        <div class="muted pequeno">{{ lineas().length }} artículo(s) · {{ totales().total > 0 ? 'Vista previa: el total final lo confirma el sistema' : '' }}</div>
+      </div>
+      <button mat-flat-button class="cobrar" [disabled]="procesando() || !cajaAbierta() || !lineas().length" (click)="cobrar()">
+        <span class="material-symbols-outlined">payments</span> Cobrar
+      </button>
+      @if (puedeCredito()) {
+        <button mat-stroked-button [disabled]="procesando() || !lineas().length" (click)="venderACredito()">
+          Venta a crédito ({{ cliente()?.diasCredito }} días)
+        </button>
+      }
+      <button mat-button [disabled]="procesando()" (click)="nuevaVenta()">Limpiar</button>
+    </aside>
+  </div>
+</div>

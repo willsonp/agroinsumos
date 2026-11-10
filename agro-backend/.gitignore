@@ -1,0 +1,10 @@
+target/
+.idea/
+*.iml
+.vscode/
+*.p12
+*.pfx
+.env
+
+# Excepción: certificado AUTOFIRMADO solo para pruebas (la DGII no lo acepta)
+!src/test/resources/ecf/test-cert.p12

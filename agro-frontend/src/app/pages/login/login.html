@@ -1,0 +1,29 @@
+<div class="fondo">
+  <form class="tarjeta login" [formGroup]="form" (ngSubmit)="entrar()">
+    <div class="encabezado">
+      <span class="material-symbols-outlined">agriculture</span>
+      <h1>Gestión Administrativa</h1>
+      <p class="muted">Ingrese con su usuario del sistema</p>
+    </div>
+    @if (cargando()) { <mat-progress-bar mode="indeterminate" /> }
+    @if (error()) { <p class="error-texto" role="alert">{{ error() }}</p> }
+
+    <mat-form-field>
+      <mat-label>Usuario</mat-label>
+      <input matInput formControlName="username" autocomplete="username" autofocus />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Contraseña</mat-label>
+      <input matInput type="password" formControlName="password" autocomplete="current-password" />
+    </mat-form-field>
+    <mat-checkbox formControlName="recordar">Mantener sesión en este equipo</mat-checkbox>
+    <button mat-flat-button type="submit" [disabled]="form.invalid || cargando()">Entrar</button>
+
+    @if (proveedores().length) {
+      <div class="separador"><span>o</span></div>
+      @for (p of proveedores(); track p.id) {
+        <a mat-stroked-button [href]="p.url">Continuar con {{ nombreProveedor(p.id!) }}</a>
+      }
+    }
+  </form>
+</div>

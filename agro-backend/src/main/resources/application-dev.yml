@@ -1,0 +1,16 @@
+# Perfil de desarrollo local. NO usar en producción.
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-secret-cambiar-0123456789-abcdefghijklmnop}
+  dev:
+    admin-password: ${DEV_ADMIN_PASSWORD:xxxxxc}
+  ecf:
+    # Certificado AUTOFIRMADO solo para desarrollo (la DGII no lo acepta). En producción: ECF_CERT_PATH.
+    certificado:
+      ruta: ${ECF_CERT_PATH:src/test/resources/ecf/test-cert.p12}
+      clave: ${ECF_CERT_PASSWORD:test1234}
+
+logging:
+  level:
+    com.agroinsumos: DEBUG

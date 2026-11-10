@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/agrodb_test}
+    username: ${TEST_DB_USER:agro}
+    password: ${TEST_DB_PASSWORD:agro}
+app:
+  security:
+    jwt:
+      secret: test-secret-0123456789-0123456789-abcdef
+  ecf:
+    certificado:
+      ruta: src/test/resources/ecf/test-cert.p12
+      clave: test1234
+    consulta-estado-intervalo: 1h

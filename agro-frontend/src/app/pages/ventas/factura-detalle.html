@@ -1,0 +1,63 @@
+<div class="pagina">
+  @if (factura(); as f) {
+    <div class="pagina-titulo">
+      <a mat-icon-button routerLink="/ventas/facturas" aria-label="Volver"><span class="material-symbols-outlined">arrow_back</span></a>
+      <h1>Factura {{ f.numero }} <span class="muted">· {{ f.encf ?? f.ncfLegacy }}</span></h1>
+      <button mat-stroked-button (click)="imprimir()"><span class="material-symbols-outlined">print</span> Reimprimir</button>
+      @if (f.ecfDocumentoId) { <button mat-stroked-button (click)="xml()"><span class="material-symbols-outlined">code</span> XML</button> }
+      @if (auth.esSupervisor() && f.estado !== 'ANULADA') {
+        <button mat-stroked-button (click)="devolver()">Devolución</button>
+        <button mat-flat-button (click)="anular()" style="--mat-button-filled-container-color: var(--mat-sys-error)">Anular</button>
+      }
+    </div>
+    <div class="tarjeta cabecera">
+      <div class="datos">
+        <div><label>Cliente</label>{{ f.clienteNombre }} @if (f.clienteRnc) { <span class="muted">({{ f.clienteRnc }})</span> }</div>
+        <div><label>Fecha</label>{{ f.fecha | date: 'dd/MM/yyyy' }}</div>
+        <div><label>Condición</label>{{ f.condicion }} @if (f.condicion === 'CREDITO') { · {{ f.diasCredito }} días, vence {{ f.fechaVencimiento | date: 'dd/MM/yyyy' }} }</div>
+        <div><label>Estado</label><span class="chip" [class.ok]="f.estado === 'PAGADA'" [class.error]="f.estado === 'ANULADA'" [class.warn]="f.estado === 'EMITIDA'">{{ f.estado }}</span></div>
+        <div><label>Balance pendiente</label><strong>{{ f.balance | currency }}</strong></div>
+        <div><label>Lista de precios</label>{{ f.tipoPrecio }}</div>
+        @if (ecf(); as e) {
+          <div><label>e-CF {{ e.tipoEcf }}</label><app-estado-ecf [estado]="e.estado" /></div>
+          <div><label>Código de seguridad</label>{{ e.codigoSeguridad }}</div>
+          @if (e.ultimoError) { <div class="error-texto"><label>Último error DGII</label>{{ e.ultimoError }}</div> }
+        }
+        @if (f.comentario) { <div style="grid-column: 1/-1"><label>Comentario</label>{{ f.comentario }}</div> }
+      </div>
+      @if (timbre(); as t) { <app-qr [valor]="t.url!" [tamano]="120" /> }
+    </div>
+
+    <section class="tarjeta tabla-contenedor">
+      <table mat-table [dataSource]="f.lineas ?? []">
+        <ng-container matColumnDef="linea"><th mat-header-cell *matHeaderCellDef>#</th><td mat-cell *matCellDef="let l">{{ l.linea }}</td></ng-container>
+        <ng-container matColumnDef="descripcion"><th mat-header-cell *matHeaderCellDef>Descripción</th><td mat-cell *matCellDef="let l">{{ l.descripcion }}</td></ng-container>
+        <ng-container matColumnDef="cantidad"><th mat-header-cell *matHeaderCellDef class="num">Cant.</th><td mat-cell *matCellDef="let l" class="num">{{ l.cantidad | number: '1.0-3' }} {{ l.unidad }}</td></ng-container>
+        <ng-container matColumnDef="precio"><th mat-header-cell *matHeaderCellDef class="num">Precio</th><td mat-cell *matCellDef="let l" class="num">{{ l.precioUnitario | currency: 'DOP' : 'symbol' : '1.2-4' }}</td></ng-container>
+        <ng-container matColumnDef="descuento"><th mat-header-cell *matHeaderCellDef class="num">Desc.</th><td mat-cell *matCellDef="let l" class="num">{{ l.descuento | currency }}</td></ng-container>
+        <ng-container matColumnDef="itbis"><th mat-header-cell *matHeaderCellDef class="num">ITBIS</th><td mat-cell *matCellDef="let l" class="num">{{ l.itbis | currency }} <span class="muted">({{ l.tasaItbis }}%)</span></td></ng-container>
+        <ng-container matColumnDef="importe"><th mat-header-cell *matHeaderCellDef class="num">Importe</th><td mat-cell *matCellDef="let l" class="num">{{ l.importe | currency }}</td></ng-container>
+        <ng-container matColumnDef="devuelta"><th mat-header-cell *matHeaderCellDef class="num">Devuelto</th><td mat-cell *matCellDef="let l" class="num">{{ l.cantidadDevuelta | number: '1.0-3' }}</td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let r; columns: columnas"></tr>
+      </table>
+      <table class="totales" style="margin-left:auto">
+        <tr><td>Gravado</td><td class="num">{{ f.montoGravado | currency }}</td></tr>
+        <tr><td>Exento</td><td class="num">{{ f.montoExento | currency }}</td></tr>
+        <tr><td>ITBIS</td><td class="num">{{ f.totalItbis | currency }}</td></tr>
+        <tr class="total"><td>Total</td><td class="num">{{ f.total | currency }}</td></tr>
+      </table>
+    </section>
+
+    @if (devoluciones().length) {
+      <section class="tarjeta">
+        <h3>Notas de crédito</h3>
+        @for (d of devoluciones(); track d.id) {
+          <div class="fila"><strong>{{ d.encf }}</strong> <span>{{ d.fecha | date: 'dd/MM/yyyy' }}</span>
+            <span>{{ d.motivo }}</span><span class="espaciador"></span><strong>{{ d.total | currency }}</strong>
+            @if ((d.saldoAFavor ?? 0) > 0) { <span class="chip info">Saldo a favor {{ d.saldoAFavor | currency }}</span> }</div>
+        }
+      </section>
+    }
+  }
+</div>
