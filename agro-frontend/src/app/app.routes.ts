@@ -1,0 +1,51 @@
+import { Routes } from '@angular/router';
+import { autenticadoGuard, invitadoGuard, permisoGuard } from './core/auth.guards';
+
+const p = (permiso: string) => ({ canActivate: [permisoGuard], data: { permiso } });
+
+export const routes: Routes = [
+  { path: 'login', canActivate: [invitadoGuard], loadComponent: () => import('./pages/login/login').then((m) => m.Login) },
+  { path: 'auth/oauth2/callback', loadComponent: () => import('./pages/login/oauth-callback').then((m) => m.OAuthCallback) },
+  {
+    path: '',
+    canActivate: [autenticadoGuard],
+    loadComponent: () => import('./layout/shell').then((m) => m.Shell),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: 'inicio', title: 'Inicio', loadComponent: () => import('./pages/inicio/inicio').then((m) => m.Inicio) },
+      { path: 'ventas/pos', title: 'Punto de venta', ...p('VENTAS_POS'),
+        loadComponent: () => import('./pages/ventas/pos').then((m) => m.Pos) },
+      { path: 'ventas/facturas', title: 'Facturas', ...p('VENTAS_FACTURAS'),
+        loadComponent: () => import('./pages/ventas/facturas').then((m) => m.Facturas) },
+      { path: 'ventas/facturas/:id', title: 'Factura', ...p('VENTAS_FACTURAS'),
+        loadComponent: () => import('./pages/ventas/factura-detalle').then((m) => m.FacturaDetalle) },
+      { path: 'caja', title: 'Mi caja', ...p('CAJA_SESION'),
+        loadComponent: () => import('./pages/caja/mi-caja').then((m) => m.MiCaja) },
+      { path: 'caja/sesiones', title: 'Supervisión de cajas', ...p('CAJA_SESIONES'),
+        loadComponent: () => import('./pages/caja/sesiones').then((m) => m.Sesiones) },
+      { path: 'cxc/cobros', title: 'Cobros', ...p('CXC_RECIBOS'),
+        loadComponent: () => import('./pages/cxc/cobros').then((m) => m.Cobros) },
+      { path: 'cxc/estado-cuenta', title: 'Estado de cuenta', ...p('CXC_ESTADO_CUENTA'),
+        loadComponent: () => import('./pages/cxc/estado-cuenta').then((m) => m.EstadoCuenta) },
+      { path: 'inventario/articulos', title: 'Artículos', ...p('INV_ARTICULOS'),
+        loadComponent: () => import('./pages/inventario/articulos').then((m) => m.Articulos) },
+      { path: 'compras', title: 'Compras', ...p('COMPRAS_REGISTRO'),
+        loadComponent: () => import('./pages/compras/compras').then((m) => m.Compras) },
+      { path: 'catalogos/clientes', title: 'Clientes', ...p('CAT_CLIENTES'),
+        loadComponent: () => import('./pages/catalogos/clientes').then((m) => m.Clientes) },
+      { path: 'catalogos/proveedores', title: 'Proveedores', ...p('CAT_PROVEEDORES'),
+        loadComponent: () => import('./pages/catalogos/proveedores').then((m) => m.Proveedores) },
+      { path: 'catalogos/generales', title: 'Catálogos generales', ...p('CAT_GENERALES'),
+        loadComponent: () => import('./pages/catalogos/generales').then((m) => m.Generales) },
+      { path: 'fiscal/ecf', title: 'Comprobantes electrónicos', ...p('ECF_DOCUMENTOS'),
+        loadComponent: () => import('./pages/fiscal/ecf-documentos').then((m) => m.EcfDocumentos) },
+      { path: 'fiscal/secuencias', title: 'Secuencias e-NCF', ...p('ECF_SECUENCIAS'),
+        loadComponent: () => import('./pages/fiscal/secuencias').then((m) => m.Secuencias) },
+      { path: 'fiscal/formatos', title: 'Formatos 606 / 607', ...p('FISCAL_FORMATOS'),
+        loadComponent: () => import('./pages/fiscal/formatos').then((m) => m.Formatos) },
+      { path: 'admin/usuarios', title: 'Usuarios', ...p('ADMIN_USUARIOS'),
+        loadComponent: () => import('./pages/admin/usuarios').then((m) => m.Usuarios) },
+    ],
+  },
+  { path: '**', redirectTo: '' },
+];

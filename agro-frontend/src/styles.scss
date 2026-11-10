@@ -1,0 +1,69 @@
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  color-scheme: light;
+  @include mat.theme((
+    color: (primary: mat.$green-palette, tertiary: mat.$orange-palette),
+    typography: Roboto,
+    density: -1,
+  ));
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+}
+
+* { box-sizing: border-box; }
+
+/* Íconos (material-symbols alojado localmente: funciona sin internet en el punto de venta) */
+.material-symbols-outlined { font-size: 22px; vertical-align: middle; }
+
+/* ---------- Utilidades de página ---------- */
+.pagina { padding: 16px 24px 32px; max-width: 1400px; margin: 0 auto; }
+.pagina-titulo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 16px;
+  h1 { font: var(--mat-sys-headline-small); margin: 0; flex: 1; } }
+.tarjeta { background: var(--mat-sys-surface); border-radius: 12px; padding: 16px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+.fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.fila > mat-form-field { flex: 1 1 180px; }
+.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; }
+.grid-form .ancho-completo { grid-column: 1 / -1; }
+.espaciador { flex: 1; }
+.num, td.num, th.num { text-align: right !important; font-variant-numeric: tabular-nums; }
+/* Separación entre ícono y texto en botones (no en botones de solo ícono) */
+.mat-mdc-button-base:not(.mat-mdc-icon-button) .material-symbols-outlined { margin-right: 6px; font-size: 20px; }
+.muted { color: var(--mat-sys-on-surface-variant); }
+.error-texto { color: var(--mat-sys-error); }
+.tabla-contenedor { overflow-x: auto; }
+table.mat-mdc-table { width: 100%; }
+tr.mat-mdc-row.clickable { cursor: pointer; }
+tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
+
+.chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-surface-container-high); }
+.chip.ok { background: #d7f5dd; color: #0f5223; }
+.chip.warn { background: #fff1c2; color: #6b4e00; }
+.chip.error { background: #ffdad6; color: #93000a; }
+.chip.info { background: #dbe7ff; color: #0b3b8c; }
+
+.snack-error { --mat-snack-bar-container-color: var(--mat-sys-error-container);
+  --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container); }
+
+@media (max-width: 600px) { .pagina { padding: 12px; } }
+
+/* ---------- Impresión (ticket / factura) ---------- */
+@media print {
+  body { background: white; }
+  /* Si hay un diálogo abierto (ticket), se imprime solo el diálogo */
+  body:has(.cdk-overlay-container .mat-mdc-dialog-container) app-root { display: none; }
+  .cdk-overlay-container, .cdk-global-overlay-wrapper { position: static !important; }
+  .cdk-overlay-backdrop { display: none; }
+  .mat-mdc-dialog-surface { box-shadow: none !important; }
+  .no-imprimir, mat-toolbar, mat-sidenav { display: none !important; }
+  .mat-drawer-content { margin: 0 !important; }
+}

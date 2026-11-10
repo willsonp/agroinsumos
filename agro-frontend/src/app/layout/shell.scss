@@ -1,0 +1,14 @@
+.contenedor { height: 100vh; }
+.menu-lateral { width: 260px; border-right: 1px solid var(--mat-sys-outline-variant); }
+.marca { display: flex; gap: 10px; align-items: center; padding: 16px;
+  .material-symbols-outlined { font-size: 34px; color: var(--mat-sys-primary); }
+  .marca-nombre { font: var(--mat-sys-title-small); line-height: 1.2; }
+  .marca-rnc { font: var(--mat-sys-body-small); } }
+.modulo { padding: 14px 16px 4px; font: var(--mat-sys-label-small); text-transform: uppercase;
+  letter-spacing: .06em; color: var(--mat-sys-on-surface-variant); }
+.activo { background: var(--mat-sys-secondary-container); border-radius: 24px; }
+.barra { position: sticky; top: 0; z-index: 2; background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant); }
+.titulo-app { font: var(--mat-sys-title-medium); margin-left: 8px; }
+.menu-encabezado { padding: 8px 16px; }
+@media (max-width: 600px) { .usuario-nombre, .titulo-app { display: none; } }

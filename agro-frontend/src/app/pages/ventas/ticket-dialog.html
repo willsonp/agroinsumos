@@ -1,0 +1,51 @@
+<mat-dialog-content>
+  <div class="ticket" id="ticket">
+    <div class="centro">
+      <strong>{{ cia?.nombre }}</strong><br />
+      RNC {{ cia?.rnc }}<br />
+      {{ cia?.direccion }}
+    </div>
+    <hr />
+    <div class="centro"><strong>{{ nombreEcf }}</strong></div>
+    <div>e-NCF: <strong>{{ datos.factura.encf }}</strong></div>
+    <div>Factura No. {{ datos.factura.numero }} · {{ datos.factura.fecha | date: 'dd/MM/yyyy' }}</div>
+    <div>Cliente: {{ datos.factura.clienteNombre }}</div>
+    @if (datos.factura.clienteRnc) { <div>RNC/Cédula: {{ datos.factura.clienteRnc }}</div> }
+    @if (datos.factura.condicion === 'CREDITO') {
+      <div>Crédito {{ datos.factura.diasCredito }} días · Vence {{ datos.factura.fechaVencimiento | date: 'dd/MM/yyyy' }}</div>
+    }
+    <hr />
+    <table>
+      @for (l of datos.factura.lineas; track l.id) {
+        <tr><td colspan="2">{{ l.descripcion }}</td></tr>
+        <tr class="detalle">
+          <td>{{ l.cantidad | number: '1.0-3' }} x {{ l.precioUnitario | currency }}@if ((l.descuento ?? 0) > 0) { · desc. {{ l.descuento | currency }} }</td>
+          <td class="num">{{ l.importe | currency }}</td>
+        </tr>
+      }
+    </table>
+    <hr />
+    <table>
+      <tr><td>Subtotal</td><td class="num">{{ (datos.factura.montoGravado ?? 0) + (datos.factura.montoExento ?? 0) | currency }}</td></tr>
+      @if ((datos.factura.totalDescuento ?? 0) > 0) { <tr><td>Descuento</td><td class="num">{{ datos.factura.totalDescuento | currency }}</td></tr> }
+      <tr><td>ITBIS</td><td class="num">{{ datos.factura.totalItbis | currency }}</td></tr>
+      <tr class="total"><td>TOTAL</td><td class="num">{{ datos.factura.total | currency }}</td></tr>
+      @if (datos.recibo; as r) {
+        @for (p of r.pagos; track $index) { <tr><td>{{ p.forma }}</td><td class="num">{{ p.monto | currency }}</td></tr> }
+        @if ((r.devuelta ?? 0) > 0) { <tr><td>Devuelta</td><td class="num">{{ r.devuelta | currency }}</td></tr> }
+      }
+    </table>
+    @if (timbre(); as t) {
+      <hr />
+      <div class="centro">
+        <app-qr [valor]="t.url!" [tamano]="150" /><br />
+        Código de seguridad: <strong>{{ t.codigoSeguridad }}</strong>
+      </div>
+    }
+    <div class="centro pequeno">¡Gracias por su compra!</div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="no-imprimir">
+  <button mat-button [mat-dialog-close]="false">Cerrar</button>
+  <button mat-flat-button (click)="imprimir()"><span class="material-symbols-outlined">print</span> Imprimir</button>
+</mat-dialog-actions>

@@ -1,0 +1,19 @@
+.pos { max-width: 1500px; }
+.progreso { position: sticky; top: 64px; z-index: 3; }
+.aviso { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; background: #fff1c2; flex-wrap: wrap; }
+.columnas { display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .columnas { grid-template-columns: 1fr; } }
+.lineas { width: 100%; border-collapse: collapse;
+  th { text-align: left; font: var(--mat-sys-label-medium); color: var(--mat-sys-on-surface-variant); padding: 8px 6px;
+    border-bottom: 1px solid var(--mat-sys-outline-variant); }
+  th.num { text-align: right; }
+  td { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); } }
+.celda { width: 72px; padding: 6px; text-align: right; border: 1px solid var(--mat-sys-outline-variant); border-radius: 6px;
+  font: inherit; background: var(--mat-sys-surface); color: inherit; }
+.vacio { text-align: center; padding: 40px 0 !important; }
+.pequeno { font-size: 12px; }
+.resumen { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 80px; }
+.totales { display: flex; flex-direction: column; gap: 6px; padding: 8px 0;
+  > div:not(.muted) { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .total { font: var(--mat-sys-headline-medium); color: var(--mat-sys-primary); } }
+.cobrar { height: 56px; font-size: 18px; }

@@ -1,0 +1,12 @@
+# Activar con SPRING_PROFILES_ACTIVE=dev,oauth2 (o prod,oauth2).
+# Para agregar otro proveedor OIDC (Microsoft Entra, Keycloak...), añadir
+# otra entrada en "registration" + "provider" con su issuer-uri.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,email,profile

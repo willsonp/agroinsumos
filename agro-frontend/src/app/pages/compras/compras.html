@@ -1,0 +1,76 @@
+<div class="pagina">
+  <div class="pagina-titulo"><h1>Compras</h1>
+    @if (!nueva()) { <button mat-flat-button (click)="nueva.set(true)"><span class="material-symbols-outlined">add</span> Registrar compra</button> }
+  </div>
+
+  @if (nueva()) {
+    <div class="tarjeta">
+      <h2>Nueva compra</h2>
+      <div class="grid-form">
+        <mat-form-field><mat-label>Proveedor</mat-label><mat-select [(ngModel)]="f.proveedorId">
+          @for (p of proveedores(); track p.id) { <mat-option [value]="p.id">{{ p.nombre }} @if (p.rncCedula) { · {{ p.rncCedula }} }</mat-option> }
+        </mat-select></mat-form-field>
+        <mat-form-field><mat-label>Condición</mat-label><mat-select [(ngModel)]="f.condicion">
+          <mat-option value="CREDITO">Crédito</mat-option><mat-option value="CONTADO">Contado</mat-option></mat-select></mat-form-field>
+        @if (f.condicion === 'CREDITO') { <mat-form-field><mat-label>Días de crédito</mat-label><input matInput type="number" [(ngModel)]="f.diasCredito" /></mat-form-field> }
+        <mat-form-field><mat-label>Tipo de gasto (606)</mat-label><mat-select [(ngModel)]="f.tipoBienServicio">
+          @for (t of tipos606; track t[0]) { <mat-option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</mat-option> }</mat-select></mat-form-field>
+        <mat-checkbox class="ancho-completo" [(ngModel)]="f.emitir41">Suplidor informal sin comprobante: emitir e-CF 41 (Comprobante de Compras)</mat-checkbox>
+        @if (!f.emitir41) { <mat-form-field><mat-label>NCF del suplidor</mat-label><input matInput [(ngModel)]="f.ncf" placeholder="B0100000001 o E310000000001" /></mat-form-field> }
+        <mat-form-field><mat-label>ITBIS retenido</mat-label><input matInput type="number" min="0" [(ngModel)]="f.itbisRetenido" /></mat-form-field>
+        <mat-form-field><mat-label>ISR retenido</mat-label><input matInput type="number" min="0" [(ngModel)]="f.isrRetenido" /></mat-form-field>
+        @if (f.isrRetenido > 0) {
+          <mat-form-field><mat-label>Tipo de retención ISR</mat-label><mat-select [(ngModel)]="f.tipoRetencionIsr">
+            <mat-option value="01">01 · Alquileres</mat-option><mat-option value="02">02 · Honorarios por servicios</mat-option>
+            <mat-option value="03">03 · Otras rentas</mat-option><mat-option value="04">04 · Otras rentas (presuntas)</mat-option>
+            <mat-option value="05">05 · Intereses a personas jurídicas</mat-option><mat-option value="06">06 · Intereses a personas físicas</mat-option>
+            <mat-option value="07">07 · Proveedores del Estado</mat-option><mat-option value="08">08 · Juegos telefónicos</mat-option></mat-select></mat-form-field>
+        }
+        <mat-form-field><mat-label>Flete</mat-label><input matInput type="number" min="0" [ngModel]="flete()" (ngModelChange)="flete.set(+$event || 0)" /></mat-form-field>
+        <mat-form-field class="ancho-completo"><mat-label>Comentario</mat-label><input matInput [(ngModel)]="f.comentario" /></mat-form-field>
+      </div>
+
+      <app-articulo-buscador (elegido)="agregar($event)" />
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Descuento</th><th class="num">ITBIS %</th><th class="num">Importe</th><th></th></tr>
+          @for (l of lineas(); track $index; let i = $index) {
+            <tr><td>{{ l.articulo.nombre }}</td>
+              <td class="num"><input class="celda" type="number" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" /></td>
+              <td class="num"><input class="celda" type="number" [ngModel]="l.costo" (ngModelChange)="fijar(i, 'costo', +$event)" /></td>
+              <td class="num"><input class="celda" type="number" [ngModel]="l.descuento" (ngModelChange)="fijar(i, 'descuento', +$event)" /></td>
+              <td class="num"><select class="celda" [ngModel]="l.tasa" (ngModelChange)="fijar(i, 'tasa', +$event)">
+                <option [ngValue]="18">18</option><option [ngValue]="16">16</option><option [ngValue]="0">0</option></select></td>
+              <td class="num">{{ l.cantidad * l.costo - l.descuento | currency }}</td>
+              <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
+          } @empty { <tr><td colspan="7" class="muted">Agregue los artículos de la factura del suplidor</td></tr> }
+        </table>
+      </div>
+      <div class="fila" style="margin-top:12px">
+        <span>Subtotal {{ totales().subtotal | currency }} · ITBIS {{ totales().itbis | currency }} · Flete {{ flete() | currency }}</span>
+        <span class="espaciador"></span><span class="total">{{ totales().total | currency }}</span>
+        <button mat-button (click)="nueva.set(false)">Cancelar</button>
+        <button mat-flat-button [disabled]="!f.proveedorId || !lineas().length" (click)="registrar()">Registrar compra</button>
+      </div>
+    </div>
+  }
+
+  <section class="tarjeta tabla-contenedor">
+    <table mat-table [dataSource]="pagina()?.content ?? []">
+      <ng-container matColumnDef="numero"><th mat-header-cell *matHeaderCellDef>No.</th><td mat-cell *matCellDef="let c">{{ c.numero }}</td></ng-container>
+      <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let c">{{ c.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
+      <ng-container matColumnDef="proveedor"><th mat-header-cell *matHeaderCellDef>Proveedor</th><td mat-cell *matCellDef="let c">{{ nombreProveedor(c.proveedorId) }}</td></ng-container>
+      <ng-container matColumnDef="ncf"><th mat-header-cell *matHeaderCellDef>Comprobante</th><td mat-cell *matCellDef="let c">{{ c.ncfProveedor ?? c.encfCompra }}</td></ng-container>
+      <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef class="num">Total</th><td mat-cell *matCellDef="let c" class="num">{{ c.total | currency }}</td></ng-container>
+      <ng-container matColumnDef="balance"><th mat-header-cell *matHeaderCellDef class="num">Por pagar</th><td mat-cell *matCellDef="let c" class="num">{{ c.balance | currency }}</td></ng-container>
+      <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let c"><span class="chip" [class.ok]="c.estado === 'PAGADA'" [class.error]="c.estado === 'ANULADA'">{{ c.estado }}</span></td></ng-container>
+      <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let c" style="white-space:nowrap">
+        @if (c.estado === 'REGISTRADA') { <button mat-button (click)="pagar(c)">Pagar</button><button mat-button (click)="anular(c)">Anular</button> }
+      </td></ng-container>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let r; columns: columnas"></tr>
+    </table>
+    <mat-paginator [length]="pagina()?.totalElements ?? 0" [pageSize]="20" (page)="cargar($event)" />
+  </section>
+</div>

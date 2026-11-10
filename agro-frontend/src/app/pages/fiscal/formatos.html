@@ -1,0 +1,64 @@
+<div class="pagina">
+  <div class="pagina-titulo"><h1>Formatos de envío DGII</h1></div>
+  <div class="tarjeta">
+    <div class="fila">
+      <mat-button-toggle-group [(ngModel)]="formato" (change)="generar()">
+        <mat-button-toggle value="607">607 · Ventas</mat-button-toggle>
+        <mat-button-toggle value="606">606 · Compras</mat-button-toggle>
+      </mat-button-toggle-group>
+      <mat-form-field style="max-width:200px"><mat-label>Periodo</mat-label><input matInput type="month" [(ngModel)]="periodo" (change)="generar()" /></mat-form-field>
+      @if (formato === '607') {
+        <mat-slide-toggle [(ngModel)]="incluirEcf" (change)="generar()">Incluir e-CF</mat-slide-toggle>
+      }
+      <span class="espaciador"></span>
+      <button mat-flat-button [disabled]="!reporte()" (click)="txt()"><span class="material-symbols-outlined">download</span> Descargar TXT</button>
+    </div>
+    <p class="muted">Valide el archivo con la Herramienta de Pre-validación de Formatos de Envío de la DGII antes de remitirlo.</p>
+
+    @if (reporte(); as r) {
+      @if (r.advertencias?.length) {
+        <ul class="advertencias">@for (a of r.advertencias; track $index) { <li>{{ a }}</li> }</ul>
+      }
+      @if (formato === '606') {
+        <div class="kpis">
+          <div><label>Registros</label>{{ r606().resumen?.registros }}</div>
+          <div><label>Monto facturado</label>{{ r606().resumen?.totalFacturado | currency }}</div>
+          <div><label>ITBIS facturado</label>{{ r606().resumen?.totalItbis | currency }}</div>
+          <div><label>ITBIS retenido</label>{{ r606().resumen?.itbisRetenido | currency }}</div>
+          <div><label>ISR retenido</label>{{ r606().resumen?.isrRetenido | currency }}</div>
+          <div><label>ITBIS por adelantar</label>{{ r606().resumen?.itbisPorAdelantar | currency }}</div>
+        </div>
+        <div class="tabla-contenedor"><table class="tabla">
+          <tr><th>RNC</th><th>Suplidor</th><th>Tipo</th><th>NCF</th><th>Fecha</th><th>Pago</th><th class="num">Servicios</th><th class="num">Bienes</th>
+            <th class="num">Total</th><th class="num">ITBIS</th><th class="num">ITBIS ret.</th><th class="num">ISR ret.</th><th>Forma</th></tr>
+          @for (l of r606().lineas; track $index) {
+            <tr><td>{{ l.rncCedula }}</td><td>{{ l.suplidor }}</td><td>{{ l.tipoBienServicio }}</td><td>{{ l.ncf }}</td>
+              <td>{{ l.fechaComprobante | date: 'dd/MM/yyyy' }}</td><td>{{ l.fechaPago | date: 'dd/MM/yyyy' }}</td>
+              <td class="num">{{ l.montoServicios | currency }}</td><td class="num">{{ l.montoBienes | currency }}</td>
+              <td class="num">{{ l.totalMontoFacturado | currency }}</td><td class="num">{{ l.itbisFacturado | currency }}</td>
+              <td class="num">{{ l.itbisRetenido | currency }}</td><td class="num">{{ l.montoRetencionRenta | currency }}</td><td>{{ l.formaPago }}</td></tr>
+          } @empty { <tr><td colspan="13" class="muted">Sin registros en el periodo</td></tr> }
+        </table></div>
+      } @else {
+        <div class="kpis">
+          <div><label>Registros</label>{{ r607().resumen?.registros }}</div>
+          <div><label>Monto facturado</label>{{ r607().resumen?.totalFacturado | currency }}</div>
+          <div><label>ITBIS facturado</label>{{ r607().resumen?.totalItbis | currency }}</div>
+          <div><label>ITBIS retenido por terceros</label>{{ r607().resumen?.itbisRetenido | currency }}</div>
+          <div><label>Notas de crédito</label>{{ r607().resumen?.notasCredito | currency }}</div>
+        </div>
+        <div class="tabla-contenedor"><table class="tabla">
+          <tr><th>RNC</th><th>Cliente</th><th>NCF</th><th>Modificado</th><th>Fecha</th><th class="num">Facturado</th><th class="num">ITBIS</th>
+            <th class="num">Ret. ITBIS</th><th class="num">Efectivo</th><th class="num">Cheque/Transf.</th><th class="num">Tarjeta</th><th class="num">Crédito</th></tr>
+          @for (l of r607().lineas; track $index) {
+            <tr><td>{{ l.rncCedula }}</td><td>{{ l.cliente }}</td><td>{{ l.ncf }}</td><td>{{ l.ncfModificado }}</td>
+              <td>{{ l.fechaComprobante | date: 'dd/MM/yyyy' }}</td><td class="num">{{ l.montoFacturado | currency }}</td>
+              <td class="num">{{ l.itbisFacturado | currency }}</td><td class="num">{{ l.itbisRetenidoTerceros | currency }}</td>
+              <td class="num">{{ l.efectivo | currency }}</td><td class="num">{{ l.chequeTransferencia | currency }}</td>
+              <td class="num">{{ l.tarjeta | currency }}</td><td class="num">{{ l.ventaCredito | currency }}</td></tr>
+          } @empty { <tr><td colspan="12" class="muted">Sin registros en el periodo</td></tr> }
+        </table></div>
+      }
+    }
+  </div>
+</div>

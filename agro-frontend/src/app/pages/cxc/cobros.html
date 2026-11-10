@@ -1,0 +1,54 @@
+<div class="pagina">
+  <div class="pagina-titulo"><h1>Cobros</h1></div>
+  <div class="tarjeta">
+    <div class="fila">
+      <div style="flex:1 1 360px"><app-cliente-selector [(cliente)]="cliente" /></div>
+      @if (cliente(); as c) {
+        @if ((c.saldoAFavor ?? 0) > 0) { <span class="chip info">Saldo a favor {{ c.saldoAFavor | currency }}</span> }
+        <mat-slide-toggle [(ngModel)]="conRetenciones">El cliente retiene ITBIS / ISR</mat-slide-toggle>
+      }
+    </div>
+    @if (cliente()) {
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <tr><th>Documento</th><th>Comprobante</th><th>Vence</th><th class="num">Balance</th><th class="num">Abonar</th>
+            @if (conRetenciones) { <th class="num">Ret. ITBIS</th><th class="num">Ret. ISR</th> }</tr>
+          @for (a of abonos(); track $index; let i = $index) {
+            <tr>
+              <td>{{ a.doc.tipo === 'FACTURA' ? 'Factura' : 'Nota de débito' }} {{ a.doc.numero }}</td>
+              <td>{{ a.doc.comprobante }}</td>
+              <td [class.vencido]="(a.doc.diasVencido ?? 0) > 0">{{ a.doc.vencimiento | date: 'dd/MM/yyyy' }}
+                @if ((a.doc.diasVencido ?? 0) > 0) { <span>({{ a.doc.diasVencido }} días)</span> }</td>
+              <td class="num">{{ a.doc.balance | currency }}</td>
+              <td class="num"><input class="celda" type="number" min="0" [ngModel]="a.monto" (ngModelChange)="fijar(i, 'monto', +$event)" /></td>
+              @if (conRetenciones) {
+                <td class="num"><input class="celda" type="number" min="0" [ngModel]="a.retItbis" (ngModelChange)="fijar(i, 'retItbis', +$event)" /></td>
+                <td class="num"><input class="celda" type="number" min="0" [ngModel]="a.retIsr" (ngModelChange)="fijar(i, 'retIsr', +$event)" /></td>
+              }
+            </tr>
+          } @empty { <tr><td colspan="7" class="muted" style="padding:24px">El cliente no tiene documentos pendientes</td></tr> }
+        </table>
+      </div>
+      @if (abonos().length) {
+        <div class="pie">
+          <button mat-stroked-button (click)="saldarTodo()">Saldar todo</button>
+          <mat-form-field style="flex:1 1 260px"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="concepto" maxlength="200" /></mat-form-field>
+          <div>
+            <div class="total">{{ totalAbono() | currency }}</div>
+            @if (totalRetenciones() > 0) { <div class="muted">+ retenciones {{ totalRetenciones() | currency }}</div> }
+          </div>
+          <button mat-flat-button [disabled]="excede()" (click)="cobrar()">Cobrar</button>
+        </div>
+        @if (excede()) { <p class="error-texto">Hay abonos mayores al balance del documento</p> }
+      }
+    }
+  </div>
+  @if (ultimo(); as r) {
+    <div class="tarjeta" style="margin-top:16px">
+      <h3>Recibo {{ r.numero }} · {{ r.fecha | date: 'dd/MM/yyyy' }}</h3>
+      <p>Aplicado {{ r.totalAplicado | currency }} · Retenciones {{ r.totalRetenciones | currency }} · Recibido {{ r.totalRecibido | currency }}
+        @if ((r.devuelta ?? 0) > 0) { · <strong>Devuelta {{ r.devuelta | currency }}</strong> }</p>
+      <button mat-stroked-button class="no-imprimir" (click)="ultimo.set(null)">Cerrar</button>
+    </div>
+  }
+</div>

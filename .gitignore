@@ -1,0 +1,12 @@
+# Respaldos y artefactos
+*.tar.gz
+agro-backend/target/
+agro-frontend/node_modules/
+agro-frontend/dist/
+agro-frontend/.angular/
+.idea/
+.vscode/
+*.iml
+.env
+# Certificados reales: nunca al repositorio (el de pruebas es autofirmado y vive en src/test)
+*.pfx

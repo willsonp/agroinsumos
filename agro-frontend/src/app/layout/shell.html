@@ -1,0 +1,55 @@
+<mat-sidenav-container class="contenedor">
+  <mat-sidenav [mode]="movil() ? 'over' : 'side'" [opened]="menuAbierto()"
+               (closedStart)="menuAbierto.set(false)" class="menu-lateral">
+    <div class="marca">
+      <span class="material-symbols-outlined">agriculture</span>
+      <div>
+        <div class="marca-nombre">{{ auth.perfil()?.compania?.nombre }}</div>
+        <div class="muted marca-rnc">RNC {{ auth.perfil()?.compania?.rnc }}</div>
+      </div>
+    </div>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/inicio" routerLinkActive="activo" (click)="alNavegar()">
+        <span matListItemIcon class="material-symbols-outlined">home</span>
+        <span matListItemTitle>Inicio</span>
+      </a>
+      @for (m of modulos(); track m.nombre) {
+        <div class="modulo">{{ m.nombre }}</div>
+        @for (o of m.opciones; track o.codigo) {
+          <a mat-list-item [routerLink]="o.ruta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }"
+             (click)="alNavegar()">
+            <span matListItemIcon class="material-symbols-outlined">{{ o.icono }}</span>
+            <span matListItemTitle>{{ o.nombre }}</span>
+          </a>
+        }
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="barra">
+      <button mat-icon-button (click)="menuAbierto.set(!menuAbierto())" aria-label="Menú">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <span class="titulo-app">Gestión Administrativa</span>
+      <span class="espaciador"></span>
+      <button mat-button [matMenuTriggerFor]="menuUsuario">
+        <span class="material-symbols-outlined">account_circle</span>
+        <span class="usuario-nombre">{{ auth.perfil()?.nombre }}</span>
+      </button>
+      <mat-menu #menuUsuario="matMenu">
+        <div class="menu-encabezado">
+          <strong>{{ auth.perfil()?.username }}</strong>
+          <div class="muted">{{ auth.perfil()?.nivel }}</div>
+        </div>
+        <mat-divider />
+        <button mat-menu-item (click)="auth.logout()">
+          <span class="material-symbols-outlined">logout</span> Cerrar sesión
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

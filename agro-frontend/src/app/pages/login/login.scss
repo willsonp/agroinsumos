@@ -1,0 +1,8 @@
+.fondo { min-height: 100vh; display: grid; place-items: center; padding: 16px;
+  background: linear-gradient(135deg, var(--mat-sys-primary-container), var(--mat-sys-surface-container-low)); }
+.login { width: min(400px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 32px 28px; }
+.encabezado { text-align: center;
+  .material-symbols-outlined { font-size: 48px; color: var(--mat-sys-primary); }
+  h1 { font: var(--mat-sys-headline-small); margin: 4px 0; } p { margin: 0; } }
+.separador { display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant);
+  &::before, &::after { content: ''; flex: 1; border-top: 1px solid var(--mat-sys-outline-variant); } }
