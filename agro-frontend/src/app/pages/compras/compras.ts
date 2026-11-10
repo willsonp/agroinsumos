@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { CuentasBancarias } from '../../shared/cuentas-bancarias';
 import type { Pagina, S } from '../../api/tipos';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
@@ -133,8 +134,18 @@ export class Compras {
       <mat-form-field><mat-label>Forma</mat-label><mat-select [(ngModel)]="forma">
         <mat-option value="TRANSFERENCIA">Transferencia</mat-option><mat-option value="CHEQUE">Cheque</mat-option>
         <mat-option value="EFECTIVO">Efectivo (sale de mi caja)</mat-option></mat-select></mat-form-field>
+      @if (forma !== 'EFECTIVO') {
+        <mat-form-field class="ancho-completo"><mat-label>Sale de la cuenta</mat-label><mat-select [(ngModel)]="cuentaBancariaId">
+          <mat-option [value]="null">Sin vincular al módulo Banco</mat-option>
+          @for (c of cuentas.activas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }} · disp. {{ c.saldo | currency }}</mat-option> }
+        </mat-select>
+        @if (cuentaBancariaId && forma === 'CHEQUE') { <mat-hint>Deje el No. de cheque vacío para usar la numeración de la cuenta</mat-hint> }
+        </mat-form-field>
+      }
       <mat-form-field><mat-label>Referencia / No. cheque</mat-label><input matInput [(ngModel)]="referencia" /></mat-form-field>
-      <mat-form-field><mat-label>Banco</mat-label><input matInput [(ngModel)]="banco" /></mat-form-field>
+      @if (!cuentaBancariaId || forma === 'EFECTIVO') {
+        <mat-form-field><mat-label>Banco</mat-label><input matInput [(ngModel)]="banco" /></mat-form-field>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancelar</button>
@@ -148,8 +159,17 @@ export class PagoProveedorDialog {
   protected forma: 'TRANSFERENCIA' | 'CHEQUE' | 'EFECTIVO' = 'TRANSFERENCIA';
   protected referencia = '';
   protected banco = '';
+  protected readonly cuentas = inject(CuentasBancarias);
+  protected cuentaBancariaId: number | null = null;
+  protected readonly etiqueta = CuentasBancarias.etiqueta;
+
+  constructor() {
+    this.cuentas.cargar();
+  }
 
   protected pagar(): void {
-    this.ref.close({ forma: this.forma, monto: this.monto, referencia: this.referencia || undefined, banco: this.banco || undefined });
+    const cuenta = this.forma === 'EFECTIVO' ? null : this.cuentaBancariaId;
+    this.ref.close({ forma: this.forma, monto: this.monto, referencia: this.referencia || undefined,
+      banco: cuenta ? undefined : this.banco || undefined, cuentaBancariaId: cuenta ?? undefined });
   }
 }

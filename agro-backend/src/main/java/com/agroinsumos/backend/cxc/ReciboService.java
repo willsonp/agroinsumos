@@ -1,5 +1,7 @@
 package com.agroinsumos.backend.cxc;
 
+import com.agroinsumos.backend.banco.MovimientoBancarioService;
+import com.agroinsumos.backend.banco.TipoMovimientoBancario;
 import com.agroinsumos.backend.caja.CajaMovimiento;
 import com.agroinsumos.backend.caja.CajaService;
 import com.agroinsumos.backend.catalogo.cliente.Cliente;
@@ -53,7 +55,7 @@ public class ReciboService {
     public record AplicacionResponse(TipoDocumento documentoTipo, Long documentoId, BigDecimal monto,
                                      BigDecimal retencionItbis, BigDecimal retencionIsr) {}
 
-    public record PagoResponse(FormaPago forma, BigDecimal monto, String referencia, String banco) {}
+    public record PagoResponse(FormaPago forma, BigDecimal monto, String referencia, String banco, Long cuentaBancariaId) {}
 
     public record ReciboResponse(Long id, long numero, LocalDate fecha, Long clienteId, Long sesionCajaId, String concepto,
                                  BigDecimal totalAplicado, BigDecimal totalRetenciones, BigDecimal totalRecibido,
@@ -66,7 +68,7 @@ public class ReciboService {
                     r.getAplicaciones().stream().map(a -> new AplicacionResponse(a.getDocumentoTipo(), a.getDocumentoId(),
                             a.getMonto(), a.getRetencionItbis(), a.getRetencionIsr())).toList(),
                     r.getPagos().stream().map(p -> new PagoResponse(p.getFormaPago(), p.getMonto(), p.getReferencia(),
-                            p.getBanco())).toList());
+                            p.getBanco(), p.getCuentaBancariaId())).toList());
         }
     }
 
@@ -75,6 +77,7 @@ public class ReciboService {
     private final FacturaService facturas;
     private final ClienteService clientes;
     private final CajaService caja;
+    private final MovimientoBancarioService banco;
     private final NumeradorService numerador;
     private final Clock clock;
 
@@ -126,6 +129,12 @@ public class ReciboService {
             rp.setMonto(p.monto());
             rp.setReferencia(p.referencia());
             rp.setBanco(p.banco());
+            if (p.cuentaBancariaId() != null) {
+                if (p.forma() != FormaPago.TRANSFERENCIA) {
+                    throw new BusinessException("CUENTA_NO_APLICA", "Solo las transferencias se acreditan directo a una cuenta bancaria; los cheques se depositan desde la caja");
+                }
+                rp.setCuentaBancariaId(p.cuentaBancariaId());
+            }
             rec.getPagos().add(rp);
             recibido = recibido.add(p.monto());
             if (p.forma() == FormaPago.EFECTIVO) efectivo = efectivo.add(p.monto());
@@ -161,6 +170,13 @@ public class ReciboService {
             caja.registrar(sesion, CajaMovimiento.Tipo.COBRO, FormaPago.EFECTIVO, efectivo.subtract(devuelta), DOC_TIPO,
                     rec.getId(), "Recibo " + rec.getNumero());
         }
+        for (var p : rec.getPagos()) {
+            if (p.getCuentaBancariaId() == null) continue;
+            var mov = banco.registrar(user, p.getCuentaBancariaId(), TipoMovimientoBancario.TRANSFERENCIA_ENTRADA, rec.getFecha(),
+                    p.getReferencia(), cliente.getNombre(), "Recibo " + rec.getNumero() + " de " + cliente.getNombre(), p.getMonto(),
+                    DOC_TIPO, rec.getId());
+            p.setReferencia(mov.getReferencia());
+        }
         return rec;
     }
 
@@ -191,6 +207,7 @@ public class ReciboService {
             caja.registrar(sesion, CajaMovimiento.Tipo.ANULACION_COBRO, FormaPago.EFECTIVO, efectivo.subtract(rec.getDevuelta()),
                     DOC_TIPO, rec.getId(), "Anulación recibo " + rec.getNumero());
         }
+        banco.anularPorOrigen(user, DOC_TIPO, rec.getId(), motivo);
         rec.setEstado(Recibo.Estado.ANULADO);
         rec.setAnuladoEn(Instant.now());
         rec.setMotivoAnulacion(motivo);

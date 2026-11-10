@@ -28,6 +28,11 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Compras', icono: 'local_shipping', opciones: [
     { codigo: 'COMPRAS_REGISTRO', nombre: 'Compras', ruta: '/compras', icono: 'add_shopping_cart', rol: 'SUPERVISOR' },
   ]},
+  { nombre: 'Banco', icono: 'account_balance', opciones: [
+    { codigo: 'BANCO_MOVIMIENTOS', nombre: 'Movimientos bancarios', ruta: '/banco/movimientos', icono: 'swap_vert', rol: 'SUPERVISOR' },
+    { codigo: 'BANCO_CONCILIACION', nombre: 'Conciliación', ruta: '/banco/conciliacion', icono: 'rule', rol: 'SUPERVISOR' },
+    { codigo: 'BANCO_CUENTAS', nombre: 'Cuentas bancarias', ruta: '/banco/cuentas', icono: 'savings' },
+  ]},
   { nombre: 'Catálogos', icono: 'menu_book', opciones: [
     { codigo: 'CAT_CLIENTES', nombre: 'Clientes', ruta: '/catalogos/clientes', icono: 'groups' },
     { codigo: 'CAT_PROVEEDORES', nombre: 'Proveedores', ruta: '/catalogos/proveedores', icono: 'storefront' },

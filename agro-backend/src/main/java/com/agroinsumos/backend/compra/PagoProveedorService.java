@@ -1,5 +1,7 @@
 package com.agroinsumos.backend.compra;
 
+import com.agroinsumos.backend.banco.MovimientoBancarioService;
+import com.agroinsumos.backend.banco.TipoMovimientoBancario;
 import com.agroinsumos.backend.caja.CajaMovimiento;
 import com.agroinsumos.backend.caja.CajaService;
 import com.agroinsumos.backend.catalogo.proveedor.ProveedorService;
@@ -52,7 +54,7 @@ public class PagoProveedorService {
             return new Response(p.getId(), p.getNumero(), p.getFecha(), p.getProveedorId(), p.getSesionCajaId(),
                     p.getConcepto(), p.getTotal(), p.getEstado(), p.getMotivoAnulacion(),
                     p.getAplicaciones().stream().map(a -> new AplicacionRequest(a.getCompraId(), a.getMonto())).toList(),
-                    p.getFormas().stream().map(f -> new PagoRequest(f.getFormaPago(), f.getMonto(), f.getReferencia(), f.getBanco())).toList());
+                    p.getFormas().stream().map(f -> new PagoRequest(f.getFormaPago(), f.getMonto(), f.getReferencia(), f.getBanco(), f.getCuentaBancariaId())).toList());
         }
     }
 
@@ -67,6 +69,7 @@ public class PagoProveedorService {
     private final CompraService compraService;
     private final ProveedorService proveedores;
     private final CajaService caja;
+    private final MovimientoBancarioService banco;
     private final NumeradorService numerador;
     private final JdbcTemplate jdbc;
     private final Clock clock;
@@ -111,6 +114,12 @@ public class PagoProveedorService {
             fp.setMonto(f.monto());
             fp.setReferencia(f.referencia());
             fp.setBanco(f.banco());
+            if (f.cuentaBancariaId() != null) {
+                if (f.forma() != FormaPago.CHEQUE && f.forma() != FormaPago.TRANSFERENCIA) {
+                    throw new BusinessException("CUENTA_NO_APLICA", "Solo cheques y transferencias salen de una cuenta bancaria");
+                }
+                fp.setCuentaBancariaId(f.cuentaBancariaId());
+            }
             p.getFormas().add(fp);
             pagado = pagado.add(f.monto());
             if (f.forma() == FormaPago.EFECTIVO) efectivo = efectivo.add(f.monto());
@@ -125,6 +134,13 @@ public class PagoProveedorService {
         if (sesion != null) {
             caja.registrar(sesion, CajaMovimiento.Tipo.PAGO_PROVEEDOR, FormaPago.EFECTIVO, efectivo, DOC_TIPO, p.getId(),
                     "Pago " + p.getNumero() + " a " + proveedor.getNombre());
+        }
+        for (var fp : p.getFormas()) {
+            if (fp.getCuentaBancariaId() == null) continue;
+            var tipo = fp.getFormaPago() == FormaPago.CHEQUE ? TipoMovimientoBancario.CHEQUE : TipoMovimientoBancario.TRANSFERENCIA_SALIDA;
+            var mov = banco.registrar(user, fp.getCuentaBancariaId(), tipo, p.getFecha(), fp.getReferencia(), proveedor.getNombre(),
+                    "Pago " + p.getNumero() + " a " + proveedor.getNombre(), fp.getMonto(), DOC_TIPO, p.getId());
+            fp.setReferencia(mov.getReferencia());
         }
         return Response.de(p);
     }
@@ -147,6 +163,7 @@ public class PagoProveedorService {
             caja.registrar(sesion, CajaMovimiento.Tipo.ANULACION_PAGO, FormaPago.EFECTIVO, efectivo, DOC_TIPO, p.getId(),
                     "Anulación pago " + p.getNumero());
         }
+        banco.anularPorOrigen(user, DOC_TIPO, p.getId(), motivo);
         p.setEstado(PagoProveedor.Estado.ANULADO);
         p.setAnuladoEn(Instant.now());
         p.setMotivoAnulacion(motivo);
