@@ -65,5 +65,5 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
   .cdk-overlay-backdrop { display: none; }
   .mat-mdc-dialog-surface { box-shadow: none !important; }
   .no-imprimir, mat-toolbar, mat-sidenav { display: none !important; }
-  .mat-drawer-content { margin: 0 !important; }
+  .mat-drawer-content { margin: 0 !important; transition: none !important; }
 }

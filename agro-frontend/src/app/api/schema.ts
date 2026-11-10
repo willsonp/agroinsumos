@@ -1715,6 +1715,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reportes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reportes disponibles para el usuario, con sus filtros y columnas */
+        get: operations["disponibles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ejecutar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reportes/{codigo}/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** El reporte en CSV para Excel */
+        get: operations["csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/monedas/tasas/vigente": {
         parameters: {
             query?: never;
@@ -4313,6 +4363,36 @@ export interface components {
             numberOfElements?: number;
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        ReporteColumna: {
+            clave?: string;
+            titulo?: string;
+            /** @enum {string} */
+            tipo?: "TEXTO" | "ENTERO" | "NUMERO" | "MONEDA" | "PORCENTAJE" | "FECHA";
+            totalizar?: boolean;
+        };
+        ReporteInfo: {
+            codigo?: string;
+            titulo?: string;
+            /** @enum {string} */
+            grupo?: "VENTAS" | "CXC_CAJA" | "INVENTARIO" | "COMPRAS";
+            grupoNombre?: string;
+            descripcion?: string;
+            legado?: string;
+            filtros?: ("RANGO_FECHAS" | "FECHA_CORTE" | "CLIENTE" | "VENDEDOR" | "DEPARTAMENTO" | "ALMACEN" | "PROVEEDOR" | "CON_EXISTENCIA")[];
+            columnas?: components["schemas"]["ReporteColumna"][];
+        };
+        ReporteResultado: {
+            codigo?: string;
+            titulo?: string;
+            subtitulo?: string;
+            columnas?: components["schemas"]["ReporteColumna"][];
+            filas?: {
+                [key: string]: Record<string, never>;
+            }[];
+            totales?: {
+                [key: string]: number;
+            };
         };
         PageImpresoraEtiquetaResponse: {
             /** Format: int64 */
@@ -9189,6 +9269,90 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApartadoResponse"];
+                };
+            };
+        };
+    };
+    disponibles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReporteInfo"][];
+                };
+            };
+        };
+    };
+    ejecutar: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+                corte?: string;
+                clienteId?: number;
+                vendedorId?: number;
+                departamentoId?: number;
+                almacenId?: number;
+                proveedorId?: number;
+                conExistencia?: boolean;
+            };
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReporteResultado"];
+                };
+            };
+        };
+    };
+    csv: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+                corte?: string;
+                clienteId?: number;
+                vendedorId?: number;
+                departamentoId?: number;
+                almacenId?: number;
+                proveedorId?: number;
+                conExistencia?: boolean;
+            };
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
         };
