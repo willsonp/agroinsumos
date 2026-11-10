@@ -381,6 +381,31 @@ Migración `V16__etiquetas_respaldos.sql`.
   escritura, guardada en `parametro_sistema`). Se listan y descargan los respaldos para copiarlos a otra ubicación.
   Recomendado: una unidad externa o de red, y copiar periódicamente fuera del servidor.
 
+## 5.10 Reportes
+Migración `V18__reportes.sql` (módulo Reportes con una opción por grupo). Sustituye los reportes Jasper del sistema anterior
+que aún no tenían equivalente (los contables, fiscales, de antigüedad, estado de cuenta, cuotas y conciliación ya existen
+en sus módulos).
+
+- **Motor genérico** (`reporte/`): cada reporte es una declaración (`Reporte`: código, grupo, filtros, columnas con tipo y si
+  totaliza, y su consulta SQL). Los catálogos (`ReportesVentas`, `ReportesCxcCaja`, `ReportesInventario`, `ReportesCompras`)
+  solo declaran; filtros opcionales tipados (null = sin filtro), totales y márgenes, CSV e impresión son comunes. Agregar un
+  reporte = agregar una declaración (Open/Closed).
+- `GET /api/v1/reportes` (los del usuario según sus opciones), `GET /api/v1/reportes/{codigo}?desde&hasta&corte&clienteId&
+  vendedorId&departamentoId&almacenId&proveedorId&conExistencia`, `GET /api/v1/reportes/{codigo}/csv` (Excel: UTF-8 con BOM).
+- Frontend: un visor por grupo (`/reportes/ventas|cobros|inventario|compras`) con la lista de reportes, los filtros que pide
+  cada uno, tabla con totales, encabezado con los datos de la empresa, **Imprimir** (hoja limpia) y **Excel**.
+
+| Grupo | Reportes (equivalente en el sistema anterior) |
+|---|---|
+| Ventas | ventas por fecha (RptVentasResumidasPorFecha), detalle (RptVentasDetalle), por cliente (RptVentasResumidasPorCliente), comisiones por vendedor (RptComisionVendedor), ventas y utilidad por artículo (FrmConsultaUtilidad), utilidad por departamento (RptUtilidad_Resumen), devoluciones (RptResumenDevolucion) |
+| Cobros y caja | cobros por fecha y forma de pago (RptIngresosResumidoPorFecha), cobros detallados (RptIngresosDetallados), facturas y ND vencidas (RptFacturasVencidas), egresos de caja (RptEgresoCaja) |
+| Inventario | inventario valorizado (RptListadoArticuloInventarioXCosto), lista de precios (RptListadoPrecioArticulos), bajo el mínimo, artículos comprados por suplidor (RptArticulosPorSuplidor) |
+| Compras | compras por suplidor (RptEstadosTodosSuplidorRangoFecha), compras detalladas (RptCompraCompleta), pagos a suplidores (RptPagosPorFecha) |
+
+Criterios: la venta neta descuenta las devoluciones; la utilidad usa el costo promedio al vender y descuenta lo devuelto;
+las comisiones se calculan sobre lo facturado sin ITBIS menos devoluciones (REVISAR si el negocio las paga sobre lo cobrado);
+los precios de venta se muestran con ITBIS.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
@@ -452,6 +477,7 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `INV_ETIQUETAS` | etiquetas ZPL (vista previa, .zpl, envío a impresora) e impresoras | — |
 | `ADMIN_RESPALDOS` | respaldos de la base de datos y su carpeta | **admin** |
 | `ADMIN_EMPRESA` | datos de la empresa (nombre comercial, dirección, teléfono…; el RNC no) | **admin** |
+| `REP_VENTAS` / `REP_CXC_CAJA` / `REP_INVENTARIO` / `REP_COMPRAS` | reportes de cada grupo (consulta, impresión, Excel) | **supervisor** |
 | `CONT_CATALOGO` | catálogo de cuentas (CRUD), catálogo base, cuentas por defecto | catálogo base y cuentas por defecto: **supervisor**; fecha de inicio: **admin** |
 | `CONT_ASIENTOS` | asientos manuales, anulación, generación de asientos automáticos | **supervisor** |
 | `CONT_REPORTES` | balanza, estado de resultados, balance general, mayor | **supervisor** |

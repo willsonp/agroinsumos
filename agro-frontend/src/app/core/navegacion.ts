@@ -45,6 +45,12 @@ export const NAVEGACION: Modulo[] = [
     { codigo: 'CONT_CATALOGO', nombre: 'Catálogo de cuentas', ruta: '/contabilidad/catalogo', icono: 'account_tree', rol: 'SUPERVISOR' },
     { codigo: 'CONT_PERIODOS', nombre: 'Cierre de períodos', ruta: '/contabilidad/periodos', icono: 'lock_clock', rol: 'ADMIN' },
   ]},
+  { nombre: 'Reportes', icono: 'summarize', opciones: [
+    { codigo: 'REP_VENTAS', nombre: 'Ventas y utilidad', ruta: '/reportes/ventas', icono: 'trending_up', rol: 'SUPERVISOR' },
+    { codigo: 'REP_CXC_CAJA', nombre: 'Cobros y caja', ruta: '/reportes/cobros', icono: 'payments', rol: 'SUPERVISOR' },
+    { codigo: 'REP_INVENTARIO', nombre: 'Inventario', ruta: '/reportes/inventario', icono: 'inventory', rol: 'SUPERVISOR' },
+    { codigo: 'REP_COMPRAS', nombre: 'Compras', ruta: '/reportes/compras', icono: 'shopping_bag', rol: 'SUPERVISOR' },
+  ]},
   { nombre: 'Catálogos', icono: 'menu_book', opciones: [
     { codigo: 'CAT_CLIENTES', nombre: 'Clientes', ruta: '/catalogos/clientes', icono: 'groups' },
     { codigo: 'CAT_PROVEEDORES', nombre: 'Proveedores', ruta: '/catalogos/proveedores', icono: 'storefront' },
