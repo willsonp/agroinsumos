@@ -11,6 +11,7 @@ export const NAVEGACION: Modulo[] = [
   { nombre: 'Ventas', icono: 'point_of_sale', opciones: [
     { codigo: 'VENTAS_POS', nombre: 'Punto de venta', ruta: '/ventas/pos', icono: 'shopping_cart' },
     { codigo: 'VENTAS_FACTURAS', nombre: 'Facturas', ruta: '/ventas/facturas', icono: 'receipt_long' },
+    { codigo: 'VENTAS_COTIZACIONES', nombre: 'Cotizaciones', ruta: '/ventas/cotizaciones', icono: 'request_page' },
   ]},
   { nombre: 'Caja', icono: 'payments', opciones: [
     { codigo: 'CAJA_SESION', nombre: 'Mi caja', ruta: '/caja', icono: 'account_balance_wallet' },
@@ -22,6 +23,7 @@ export const NAVEGACION: Modulo[] = [
   ]},
   { nombre: 'Inventario', icono: 'inventory_2', opciones: [
     { codigo: 'INV_ARTICULOS', nombre: 'Artículos', ruta: '/inventario/articulos', icono: 'category' },
+    { codigo: 'INV_DOCUMENTOS', nombre: 'Ajustes y transferencias', ruta: '/inventario/documentos', icono: 'swap_horiz', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Compras', icono: 'local_shipping', opciones: [
     { codigo: 'COMPRAS_REGISTRO', nombre: 'Compras', ruta: '/compras', icono: 'add_shopping_cart', rol: 'SUPERVISOR' },
