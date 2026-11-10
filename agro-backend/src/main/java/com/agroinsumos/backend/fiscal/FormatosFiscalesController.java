@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 public class FormatosFiscalesController {
 
     private final FormatosFiscalesService service;
+    private final ComprobanteAnuladoService anulados;
 
     @Operation(summary = "606 (compras) del periodo AAAAMM: detalle, totales y advertencias")
     @GetMapping("/606")
@@ -46,6 +47,39 @@ public class FormatosFiscalesController {
                                           @RequestParam(defaultValue = "true") boolean incluirEcf) {
         var rep = service.formato607(user.companiaId(), periodo, incluirEcf);
         return archivo(service.txt607(rep), FormatosFiscalesService.nombreArchivo("607", rep.rnc(), rep.periodo()));
+    }
+
+    @Operation(summary = "608 (comprobantes anulados) del periodo AAAAMM")
+    @GetMapping("/608")
+    public Formato608.Reporte f608(AuthUser user, @RequestParam String periodo) {
+        return service.formato608(user.companiaId(), periodo);
+    }
+
+    @GetMapping(value = "/608/txt", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<byte[]> f608Txt(AuthUser user, @RequestParam String periodo) {
+        var rep = service.formato608(user.companiaId(), periodo);
+        return archivo(service.txt608(rep), FormatosFiscalesService.nombreArchivo("608", rep.rnc(), rep.periodo()));
+    }
+
+    @Operation(summary = "Comprobantes (NCF) registrados como anulados en el rango de fechas de anulación")
+    @GetMapping("/anulaciones")
+    public java.util.List<ComprobanteAnuladoService.Response> anulaciones(AuthUser user,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate desde,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate hasta) {
+        return anulados.listar(user.companiaId(), desde, hasta);
+    }
+
+    @Operation(summary = "Registra un NCF anulado (preimpreso, serie B o e-NCF no utilizado) para el 608")
+    @PostMapping("/anulaciones")
+    public ResponseEntity<ComprobanteAnuladoService.Response> anular(AuthUser user,
+            @jakarta.validation.Valid @RequestBody ComprobanteAnuladoService.Request r) {
+        return ResponseEntity.status(201).body(anulados.registrar(user, r));
+    }
+
+    @DeleteMapping("/anulaciones/{id}")
+    public ResponseEntity<Void> eliminarAnulacion(AuthUser user, @PathVariable Long id) {
+        anulados.eliminar(user.companiaId(), id);
+        return ResponseEntity.noContent().build();
     }
 
     private static ResponseEntity<byte[]> archivo(String contenido, String nombre) {
