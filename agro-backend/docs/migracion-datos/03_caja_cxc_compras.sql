@@ -1,9 +1,15 @@
 -- =====================================================================
 -- Migración de datos: Cuentas por Cobrar (recibos históricos) y Compras / CxP
--- Requiere 01 y 02 ejecutados. Ejecutar:  psql -v cia=1 -f 03_caja_cxc_compras.sql
+-- Requiere 01 y 02 ejecutados. Ejecutar:  psql -v cia=1 -v cxp=saldada -f 03_caja_cxc_compras.sql
 -- No se migran las sesiones de caja históricas: el sistema nuevo inicia con cajas cerradas.
+--
+-- cxp = saldada   (por defecto) las compras del sistema anterior entran PAGADAS: en el sistema anterior no se
+--                 registraban los pagos a suplidores, así que su balance no refleja la deuda real. Se crea un pago
+--                 "Saldada al migrar" por lo pendiente (queda la traza del balance que tenía) y CxP inicia en cero.
+-- cxp = pendiente las compras conservan el balance del sistema anterior (facturacreditocxp).
 -- =====================================================================
 \if :{?cia} \else \set cia 1 \endif
+\if :{?cxp} \else \set cxp saldada \endif
 BEGIN;
 
 -- ---------------------------------------------------------------- Recibos históricos
@@ -123,6 +129,13 @@ JOIN compra c ON c.id = d.idcompra
 JOIN articulo a ON a.id = d.articulo
 WHERE d.qty > 0;
 
+-- CxP saldada: el balance pendiente del sistema anterior se cubre con un pago "Saldada al migrar"
+CREATE TEMP TABLE tmp_cxp_saldada AS
+SELECT c.id compra_id, c.balance FROM compra c
+WHERE :'cxp' = 'saldada' AND c.compania_id = :cia AND c.actualizado_por = 'migracion' AND c.estado <> 'ANULADA' AND c.balance > 0;
+
+UPDATE compra c SET balance = 0, estado = 'PAGADA' FROM tmp_cxp_saldada t WHERE t.compra_id = c.id;
+
 -- Pagos a suplidores del sistema anterior: no se migran uno a uno; se registra un pago por compra por lo ya pagado
 -- (total - retenciones - balance). Así el estado de cuenta del suplidor cuadra con el balance de sus compras.
 -- Llevan la fecha de la compra (anterior al inicio contable): no generan asientos ni movimientos de banco/caja.
@@ -135,9 +148,12 @@ WHERE c.compania_id = :cia AND c.estado <> 'ANULADA' AND c.actualizado_por = 'mi
   AND c.total - c.itbis_retenido - c.isr_retenido - c.balance > 0.009;
 
 INSERT INTO pago_proveedor (id, compania_id, numero, fecha, proveedor_id, concepto, total, estado, actualizado_por)
-SELECT t.nuevo_id, :cia, t.nuevo_numero, t.fecha, t.proveedor_id, 'Pagado en el sistema anterior (compra ' || t.compra_id || ')',
+SELECT t.nuevo_id, :cia, t.nuevo_numero, t.fecha, t.proveedor_id,
+       CASE WHEN x.balance IS NULL THEN 'Pagado en el sistema anterior (compra ' || t.compra_id || ')'
+            ELSE left('Saldada al migrar (compra ' || t.compra_id || ', balance en el sistema anterior RD$' || x.balance || ')', 200) END,
        t.monto, 'EMITIDO', 'migracion'
-FROM tmp_pago_prov t;
+FROM tmp_pago_prov t
+LEFT JOIN tmp_cxp_saldada x ON x.compra_id = t.compra_id;
 
 INSERT INTO pago_proveedor_aplicacion (pago_id, compra_id, monto, monto_dop)
 SELECT t.nuevo_id, t.compra_id, t.monto, t.monto FROM tmp_pago_prov t;
@@ -181,8 +197,12 @@ SELECT count(*) AS notas_debito_legacy_pendientes, coalesce(sum(balance), 0) AS 
 FROM legacy.notadebito WHERE estado = 'A' AND balance > 0;
 
 -- 3) CxP: legacy vs nuevo
-SELECT (SELECT round(sum(balance)::numeric, 2) FROM legacy.facturacreditocxp WHERE estado = 'A') AS cxp_legacy,
-       (SELECT sum(balance) FROM compra WHERE estado <> 'ANULADA') AS cxp_nuevo;
+--    Con cxp=saldada, cxp_nuevo es 0 y cxp_saldada_al_migrar muestra lo que quedó cubierto con pagos "Saldada al migrar".
+SELECT :'cxp' AS modo,
+       (SELECT round(sum(balance)::numeric, 2) FROM legacy.facturacreditocxp WHERE estado = 'A') AS cxp_legacy,
+       (SELECT sum(balance) FROM compra WHERE estado <> 'ANULADA') AS cxp_nuevo,
+       (SELECT coalesce(sum(balance), 0) FROM tmp_cxp_saldada) AS cxp_saldada_al_migrar,
+       (SELECT count(*) FROM tmp_cxp_saldada) AS compras_saldadas;
 
 -- 4) Suplidores cuyo balance de compras NO cuadra con (compras - pagos): revisar antes de salir en vivo
 SELECT p.id, p.nombre, b.balance_compras, e.estado_cuenta
