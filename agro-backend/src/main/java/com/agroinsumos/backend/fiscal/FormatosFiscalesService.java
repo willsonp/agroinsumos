@@ -135,6 +135,24 @@ public class FormatosFiscalesService {
                     null, Z, Z, Z, Z, Z, "01", "EGRESO_CAJA", ((Number) r.get("id")).longValue(), (String) r.get("beneficiario")));
         }
 
+        // ---- Gastos de caja chica con comprobante
+        var chica = jdbc.queryForList("""
+                select m.id, m.numero, m.fecha, m.ncf, m.rnc, m.beneficiario, m.monto, m.itbis, m.tipo_bien_servicio
+                  from caja_chica_movimiento m
+                 where m.compania_id = ? and m.tipo = 'GASTO' and m.estado = 'REGISTRADO' and m.fecha between ? and ?
+                 order by m.fecha, m.numero
+                """, cia, desde, hasta);
+        for (var r : chica) {
+            String ncf = (String) r.get("ncf");
+            if (ncf == null) continue;   // vales sin comprobante: gasto no deducible
+            String rnc = (String) r.get("rnc");
+            BigDecimal itbis = bd(r.get("itbis"));
+            BigDecimal facturado = bd(r.get("monto")).subtract(itbis);
+            lineas.add(new Formato606.Linea(rnc, tipoId(rnc), (String) r.get("tipo_bien_servicio"), ncf, null,
+                    fecha(r.get("fecha")), fecha(r.get("fecha")), facturado, Z, facturado, itbis, Z, Z, Z, itbis, Z,
+                    null, Z, Z, Z, Z, Z, "01", "CAJA_CHICA", ((Number) r.get("id")).longValue(), (String) r.get("beneficiario")));
+        }
+
         var resumen = new Formato606.Resumen(lineas.size(),
                 sum(lineas, Formato606.Linea::totalMontoFacturado), sum(lineas, Formato606.Linea::itbisFacturado),
                 sum(lineas, Formato606.Linea::itbisRetenido), sum(lineas, Formato606.Linea::montoRetencionRenta),

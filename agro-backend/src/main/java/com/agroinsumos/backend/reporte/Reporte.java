@@ -22,7 +22,8 @@ public record Reporte(String codigo, String titulo, Grupo grupo, String descripc
         public String permiso() { return permiso; }
     }
 
-    public enum Filtro { RANGO_FECHAS, FECHA_CORTE, CLIENTE, VENDEDOR, DEPARTAMENTO, ALMACEN, PROVEEDOR, CON_EXISTENCIA }
+    /** PROVEEDOR_REQUERIDO: el reporte es de un solo suplidor (p.ej. estado de cuenta). */
+    public enum Filtro { RANGO_FECHAS, FECHA_CORTE, CLIENTE, VENDEDOR, DEPARTAMENTO, ALMACEN, PROVEEDOR, PROVEEDOR_REQUERIDO, CON_EXISTENCIA }
 
     public enum Tipo { TEXTO, ENTERO, NUMERO, MONEDA, PORCENTAJE, FECHA }
 

@@ -57,9 +57,11 @@ const GRUPOS: Record<string, { grupo: string; titulo: string }> = {
                   <mat-option [value]="null">Todos</mat-option>@for (o of almacenes(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
                 @if (pide('PROVEEDOR')) { <mat-form-field><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId">
                   <mat-option [value]="null">Todos</mat-option>@for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
+                @if (pide('PROVEEDOR_REQUERIDO')) { <mat-form-field style="min-width:260px"><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId">
+                  @for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
                 @if (pide('CON_EXISTENCIA')) { <mat-checkbox [(ngModel)]="f.conExistencia">Solo con existencia</mat-checkbox> }
                 <span class="espaciador"></span>
-                <button mat-flat-button (click)="consultar()"><span class="material-symbols-outlined">play_arrow</span> Consultar</button>
+                <button mat-flat-button [disabled]="faltaSuplidor()" (click)="consultar()"><span class="material-symbols-outlined">play_arrow</span> Consultar</button>
               </div>
             </div>
 
@@ -148,7 +150,10 @@ export class Reportes {
 
   protected pide(filtro: string): boolean { return (this.actual()?.filtros ?? []).includes(filtro as never); }
 
-  protected elegir(r: Info): void { this.actual.set(r); this.resultado.set(null); this.consultar(); }
+  /** Reportes que exigen un suplidor (estado de cuenta) no se ejecutan hasta elegirlo. */
+  protected faltaSuplidor(): boolean { return this.pide('PROVEEDOR_REQUERIDO') && !this.f.proveedorId; }
+
+  protected elegir(r: Info): void { this.actual.set(r); this.resultado.set(null); if (!this.faltaSuplidor()) this.consultar(); }
 
   private parametros() {
     const p: Record<string, unknown> = {};
@@ -158,14 +163,14 @@ export class Reportes {
     if (this.pide('VENDEDOR')) p['vendedorId'] = this.f.vendedorId;
     if (this.pide('DEPARTAMENTO')) p['departamentoId'] = this.f.departamentoId;
     if (this.pide('ALMACEN')) p['almacenId'] = this.f.almacenId;
-    if (this.pide('PROVEEDOR')) p['proveedorId'] = this.f.proveedorId;
+    if (this.pide('PROVEEDOR') || this.pide('PROVEEDOR_REQUERIDO')) p['proveedorId'] = this.f.proveedorId;
     if (this.pide('CON_EXISTENCIA')) p['conExistencia'] = this.f.conExistencia;
     return params(p);
   }
 
   protected consultar(): void {
     const r = this.actual();
-    if (!r) return;
+    if (!r || this.faltaSuplidor()) return;
     this.http.get<Resultado>(`/api/v1/reportes/${r.codigo}`, { params: this.parametros() }).subscribe({
       next: (res) => { this.ahora = new Date(); this.resultado.set(res); }, error: (e) => this.notif.error(e) });
   }
@@ -178,7 +183,7 @@ export class Reportes {
     if (this.pide('VENDEDOR') && this.f.vendedorId) t.push('Vendedor: ' + nombre(this.vendedores(), this.f.vendedorId));
     if (this.pide('DEPARTAMENTO') && this.f.departamentoId) t.push('Departamento: ' + nombre(this.departamentos(), this.f.departamentoId));
     if (this.pide('ALMACEN') && this.f.almacenId) t.push('Almacén: ' + nombre(this.almacenes(), this.f.almacenId));
-    if (this.pide('PROVEEDOR') && this.f.proveedorId) t.push('Suplidor: ' + nombre(this.proveedores(), this.f.proveedorId));
+    if ((this.pide('PROVEEDOR') || this.pide('PROVEEDOR_REQUERIDO')) && this.f.proveedorId) t.push('Suplidor: ' + nombre(this.proveedores(), this.f.proveedorId));
     if (this.pide('CON_EXISTENCIA') && this.f.conExistencia) t.push('solo con existencia');
     return t.join(' · ');
   }

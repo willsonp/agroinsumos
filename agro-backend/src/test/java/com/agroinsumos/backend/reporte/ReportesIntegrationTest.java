@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class ReportesIntegrationTest extends IntegrationTestBase {
 
     String admin, supInventario;
-    long urea, finca, vendedor;
+    long urea, finca, vendedor, proveedor;
 
     @BeforeEach
     void preparar() throws Exception {
@@ -38,9 +38,13 @@ class ReportesIntegrationTest extends IntegrationTestBase {
         finca = id(post("/api/v1/catalogos/clientes", """
                 {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":0,"diasCredito":30}""", 201));
         vendedor = id(post("/api/v1/catalogos/vendedores", "{\"nombre\":\"Pedro Vendedor\",\"comision\":5}", 201));
-        post("/api/v1/compras", """
+        long compra = id(post("/api/v1/compras", """
                 {"proveedorId":%d,"ncfProveedor":"B0100000001","condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":10,"costoUnitario":1000}]}"""
-                .formatted(prov, urea), 201);
+                .formatted(prov, urea), 201));
+        proveedor = prov;
+        post("/api/v1/cxp/pagos", """
+                {"proveedorId":%d,"aplicaciones":[{"compraId":%d,"monto":5000}],"formas":[{"forma":"TRANSFERENCIA","monto":5000,"referencia":"TRX-7"}]}"""
+                .formatted(prov, compra), 201);
         // Crédito 2 sacos y contado 1 saco (cobrado en efectivo); devolución de 1 saco de la de crédito
         String credito = post("/api/v1/ventas/facturas", """
                 {"clienteId":%d,"condicion":"CREDITO","vendedorId":%d,"lineas":[{"articuloId":%d,"cantidad":2}]}""".formatted(finca, vendedor, urea), 201);
@@ -58,8 +62,8 @@ class ReportesIntegrationTest extends IntegrationTestBase {
     @Test
     void todosLosReportesCorrenYCuadran() throws Exception {
         List<String> codigos = JsonPath.read(getJson(admin, "/api/v1/reportes"), "$[*].codigo");
-        assertThat(codigos).hasSize(18);
-        for (String c : codigos) getJson(admin, "/api/v1/reportes/" + c);   // todos ejecutan sin error
+        assertThat(codigos).hasSize(20);
+        for (String c : codigos) getJson(admin, "/api/v1/reportes/" + c + "?proveedorId=" + proveedor);   // todos ejecutan sin error
 
         String vf = getJson(admin, "/api/v1/reportes/ventas-por-fecha");
         assertThat(total(vf, "total")).isEqualTo(7434.0);          // 4956 + 2478
@@ -84,6 +88,18 @@ class ReportesIntegrationTest extends IntegrationTestBase {
         assertThat(total(inv, "valor_costo")).isEqualTo(8000.0);
         assertThat(JsonPath.<List<?>>read(getJson(admin, "/api/v1/reportes/bajo-minimo"), "$.filas")).hasSize(1);
         assertThat(JsonPath.<String>read(vf, "$.subtitulo")).startsWith("Del ");
+
+        // Estado de cuenta del suplidor: saldo anterior, compra (cargo), pago (abono) y saldo corrido
+        assertThat(JsonPath.<String>read(consultar(admin, "/api/v1/reportes/estado-cuenta-suplidor", 422), "$.code")).isEqualTo("PROVEEDOR_REQUERIDO");
+        String ec = getJson(admin, "/api/v1/reportes/estado-cuenta-suplidor?proveedorId=" + proveedor);
+        assertThat(JsonPath.<List<String>>read(ec, "$.filas[*].documento")).containsExactly("Saldo anterior", "Compra 1 · B0100000001", "Pago 1 · transferencia TRX-7");
+        assertThat(JsonPath.<List<Number>>read(ec, "$.filas[*].saldo")).extracting(Number::doubleValue).containsExactly(0.0, 11800.0, 6800.0);
+        assertThat(total(ec, "cargo")).isEqualTo(11800.0);
+        assertThat(total(ec, "abono")).isEqualTo(5000.0);
+        // Un período posterior arrastra el saldo anterior
+        String ec2 = getJson(admin, "/api/v1/reportes/estado-cuenta-suplidor?proveedorId=" + proveedor + "&desde=2099-01-01&hasta=2099-01-31");
+        assertThat(JsonPath.<List<Number>>read(ec2, "$.filas[*].saldo")).extracting(Number::doubleValue).containsExactly(6800.0);
+        assertThat(total(getJson(admin, "/api/v1/reportes/saldos-suplidores"), "saldo")).isEqualTo(6800.0);
 
         // CSV para Excel
         var csv = mvc.perform(get("/api/v1/reportes/ventas-por-fecha/csv").header("Authorization", "Bearer " + admin)).andReturn().getResponse();

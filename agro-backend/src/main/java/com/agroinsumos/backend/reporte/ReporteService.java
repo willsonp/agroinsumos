@@ -82,6 +82,9 @@ public class ReporteService {
             if (desde.plusYears(3).isBefore(hasta)) throw new BusinessException("RANGO_INVALIDO", "Consulte como máximo 3 años");
         }
         if (r.filtros().contains(Reporte.Filtro.FECHA_CORTE) && corte == null) corte = hoy;
+        if (r.filtros().contains(Reporte.Filtro.PROVEEDOR_REQUERIDO) && p.proveedorId() == null) {
+            throw new BusinessException("PROVEEDOR_REQUERIDO", "Elija el suplidor");
+        }
         return new Reporte.Parametros(desde, hasta, corte, p.clienteId(), p.vendedorId(), p.departamentoId(), p.almacenId(),
                 p.proveedorId(), p.conExistencia());
     }

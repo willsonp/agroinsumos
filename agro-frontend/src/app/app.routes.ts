@@ -39,6 +39,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/caja/mi-caja').then((m) => m.MiCaja) },
       { path: 'caja/sesiones', title: 'Supervisión de cajas', ...p('CAJA_SESIONES'),
         loadComponent: () => import('./pages/caja/sesiones').then((m) => m.Sesiones) },
+      { path: 'caja/chica', title: 'Caja chica', ...p('CAJA_CHICA'),
+        loadComponent: () => import('./pages/caja/caja-chica').then((m) => m.CajaChica) },
       { path: 'cxc/cobros', title: 'Cobros', ...p('CXC_RECIBOS'),
         loadComponent: () => import('./pages/cxc/cobros').then((m) => m.Cobros) },
       { path: 'cxc/estado-cuenta', title: 'Estado de cuenta', ...p('CXC_ESTADO_CUENTA'),

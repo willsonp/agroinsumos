@@ -6,6 +6,7 @@ package com.agroinsumos.backend.contabilidad;
  */
 public enum ClaveContable {
     CAJA("Caja general (efectivo y cheques recibidos)"),
+    CAJA_CHICA("Caja chica (fondo fijo)"),
     BANCO("Banco (cuando la cuenta bancaria no indica su cuenta contable)"),
     TARJETAS_POR_COBRAR("Ventas con tarjeta por cobrar"),
     CXC_CLIENTES("Cuentas por cobrar clientes"),
