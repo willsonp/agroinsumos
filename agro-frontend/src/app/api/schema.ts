@@ -793,6 +793,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/cierres-anuales/{anio}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cierre del ejercicio: lleva ingresos, costos y gastos del año a resultados acumulados (simular=true: vista previa) */
+        post: operations["cerrarEjercicio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contabilidad/cierres-anuales/{anio}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reabre el ejercicio anulando su asiento de cierre */
+        post: operations["anularCierre"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/asientos": {
         parameters: {
             query?: never;
@@ -1775,6 +1809,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contabilidad/cierres-anuales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cierresAnuales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contabilidad/asientos/{id}": {
         parameters: {
             query?: never;
@@ -2137,12 +2187,12 @@ export interface components {
         };
         ConfigContableCambio: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS";
+            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS";
             codigo?: string;
         };
         ConfigContableItem: {
             /** @enum {string} */
-            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS";
+            clave?: "CAJA" | "BANCO" | "TARJETAS_POR_COBRAR" | "CXC_CLIENTES" | "CXP_PROVEEDORES" | "INVENTARIO" | "INGRESOS_VENTAS" | "DEVOLUCIONES_VENTAS" | "COSTO_VENTAS" | "ITBIS_POR_PAGAR" | "ITBIS_ADELANTADO" | "ITBIS_RETENIDO_POR_CLIENTES" | "ISR_RETENIDO_POR_CLIENTES" | "ITBIS_RETENIDO_POR_PAGAR" | "ISR_RETENIDO_POR_PAGAR" | "OTROS_INGRESOS" | "INGRESOS_FINANCIEROS" | "GASTOS_BANCARIOS" | "GASTOS_CAJA" | "GASTOS_COMPRAS" | "SOBRANTES_CAJA" | "FALTANTES_CAJA" | "RESULTADOS_ACUMULADOS";
             descripcion?: string;
             codigo?: string;
             nombreCuenta?: string;
@@ -2911,6 +2961,42 @@ export interface components {
             /** @enum {string} */
             estado?: "EMITIDA" | "PAGADA";
         };
+        CierreAnualResultado: {
+            /** Format: int32 */
+            anio?: number;
+            simulacion?: boolean;
+            ingresos?: number;
+            costos?: number;
+            gastos?: number;
+            resultado?: number;
+            cuentaDestino?: string;
+            /** Format: int32 */
+            cuentasSaldadas?: number;
+            /** Format: int32 */
+            documentosPendientes?: number;
+            advertencias?: string[];
+            /** Format: int64 */
+            asientoId?: number;
+        };
+        AsientoAnularRequest: {
+            motivo: string;
+        };
+        CierreAnualCierre: {
+            /** Format: int32 */
+            anio?: number;
+            /** Format: int64 */
+            asientoId?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            total?: number;
+            /** @enum {string} */
+            estado?: "REGISTRADO" | "ANULADO";
+            motivoAnulacion?: string;
+            /** Format: date-time */
+            creadoEn?: string;
+        };
         AsientoLineaRequest: {
             /** Format: int64 */
             cuentaId: number;
@@ -2960,9 +3046,6 @@ export interface components {
             estado?: "REGISTRADO" | "ANULADO";
             motivoAnulacion?: string;
             lineas?: components["schemas"]["AsientoLineaResponse"][];
-        };
-        AsientoAnularRequest: {
-            motivo: string;
         };
         AsientoBorrador: {
             /** Format: date */
@@ -6310,6 +6393,56 @@ export interface operations {
             };
         };
     };
+    cerrarEjercicio: {
+        parameters: {
+            query?: {
+                simular?: boolean;
+            };
+            header?: never;
+            path: {
+                anio: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CierreAnualResultado"];
+                };
+            };
+        };
+    };
+    anularCierre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                anio: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AsientoAnularRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CierreAnualCierre"];
+                };
+            };
+        };
+    };
     buscar_3: {
         parameters: {
             query: {
@@ -8025,6 +8158,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CuentaContableResponse"][];
+                };
+            };
+        };
+    };
+    cierresAnuales: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CierreAnualCierre"][];
                 };
             };
         };

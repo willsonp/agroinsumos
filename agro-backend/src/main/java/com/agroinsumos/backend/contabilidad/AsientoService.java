@@ -115,6 +115,16 @@ public class AsientoService {
             throw new BusinessException("ASIENTO_DESBALANCEADO", "Débitos RD$" + debitos + " ≠ créditos RD$" + creditos);
         }
         periodos.exigirAbierto(cia, b.fecha());
+        if (!CierreAnualService.ORIGEN.equals(b.origenTipo())) exigirEjercicioAbierto(cia, b.fecha());
+    }
+
+    /** Período mensual abierto y ejercicio sin asiento de cierre anual. */
+    public void exigirPeriodoAbierto(Long cia, LocalDate fecha) { periodos.exigirAbierto(cia, fecha); }
+
+    private void exigirEjercicioAbierto(Long cia, LocalDate fecha) {
+        if (repo.existsByCompaniaIdAndOrigenTipoAndOrigenIdAndEstado(cia, CierreAnualService.ORIGEN, (long) fecha.getYear(), Asiento.Estado.REGISTRADO)) {
+            throw new BusinessException("EJERCICIO_CERRADO", "El ejercicio " + fecha.getYear() + " está cerrado; anule el cierre anual para registrar en él");
+        }
     }
 
     /** Solo asientos manuales; los automáticos se reversan anulando su documento. */
@@ -126,6 +136,7 @@ public class AsientoService {
         }
         if (a.getEstado() == Asiento.Estado.ANULADO) throw new BusinessException("ASIENTO_ANULADO", "El asiento ya está anulado");
         periodos.exigirAbierto(user.companiaId(), a.getFecha());
+        exigirEjercicioAbierto(user.companiaId(), a.getFecha());
         a.setEstado(Asiento.Estado.ANULADO);
         a.setMotivoAnulacion(motivo);
         return respuesta(a);
@@ -138,7 +149,7 @@ public class AsientoService {
     }
 
     public Optional<Asiento> deOrigen(Long cia, String origenTipo, Long origenId) {
-        return repo.findByCompaniaIdAndOrigenTipoAndOrigenIdAndReversoFalse(cia, origenTipo, origenId);
+        return repo.findByCompaniaIdAndOrigenTipoAndOrigenIdAndReversoFalseAndEstado(cia, origenTipo, origenId, Asiento.Estado.REGISTRADO);
     }
 
     Asiento cargar(Long cia, Long id) {

@@ -20,7 +20,7 @@ interface Linea { cuentaId: number | null; descripcion: string; debito: number; 
 
 export const ORIGENES_CONTABLES: Record<string, string> = {
   FACTURA: 'Factura', DEVOLUCION: 'Devolución', NOTA_DEBITO: 'Nota de débito', RECIBO: 'Recibo', COMPRA: 'Compra',
-  PAGO_PROVEEDOR: 'Pago a suplidor', NOTA_PROVEEDOR: 'Nota de suplidor', MOV_BANCO: 'Banco', EGRESO_CAJA: 'Gasto de caja',
+  PAGO_PROVEEDOR: 'Pago a suplidor', NOTA_PROVEEDOR: 'Nota de suplidor', MOV_BANCO: 'Banco', EGRESO_CAJA: 'Gasto de caja', CIERRE_CAJA: 'Sobrante/faltante de caja', CIERRE_ANUAL: 'Cierre del ejercicio',
 };
 
 /** Diario general: asientos manuales y generación de los automáticos. */
@@ -39,7 +39,7 @@ export const ORIGENES_CONTABLES: Record<string, string> = {
       @if (generando()) {
         <div class="tarjeta">
           <h2>Contabilizar documentos</h2>
-          <p class="ayuda">Genera los asientos de facturas, devoluciones, notas de débito, recibos, compras, pagos, banco y gastos de caja
+          <p class="ayuda">Genera los asientos de facturas, devoluciones, notas de débito, recibos, compras, pagos, notas de suplidores, banco, gastos y sobrantes/faltantes de caja
             del rango que aún no estén contabilizados, y reversa los documentos anulados. Puede ejecutarse las veces que haga falta.</p>
           <div class="fila">
             <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="gen.desde" /></mat-form-field>

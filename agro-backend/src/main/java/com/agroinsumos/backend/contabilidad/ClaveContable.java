@@ -24,7 +24,10 @@ public enum ClaveContable {
     INGRESOS_FINANCIEROS("Ingresos financieros (notas de crédito bancarias)"),
     GASTOS_BANCARIOS("Gastos bancarios (notas de débito bancarias)"),
     GASTOS_CAJA("Gastos menores pagados por caja"),
-    GASTOS_COMPRAS("Compras de servicios (artículos tipo servicio)");
+    GASTOS_COMPRAS("Compras de servicios (artículos tipo servicio)"),
+    SOBRANTES_CAJA("Sobrantes de caja (ingreso)"),
+    FALTANTES_CAJA("Faltantes de caja (gasto o cuenta por cobrar al cajero)"),
+    RESULTADOS_ACUMULADOS("Resultados acumulados (destino del cierre anual)");
 
     private final String descripcion;
 
