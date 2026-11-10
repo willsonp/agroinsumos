@@ -1,0 +1,78 @@
+<div class="pagina">
+  <div class="pagina-titulo no-imprimir"><h1>Cotizaciones</h1>
+    <mat-form-field style="width:200px"><mat-label>Estado</mat-label>
+      <mat-select [(ngModel)]="estado" (selectionChange)="cargar()"><mat-option [value]="null">Todas</mat-option>
+        <mat-option value="ABIERTA">Abiertas</mat-option><mat-option value="FACTURADA">Facturadas</mat-option>
+        <mat-option value="ANULADA">Anuladas</mat-option></mat-select></mat-form-field>
+    @if (!nueva()) { <button mat-flat-button (click)="nueva.set(true)"><span class="material-symbols-outlined">add</span> Nueva cotización</button> }
+  </div>
+
+  @if (nueva()) {
+    <div class="tarjeta no-imprimir">
+      <div class="fila">
+        <div style="flex:1 1 320px"><app-cliente-selector [(cliente)]="cliente" /></div>
+        <mat-form-field style="max-width:160px"><mat-label>Días de validez</mat-label><input matInput type="number" min="1" max="90" [(ngModel)]="diasValidez" /></mat-form-field>
+      </div>
+      <app-articulo-buscador (elegido)="agregar($event)" />
+      <div class="tabla-contenedor"><table class="tabla">
+        <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Precio especial (sin ITBIS)</th><th class="num">Desc. %</th><th></th></tr>
+        @for (l of lineas(); track $index; let i = $index) {
+          <tr><td>{{ l.articulo.nombre }}</td>
+            <td class="num"><input class="celda" type="number" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" /></td>
+            <td class="num"><input class="celda" type="number" placeholder="de lista" [ngModel]="l.precioManual" (ngModelChange)="fijar(i, 'precioManual', $event === '' ? null : +$event)" /></td>
+            <td class="num"><input class="celda" type="number" [ngModel]="l.descuentoPorcentaje" (ngModelChange)="fijar(i, 'descuentoPorcentaje', +$event)" /></td>
+            <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
+        } @empty { <tr><td colspan="5" class="muted">Agregue artículos</td></tr> }
+      </table></div>
+      <mat-form-field style="width:100%;margin-top:12px"><mat-label>Comentario</mat-label><input matInput [(ngModel)]="comentario" maxlength="600" /></mat-form-field>
+      @if (!auth.esSupervisor()) { <p class="muted">Cambiar precios o exceder el descuento máximo requiere un supervisor.</p> }
+      <div class="fila">
+        <span>Subtotal {{ totales().subtotal | currency }} · ITBIS {{ totales().itbis | currency }}</span>
+        <span class="espaciador"></span><span class="total">{{ totales().total | currency }}</span>
+        <button mat-button (click)="nueva.set(false)">Cancelar</button>
+        <button mat-flat-button [disabled]="!cliente() || !lineas().length" (click)="crear()">Guardar cotización</button>
+      </div>
+    </div>
+  }
+
+  <section class="tarjeta tabla-contenedor no-imprimir">
+    <table mat-table [dataSource]="pagina()?.content ?? []">
+      <ng-container matColumnDef="numero"><th mat-header-cell *matHeaderCellDef>No.</th><td mat-cell *matCellDef="let c">{{ c.numero }}</td></ng-container>
+      <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let c">{{ c.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
+      <ng-container matColumnDef="cliente"><th mat-header-cell *matHeaderCellDef>Cliente</th><td mat-cell *matCellDef="let c">{{ c.clienteNombre }}</td></ng-container>
+      <ng-container matColumnDef="validaHasta"><th mat-header-cell *matHeaderCellDef>Válida hasta</th><td mat-cell *matCellDef="let c">{{ c.validaHasta | date: 'dd/MM/yyyy' }}</td></ng-container>
+      <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef class="num">Total</th><td mat-cell *matCellDef="let c" class="num">{{ c.total | currency }}</td></ng-container>
+      <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let c"><span class="chip" [class.ok]="c.estado === 'FACTURADA'" [class.error]="c.estado === 'ANULADA'" [class.info]="c.estado === 'ABIERTA'">{{ c.estado }}</span></td></ng-container>
+      <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let c" style="white-space:nowrap" (click)="$event.stopPropagation()">
+        @if (c.estado === 'ABIERTA') { <button mat-button (click)="facturar(c)">Facturar</button><button mat-button (click)="anular(c)">Anular</button> }
+      </td></ng-container>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let r; columns: columnas" class="clickable" (click)="ver(r)"></tr>
+      <tr *matNoDataRow><td [attr.colspan]="columnas.length" class="muted" style="padding:24px">Sin cotizaciones</td></tr>
+    </table>
+    <mat-paginator [length]="pagina()?.totalElements ?? 0" [pageSize]="20" (page)="cargar($event)" />
+  </section>
+
+  @if (seleccionada(); as c) {
+    <section class="tarjeta">
+      <div class="fila"><h2 style="flex:1">Cotización {{ c.numero }}</h2>
+        <button mat-stroked-button class="no-imprimir" (click)="imprimir()"><span class="material-symbols-outlined">print</span> Imprimir</button>
+        <button mat-button class="no-imprimir" (click)="seleccionada.set(null)">Cerrar</button></div>
+      <p>{{ auth.perfil()?.compania?.nombre }} · RNC {{ auth.perfil()?.compania?.rnc }}<br />
+        Fecha {{ c.fecha | date: 'dd/MM/yyyy' }} · Válida hasta {{ c.validaHasta | date: 'dd/MM/yyyy' }} · Lista {{ c.tipoPrecio }}</p>
+      <table class="tabla">
+        <tr><th>#</th><th>Artículo</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Descuento</th><th class="num">ITBIS</th><th class="num">Importe</th></tr>
+        @for (l of c.lineas; track l.linea) {
+          <tr><td>{{ l.linea }}</td><td>{{ nombres()[l.articuloId!] ?? l.articuloId }}</td><td class="num">{{ l.cantidad | number: '1.0-3' }}</td>
+            <td class="num">{{ l.precioUnitario | currency: 'DOP' : 'symbol' : '1.2-4' }}</td><td class="num">{{ l.descuento | currency }}</td>
+            <td class="num">{{ l.itbis | currency }}</td><td class="num">{{ l.importe | currency }}</td></tr>
+        }
+        <tr><td colspan="5"></td><td><strong>ITBIS</strong></td><td class="num">{{ c.totalItbis | currency }}</td></tr>
+        <tr><td colspan="5"></td><td><strong>Total</strong></td><td class="num"><strong>{{ c.total | currency }}</strong></td></tr>
+      </table>
+      @if (c.comentario) { <p>{{ c.comentario }}</p> }
+      <p class="muted">Precios sujetos a disponibilidad. Esta cotización no es un comprobante fiscal.</p>
+    </section>
+  }
+</div>

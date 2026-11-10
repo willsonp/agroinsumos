@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Inventario")
 @RestController
 @RequestMapping("/api/v1/inventario/documentos")
-@PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('INV_ARTICULOS')")
+@PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('INV_DOCUMENTOS')")
 @RequiredArgsConstructor
 public class DocumentoInventarioController {
 

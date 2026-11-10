@@ -275,7 +275,9 @@ Toda la API se autoriza en el **servidor** con dos capas complementarias:
 | `CAJA_SESIONES` | listado y arqueo de todas las cajas | **supervisor** |
 | `CXC_RECIBOS` | cobros, pendientes, notas de débito | anular recibo, emitir nota de débito: **supervisor** |
 | `CXC_ESTADO_CUENTA` | estado de cuenta | antigüedad: **supervisor** |
-| `INV_ARTICULOS` | crear/editar artículos, kardex | documentos de inventario: **supervisor** |
+| `INV_ARTICULOS` | crear/editar artículos, kardex | — |
+| `INV_DOCUMENTOS` | ajustes por conteo, entradas, salidas, transferencias | **supervisor** |
+| `VENTAS_COTIZACIONES` | cotizaciones (también con `VENTAS_POS` o `VENTAS_FACTURAS`) | — |
 | `COMPRAS_REGISTRO` | compras, pagos a suplidores, CxP | **supervisor** |
 | `CAT_CLIENTES` / `CAT_PROVEEDORES` / `CAT_GENERALES` | escritura del catálogo | — |
 | `ECF_DOCUMENTOS` | listado, envío y consulta en la DGII | emisión directa: **admin** |

@@ -6,6 +6,7 @@
       <button mat-stroked-button (click)="imprimir()"><span class="material-symbols-outlined">print</span> Reimprimir</button>
       @if (f.ecfDocumentoId) { <button mat-stroked-button (click)="xml()"><span class="material-symbols-outlined">code</span> XML</button> }
       @if (auth.esSupervisor() && f.estado !== 'ANULADA') {
+        @if (auth.puede('CXC_RECIBOS')) { <button mat-stroked-button (click)="notaDebito()">Nota de débito</button> }
         <button mat-stroked-button (click)="devolver()">Devolución</button>
         <button mat-flat-button (click)="anular()" style="--mat-button-filled-container-color: var(--mat-sys-error)">Anular</button>
       }

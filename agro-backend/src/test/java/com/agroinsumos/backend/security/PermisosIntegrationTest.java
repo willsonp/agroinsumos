@@ -84,6 +84,19 @@ class PermisosIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void documentosDeInventarioExigenSuOpcionYSupervisor() throws Exception {
+        String sup = login("super", "superclave");
+        permitir(supervisorId, "INV_ARTICULOS");
+        mvc.perform(get("/api/v1/inventario/documentos").header("Authorization", "Bearer " + sup)).andExpect(status().isForbidden());
+        permitir(supervisorId, "INV_DOCUMENTOS");
+        mvc.perform(get("/api/v1/inventario/documentos").header("Authorization", "Bearer " + sup)).andExpect(status().isOk());
+        permitir(cajeroId, "INV_DOCUMENTOS", "VENTAS_COTIZACIONES");
+        String cajero = login("cajero", "cajeroclave");
+        mvc.perform(get("/api/v1/inventario/documentos").header("Authorization", "Bearer " + cajero)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/ventas/cotizaciones").header("Authorization", "Bearer " + cajero)).andExpect(status().isOk());
+    }
+
+    @Test
     void laGestionDeUsuariosEsSoloParaAdministradores() throws Exception {
         permitir(supervisorId, "ADMIN_USUARIOS");
         String sup = login("super", "superclave");

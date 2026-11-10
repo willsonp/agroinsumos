@@ -13,6 +13,7 @@ import { EstadoEcf } from '../../shared/estado-ecf';
 import { Qr } from '../../shared/qr';
 import { descargar } from '../../shared/http';
 import { DevolucionDialog } from './devolucion-dialog';
+import { NotaDebitoDialog } from './nota-debito-dialog';
 import { TicketDialog } from './ticket-dialog';
 
 @Component({
@@ -76,6 +77,16 @@ export class FacturaDetalle {
           error: (e) => this.notif.error(e),
         });
       });
+  }
+
+  protected notaDebito(): void {
+    this.dialog.open(NotaDebitoDialog, { data: this.factura() }).afterClosed().subscribe((req?: S['NotaDebitoRequest']) => {
+      if (!req) return;
+      this.http.post<S['NotaDebitoResponse']>('/api/v1/cxc/notas-debito', req).subscribe({
+        next: (n) => this.notif.ok(`Nota de débito ${n.encf} por ${n.total} (cobrable en Cobros)`),
+        error: (e) => this.notif.error(e),
+      });
+    });
   }
 
   protected devolver(): void {

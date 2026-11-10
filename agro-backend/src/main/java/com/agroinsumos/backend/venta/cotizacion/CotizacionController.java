@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Ventas")
 @RestController
 @RequestMapping("/api/v1/ventas/cotizaciones")
-@PreAuthorize("@permisos.tiene('VENTAS_POS','VENTAS_FACTURAS')")
+@PreAuthorize("@permisos.tiene('VENTAS_COTIZACIONES','VENTAS_POS','VENTAS_FACTURAS')")
 @RequiredArgsConstructor
 public class CotizacionController {
 

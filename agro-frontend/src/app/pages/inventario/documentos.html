@@ -1,0 +1,84 @@
+<div class="pagina">
+  <div class="pagina-titulo"><h1>Ajustes y transferencias</h1>
+    @if (!nuevo()) { <button mat-flat-button (click)="nuevo.set(true)"><span class="material-symbols-outlined">add</span> Nuevo documento</button> }
+  </div>
+
+  @if (nuevo()) {
+    <div class="tarjeta">
+      <mat-button-toggle-group [(ngModel)]="tipo" (change)="lineas.set([])">
+        <mat-button-toggle value="AJUSTE">Ajuste por conteo</mat-button-toggle>
+        <mat-button-toggle value="ENTRADA">Entrada</mat-button-toggle>
+        <mat-button-toggle value="SALIDA">Salida</mat-button-toggle>
+        <mat-button-toggle value="TRANSFERENCIA">Transferencia</mat-button-toggle>
+      </mat-button-toggle-group>
+      <p class="muted">{{ ayuda[tipo] }}</p>
+      <div class="fila">
+        <mat-form-field><mat-label>{{ tipo === 'TRANSFERENCIA' ? 'Almacén origen' : 'Almacén' }}</mat-label>
+          <mat-select [(ngModel)]="almacenId">@for (a of almacenes(); track a.id) { <mat-option [value]="a.id">{{ a.nombre }}</mat-option> }</mat-select></mat-form-field>
+        @if (tipo === 'TRANSFERENCIA') {
+          <mat-form-field><mat-label>Almacén destino</mat-label>
+            <mat-select [(ngModel)]="almacenDestinoId">@for (a of almacenes(); track a.id) { @if (a.id !== almacenId) { <mat-option [value]="a.id">{{ a.nombre }}</mat-option> } }</mat-select></mat-form-field>
+        }
+        <mat-form-field style="flex:2 1 300px"><mat-label>Descripción / motivo</mat-label><input matInput [(ngModel)]="descripcion" maxlength="200" /></mat-form-field>
+      </div>
+      <app-articulo-buscador (elegido)="agregar($event)" />
+      <div class="tabla-contenedor"><table class="tabla">
+        <tr><th>Artículo</th>@if (tipo === 'AJUSTE') { <th class="num">Existencia actual</th> }<th class="num">{{ tipo === 'AJUSTE' ? 'Conteo físico' : 'Cantidad' }}</th><th></th></tr>
+        @for (l of lineas(); track l.articulo.id; let i = $index) {
+          <tr><td>{{ l.articulo.nombre }}</td>
+            @if (tipo === 'AJUSTE') { <td class="num">{{ l.articulo.existencia | number: '1.0-3' }}</td> }
+            <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, +$event)" /></td>
+            <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
+        } @empty { <tr><td colspan="4" class="muted">Agregue artículos</td></tr> }
+      </table></div>
+      <div class="fila" style="margin-top:12px"><span class="espaciador"></span>
+        <button mat-button (click)="nuevo.set(false); lineas.set([])">Cancelar</button>
+        <button mat-stroked-button [disabled]="!lineas().length || (tipo === 'TRANSFERENCIA' && !almacenDestinoId)" (click)="guardar(false)">Guardar borrador</button>
+        <button mat-flat-button [disabled]="!lineas().length || (tipo === 'TRANSFERENCIA' && !almacenDestinoId)" (click)="guardar(true)">Guardar y aplicar</button>
+      </div>
+    </div>
+  }
+
+  <section class="tarjeta tabla-contenedor">
+    <table mat-table [dataSource]="pagina()?.content ?? []">
+      <ng-container matColumnDef="numero"><th mat-header-cell *matHeaderCellDef>No.</th><td mat-cell *matCellDef="let d">{{ d.numero }}</td></ng-container>
+      <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let d">{{ d.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
+      <ng-container matColumnDef="tipo"><th mat-header-cell *matHeaderCellDef>Tipo</th><td mat-cell *matCellDef="let d">{{ d.tipo }}</td></ng-container>
+      <ng-container matColumnDef="almacen"><th mat-header-cell *matHeaderCellDef>Almacén</th>
+        <td mat-cell *matCellDef="let d">{{ nombreAlmacen(d.almacenId) }}@if (d.almacenDestinoId) { → {{ nombreAlmacen(d.almacenDestinoId) }} }</td></ng-container>
+      <ng-container matColumnDef="descripcion"><th mat-header-cell *matHeaderCellDef>Descripción</th><td mat-cell *matCellDef="let d">{{ d.descripcion }}</td></ng-container>
+      <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let d"><span class="chip" [class.ok]="d.estado === 'APLICADO'" [class.warn]="d.estado === 'BORRADOR'" [class.error]="d.estado === 'ANULADO'">{{ d.estado }}</span></td></ng-container>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let r; columns: columnas" class="clickable" (click)="ver(r)"></tr>
+      <tr *matNoDataRow><td [attr.colspan]="columnas.length" class="muted" style="padding:24px">Sin documentos</td></tr>
+    </table>
+    <mat-paginator [length]="pagina()?.totalElements ?? 0" [pageSize]="20" (page)="cargar($event)" />
+  </section>
+
+  @if (seleccionado(); as d) {
+    <section class="tarjeta">
+      <div class="fila"><h2 style="flex:1">{{ d.tipo }} No. {{ d.numero }}</h2>
+        @if (d.estado === 'BORRADOR') {
+          <button mat-button (click)="anular(d)">Anular</button>
+          <button mat-flat-button (click)="aplicar(d)">Aplicar al inventario</button>
+        }
+        <button mat-button (click)="seleccionado.set(null)">Cerrar</button></div>
+      @if (d.aplicadoEn) { <p class="muted">Aplicado {{ d.aplicadoEn | date: 'short' }} por {{ d.aplicadoPor }}</p> }
+      <table class="tabla">
+        <tr><th>Artículo</th>
+          @if (d.tipo === 'AJUSTE') { <th class="num">Teórico</th><th class="num">Físico</th><th class="num">Diferencia</th> }
+          @else { <th class="num">Cantidad</th> }</tr>
+        @for (l of d.lineas; track l.id) {
+          <tr><td>{{ nombres()[l.articuloId!] ?? l.articuloId }}</td>
+            @if (d.tipo === 'AJUSTE') {
+              <td class="num">{{ l.cantidadTeorica != null ? (l.cantidadTeorica | number: '1.0-3') : 'al aplicar' }}</td>
+              <td class="num">{{ l.cantidad | number: '1.0-3' }}</td>
+              <td class="num" [class.negativo]="(l.diferencia ?? 0) < 0" [class.positivo]="(l.diferencia ?? 0) > 0">{{ l.diferencia != null ? (l.diferencia | number: '1.0-3') : '' }}</td>
+            } @else { <td class="num">{{ l.cantidad | number: '1.0-3' }}</td> }
+          </tr>
+        }
+      </table>
+    </section>
+  }
+</div>

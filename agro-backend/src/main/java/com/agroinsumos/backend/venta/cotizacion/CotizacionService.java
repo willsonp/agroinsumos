@@ -42,11 +42,11 @@ public class CotizacionService {
                                 BigDecimal descuento, BigDecimal importe, BigDecimal itbis) {}
 
     public record Response(Long id, long numero, LocalDate fecha, LocalDate validaHasta, Long clienteId,
-                           Long vendedorId, TipoPrecio tipoPrecio, String comentario, BigDecimal totalItbis,
+                           String clienteNombre, Long vendedorId, TipoPrecio tipoPrecio, String comentario, BigDecimal totalItbis,
                            BigDecimal total, Cotizacion.Estado estado, Long facturaId, List<LineaResponse> lineas) {
-        static Response de(Cotizacion c) {
+        static Response de(Cotizacion c, String clienteNombre) {
             return new Response(c.getId(), c.getNumero(), c.getFecha(), c.getValidaHasta(), c.getClienteId(),
-                    c.getVendedorId(), c.getTipoPrecio(), c.getComentario(), c.getTotalItbis(), c.getTotal(),
+                    clienteNombre, c.getVendedorId(), c.getTipoPrecio(), c.getComentario(), c.getTotalItbis(), c.getTotal(),
                     c.getEstado(), c.getFacturaId(), c.getLineas().stream().map(l -> new LineaResponse(l.getLinea(),
                     l.getArticuloId(), l.getCantidad(), l.getPrecioUnitario(), l.getDescuento(), l.getImporte(),
                     l.getItbis())).toList());
@@ -91,7 +91,7 @@ public class CotizacionService {
         }
         c.setTotalItbis(tot.totalItbis());
         c.setTotal(tot.montoTotal());
-        return Response.de(repo.save(c));
+        return respuesta(repo.save(c));
     }
 
     /** Convierte la cotización en factura con los precios cotizados (si sigue vigente). */
@@ -123,10 +123,14 @@ public class CotizacionService {
         c.setEstado(Cotizacion.Estado.ANULADA);
     }
 
-    public Response obtener(Long companiaId, Long id) { return Response.de(cargar(companiaId, id)); }
+    public Response obtener(Long companiaId, Long id) { return respuesta(cargar(companiaId, id)); }
 
     public Page<Response> buscar(Long companiaId, Long clienteId, Cotizacion.Estado estado, Pageable p) {
-        return repo.buscar(companiaId, clienteId, estado, p).map(Response::de);
+        return repo.buscar(companiaId, clienteId, estado, p).map(this::respuesta);
+    }
+
+    private Response respuesta(Cotizacion c) {
+        return Response.de(c, clientes.cargar(c.getCompaniaId(), c.getClienteId()).getNombre());
     }
 
     private Cotizacion cargar(Long companiaId, Long id) {
