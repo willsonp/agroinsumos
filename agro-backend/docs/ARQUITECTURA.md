@@ -405,7 +405,7 @@ en sus módulos).
 |---|---|
 | Ventas | ventas por fecha (RptVentasResumidasPorFecha), detalle (RptVentasDetalle), por cliente (RptVentasResumidasPorCliente), comisiones por vendedor (RptComisionVendedor), ventas y utilidad por artículo (FrmConsultaUtilidad), utilidad por departamento (RptUtilidad_Resumen), devoluciones (RptResumenDevolucion) |
 | Cobros y caja | cobros por fecha y forma de pago (RptIngresosResumidoPorFecha), cobros detallados (RptIngresosDetallados), facturas y ND vencidas (RptFacturasVencidas), egresos de caja (RptEgresoCaja) |
-| Inventario | inventario valorizado (RptListadoArticuloInventarioXCosto), lista de precios (RptListadoPrecioArticulos), bajo el mínimo, artículos comprados por suplidor (RptArticulosPorSuplidor) |
+| Inventario | **existencia de artículos por almacén a una fecha** (RptConsultaArticulosPorAlmacen; se calcula con el kárdex), **listado para toma de inventario** con columnas Físico/Diferencia en blanco (RptListadoArticuloInventario), productos por vencer, inventario valorizado (RptListadoArticuloInventarioXCosto), lista de precios (RptListadoPrecioArticulos), bajo el mínimo, artículos comprados por suplidor (RptArticulosPorSuplidor) |
 | Compras | compras por suplidor (RptEstadosTodosSuplidorRangoFecha), compras detalladas (RptCompraCompleta), pagos a suplidores (RptPagosPorFecha), **estado de cuenta de un suplidor** (RptEstadoCuentaSuplidor: saldo anterior + compras, notas y pagos con saldo acumulado; exige elegir el suplidor), **saldos de todos los suplidores** (anterior, cargos, abonos, saldo final) |
 
 Criterios: la venta neta descuenta las devoluciones; la utilidad usa el costo promedio al vender y descuenta lo devuelto;

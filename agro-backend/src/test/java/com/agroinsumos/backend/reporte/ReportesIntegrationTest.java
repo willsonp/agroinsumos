@@ -62,7 +62,7 @@ class ReportesIntegrationTest extends IntegrationTestBase {
     @Test
     void todosLosReportesCorrenYCuadran() throws Exception {
         List<String> codigos = JsonPath.read(getJson(admin, "/api/v1/reportes"), "$[*].codigo");
-        assertThat(codigos).hasSize(21);
+        assertThat(codigos).hasSize(23);
         for (String c : codigos) getJson(admin, "/api/v1/reportes/" + c + "?proveedorId=" + proveedor);   // todos ejecutan sin error
 
         String vf = getJson(admin, "/api/v1/reportes/ventas-por-fecha");
@@ -100,6 +100,13 @@ class ReportesIntegrationTest extends IntegrationTestBase {
         String ec2 = getJson(admin, "/api/v1/reportes/estado-cuenta-suplidor?proveedorId=" + proveedor + "&desde=2099-01-01&hasta=2099-01-31");
         assertThat(JsonPath.<List<Number>>read(ec2, "$.filas[*].saldo")).extracting(Number::doubleValue).containsExactly(6800.0);
         assertThat(total(getJson(admin, "/api/v1/reportes/saldos-suplidores"), "saldo")).isEqualTo(6800.0);
+
+        // Existencia por almacén: hoy coincide con el inventario valorizado; antes del primer movimiento es 0
+        assertThat(total(getJson(admin, "/api/v1/reportes/existencia-articulos"), "existencia"))
+                .isEqualTo(total(getJson(admin, "/api/v1/reportes/inventario-valorizado"), "existencia"));
+        assertThat(total(getJson(admin, "/api/v1/reportes/existencia-articulos?corte=2000-01-01"), "existencia")).isZero();
+        String toma = getJson(admin, "/api/v1/reportes/toma-inventario?conExistencia=true");
+        assertThat(JsonPath.<List<String>>read(toma, "$.filas[*].fisico")).allMatch(f -> f.startsWith("___"));
 
         // CSV para Excel
         var csv = mvc.perform(get("/api/v1/reportes/ventas-por-fecha/csv").header("Authorization", "Bearer " + admin)).andReturn().getResponse();

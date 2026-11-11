@@ -22,6 +22,42 @@ class ReportesInventario extends CatalogoBase {
     @Override
     public List<Reporte> reportes() {
         return List.of(
+                reporte("existencia-articulos", "Existencia de artículos por almacén", INVENTARIO,
+                        "Cantidad de cada artículo a una fecha (hoy por defecto), en un almacén o en todos, con su costo y total.",
+                        "RptConsultaArticulosPorAlmacen", List.of(FECHA_CORTE, ALMACEN, DEPARTAMENTO, CON_EXISTENCIA),
+                        List.of(Columna.texto("codigo", "Código"), Columna.texto("articulo", "Artículo"), Columna.texto("departamento", "Departamento"),
+                                Columna.texto("unidad", "Unidad"), Columna.numero("existencia", "Existencia"),
+                                Columna.monedaSinTotal("costo", "Costo promedio"), Columna.moneda("valor", "Total al costo")),
+                        """
+                        with ex as (
+                          select m.articulo_id, sum(m.cantidad) cantidad from inventario_movimiento m
+                           where m.compania_id = :cia and (:almacen is null or m.almacen_id = :almacen)
+                             and (m.fecha at time zone 'America/Santo_Domingo')::date <= cast(:corte as date)
+                           group by m.articulo_id)
+                        select coalesce(a.codigo_barra, a.referencia) codigo, a.nombre articulo, d.nombre departamento, u.nombre unidad,
+                               coalesce(ex.cantidad, 0) existencia, round(a.costo_promedio, 2) costo,
+                               round(coalesce(ex.cantidad, 0) * a.costo_promedio, 2) valor
+                          from articulo a join departamento d on d.id = a.departamento_id join unidad u on u.id = a.unidad_id
+                          left join ex on ex.articulo_id = a.id
+                         where a.compania_id = :cia and a.tipo = 'B' and a.estado = 'A'
+                           and (:departamento is null or a.departamento_id = :departamento)
+                           and (not :conExistencia or coalesce(ex.cantidad, 0) <> 0)
+                         order by d.nombre, a.nombre"""),
+                reporte("toma-inventario", "Listado para toma de inventario", INVENTARIO,
+                        "Hoja para el conteo físico: existencia teórica de cada artículo y columnas en blanco para anotar lo contado.",
+                        "RptListadoArticuloInventario", List.of(ALMACEN, DEPARTAMENTO, CON_EXISTENCIA),
+                        List.of(Columna.texto("codigo", "Código"), Columna.texto("articulo", "Artículo"), Columna.texto("departamento", "Departamento"),
+                                Columna.texto("ubicacion", "Ubicación"), Columna.texto("unidad", "Unidad"),
+                                Columna.numero("teorico", "Teórico"), Columna.texto("fisico", "Físico"), Columna.texto("diferencia", "Diferencia")),
+                        """
+                        select coalesce(a.codigo_barra, a.referencia) codigo, a.nombre articulo, d.nombre departamento, a.ubicacion,
+                               u.nombre unidad, coalesce(e.cantidad, 0) teorico, '____________' fisico, '__________' diferencia
+                          from articulo a join departamento d on d.id = a.departamento_id join unidad u on u.id = a.unidad_id
+                          left join %s e on e.articulo_id = a.id
+                         where a.compania_id = :cia and a.tipo = 'B' and a.estado = 'A'
+                           and (:departamento is null or a.departamento_id = :departamento)
+                           and (not :conExistencia or coalesce(e.cantidad, 0) <> 0)
+                         order by d.nombre, a.ubicacion nulls last, a.nombre""".formatted(EXISTENCIA)),
                 reporte("productos-por-vencer", "Productos por vencer", INVENTARIO,
                         "Lotes con existencia ya vencidos, que vencen hoy o en los próximos días (7 por defecto). Solo artículos que controlan vencimiento.",
                         null, List.of(DIAS, ALMACEN, DEPARTAMENTO),
