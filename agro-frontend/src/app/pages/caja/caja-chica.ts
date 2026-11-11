@@ -218,7 +218,7 @@ const TIPOS_BIEN: [string, string][] = [
         </div>
       }
     </div>`,
-  styles: `.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; } .grid .ancho { grid-column: span 2; }
+  styles: `.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px 12px; align-items: start; } .grid .ancho { grid-column: span 2; }
     @media (max-width: 600px) { .grid .ancho { grid-column: auto; } }
     .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
     .kpi { display: flex; flex-direction: column; gap: 4px; span { color: var(--mat-sys-on-surface-variant); font-size: .85em; }

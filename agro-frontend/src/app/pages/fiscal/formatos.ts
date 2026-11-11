@@ -26,7 +26,7 @@ const TIPOS_ANULACION: [string, string][] = [['01', 'Deterioro de factura preimp
   styles: `.tabla { width: 100%; border-collapse: collapse; font-size: 13px; td, th { padding: 5px 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; white-space: nowrap; } }
     .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 12px 0;
       div { font: var(--mat-sys-title-large); } label { display: block; font: var(--mat-sys-label-medium); color: var(--mat-sys-on-surface-variant); } }
-    .grid-anul { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; align-items: start;
+    .grid-anul { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px 12px; align-items: start;
       .motivo { grid-column: span 2; } .registrar { margin-top: 8px; justify-self: start; } }
     @media (max-width: 600px) { .grid-anul .motivo { grid-column: auto; } }
     .advertencias { background: #fff1c2; border-radius: 8px; padding: 8px 16px; li { margin: 4px 0; } }`,

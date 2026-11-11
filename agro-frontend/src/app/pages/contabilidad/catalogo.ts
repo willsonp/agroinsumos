@@ -72,7 +72,7 @@ const CATALOGO: CatalogoConfig = {
         </mat-tab>
       </mat-tab-group>
     </div>`,
-  styles: `.grid-config { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0 16px; }
+  styles: `.grid-config { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px 16px; align-items: start; }
     .ayuda { color: var(--mat-sys-on-surface-variant); } .aviso { margin-bottom: 16px; } .falta { color: var(--mat-sys-error); }`,
 })
 export class Catalogo {

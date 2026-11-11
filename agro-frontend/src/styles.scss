@@ -31,9 +31,13 @@ body {
   box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
 .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .fila > mat-form-field { flex: 1 1 180px; }
-.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; }
+.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px 12px; align-items: start; }
 .grid-form .ancho-completo { grid-column: 1 / -1; }
 .espaciador { flex: 1; }
+/* La etiqueta flotante (outline) sobresale ~8px por encima del campo: el contenido del diálogo deja ese espacio
+   arriba para que la etiqueta del primer campo no quede recortada. */
+.mat-mdc-dialog-content.mdc-dialog__content { padding-top: 12px !important; }
+.mat-mdc-dialog-content .grid-form, .mat-mdc-dialog-content form { padding-top: 2px; }
 .num, td.num, th.num { text-align: right !important; font-variant-numeric: tabular-nums; }
 /* Separación entre ícono y texto en botones (no en botones de solo ícono) */
 .mat-mdc-button-base:not(.mat-mdc-icon-button) .material-symbols-outlined { margin-right: 6px; font-size: 20px; }
