@@ -384,6 +384,8 @@ Migración `V16__etiquetas_respaldos.sql`.
   un `pg_dump` 16 se niega con "server version mismatch"). Si en el servidor hay varias versiones instaladas, indique la ruta
   con `PG_DUMP` (Windows: `C:\Program Files\PostgreSQL\18\bin\pg_dump.exe`; Linux: `/usr/lib/postgresql/18/bin/pg_dump`).
   La pantalla muestra el error `PG_DUMP_VERSION` con esta indicación.
+- **Restaurar**: con el `psql` de la misma versión del servidor (`psql -d <base_nueva> -f BK_<base>_NN.sql`).
+  Probado en PostgreSQL 18.6: respaldo de 69 MB en < 1 s y restauración idéntica (tablas, facturas, saldos) en 2 s.
 
 ## 5.10 Reportes
 Migración `V18__reportes.sql` (módulo Reportes con una opción por grupo). Sustituye los reportes Jasper del sistema anterior
@@ -430,6 +432,10 @@ Migración `V19__caja_chica.sql` (opción `CAJA_CHICA` en el menú Caja). Sustit
   Dr caja chica / Cr banco o caja; vale anulado → reverso.
 - Endpoints: `/api/v1/caja/chica` (GET, POST), `/{id}` (PUT), `/{id}/movimientos`, `/{id}/gastos`, `/movimientos/{id}/anular`,
   `/{id}/reposiciones`, `/reposiciones/{id}`, `/{id}/arqueos`.
+
+**Compatibilidad con PostgreSQL 18** (probado el 10/11/2026 con PostgreSQL 18.6): las 75 pruebas del backend, las
+migraciones V1–V19, la migración completa de datos reales (`00_pgloader.load` + scripts 01–08, resultados idénticos a
+PostgreSQL 16), autenticación SCRAM-SHA-256, respaldo/restauración y las 37 pantallas. No requiere cambios.
 
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).

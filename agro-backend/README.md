@@ -1,6 +1,6 @@
 # agro-backend
 
-API REST (Spring Boot 4 · Java 21 · PostgreSQL 16) que reemplaza la aplicación de escritorio
+API REST (Spring Boot 4 · Java 21 · PostgreSQL 16 o 18) que reemplaza la aplicación de escritorio
 **PV Agroinsumos** (Java Swing + MySQL). Módulos: **Seguridad (JWT + OAuth2)**, **e-CF DGII**,
 **Catálogos**, **Inventario (kardex)**, **Facturación** (facturas, cotizaciones, devoluciones con nota de crédito electrónica),
 **Caja** (punto de venta, cuadre y cierre), **Cuentas por Cobrar** y **Compras / Cuentas por Pagar**.
