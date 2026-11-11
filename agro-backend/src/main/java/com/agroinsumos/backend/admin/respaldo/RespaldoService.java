@@ -66,10 +66,30 @@ public class RespaldoService {
         this.base = m.group(3);
         this.usuario = usuario;
         this.clave = clave;
-        this.pgDump = pgDump;
+        this.pgDump = resolverPgDump(pgDump);
         this.directorioPorDefecto = directorio;
         this.cron = cron;
         this.tiempoMaximoMin = tiempoMaximoMin;
+    }
+
+    /**
+     * Acepta la ruta del programa o la carpeta que lo contiene (p.ej. "C:\\Program Files\\PostgreSQL\\18\\bin\\"):
+     * si es una carpeta se le agrega pg_dump.exe (Windows) o pg_dump. También quita comillas sobrantes.
+     */
+    static String resolverPgDump(String valor) {
+        String v = valor == null ? "" : valor.trim();
+        if (v.length() > 1 && v.startsWith("\"") && v.endsWith("\"")) v = v.substring(1, v.length() - 1).trim();
+        if (v.isEmpty()) return "pg_dump";
+        try {
+            Path ruta = Path.of(v);
+            if (Files.isDirectory(ruta)) {
+                Path exe = ruta.resolve("pg_dump.exe");
+                return (Files.isRegularFile(exe) ? exe : ruta.resolve("pg_dump")).toString();
+            }
+        } catch (RuntimeException ignorada) {
+            // ruta con caracteres no válidos: se usa tal cual y el error se informa al ejecutar
+        }
+        return v;
     }
 
     public Path directorio() {
@@ -127,7 +147,15 @@ public class RespaldoService {
                     "--no-owner", "--no-privileges", "--encoding=UTF8", "-f", temporal.toString());
             pb.environment().put("PGPASSWORD", clave);
             pb.redirectErrorStream(false).redirectError(errores.toFile()).redirectOutput(ProcessBuilder.Redirect.DISCARD);
-            Process p = pb.start();
+            Process p;
+            try {
+                p = pb.start();
+            } catch (IOException e) {
+                Files.deleteIfExists(errores);
+                throw new BusinessException("PG_DUMP_NO_ENCONTRADO", "No se pudo ejecutar pg_dump en \"" + pgDump + "\". "
+                        + "Configure la variable PG_DUMP con la ruta completa del programa, incluido el nombre del archivo "
+                        + "(p.ej. C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe), y reinicie el backend.");
+            }
             if (!p.waitFor(tiempoMaximoMin, TimeUnit.MINUTES)) {
                 p.destroyForcibly();
                 Files.deleteIfExists(temporal);
