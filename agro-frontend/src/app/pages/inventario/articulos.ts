@@ -6,6 +6,11 @@ import type { Pagina, S } from '../../api/tipos';
 import { CatalogoCrud } from '../../shared/catalogo-crud';
 import { ARTICULOS } from '../catalogos/configs';
 
+/** Nombre legible del documento que originó el movimiento (en el kárdex se guarda como código). */
+const DOCUMENTOS: Record<string, string> = { FACTURA: 'Factura', COMPRA: 'Compra', DEVOLUCION: 'Devolución', CONDUCE: 'Conduce',
+  NOTA_PROVEEDOR: 'Nota de suplidor', APARTADO: 'Apartado', INV_ENTRADA: 'Entrada de inventario', INV_SALIDA: 'Salida de inventario',
+  INV_AJUSTE: 'Ajuste por conteo', INV_TRANSFERENCIA: 'Transferencia', MIGRACION: 'Saldo migrado' };
+
 const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 'Compra', VENTA: 'Venta', DEVOLUCION_VENTA: 'Devolución de venta',
   DEVOLUCION_COMPRA: 'Devolución de compra', AJUSTE_ENTRADA: 'Ajuste (+)', AJUSTE_SALIDA: 'Ajuste (-)', ENTRADA: 'Entrada', SALIDA: 'Salida',
   TRANSFERENCIA_ENTRADA: 'Transferencia (+)', TRANSFERENCIA_SALIDA: 'Transferencia (-)' };
@@ -20,7 +25,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
       @if (seleccionado(); as a) {
         <div class="tarjeta" style="margin-top:16px">
           <div class="fila"><h2 style="flex:1">Kardex · {{ a.nombre }}</h2>
-            @for (e of existencias(); track e.almacenId) { <span class="chip">Almacén {{ e.almacenId }}: {{ e.cantidad | number: '1.0-3' }}</span> }
+            @for (e of existencias(); track e.almacenId) { <span class="chip">{{ almacen(e.almacenId) }}: {{ e.cantidad | number: '1.0-3' }}</span> }
             <button mat-button (click)="seleccionado.set(null)">Cerrar</button></div>
           @if (a.manejaVencimiento) {
             <h3>Lotes con existencia</h3>
@@ -40,7 +45,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
           <div class="tabla-contenedor"><table class="tabla">
             <tr><th>Fecha</th><th>Movimiento</th><th>Documento</th><th>Almacén</th><th class="num">Cantidad</th><th class="num">Costo</th><th class="num">Existencia</th><th>Usuario</th></tr>
             @for (m of movimientos(); track m.id) {
-              <tr><td>{{ m.fecha | date: 'short' }}</td><td>{{ tipo(m.tipo) }}</td><td>{{ m.documentoTipo }} {{ m.documentoId }}</td><td>{{ m.almacenId }}</td>
+              <tr><td>{{ m.fecha | date: 'short' }}</td><td>{{ tipo(m.tipo) }}</td><td>{{ documento(m.documentoTipo) }} {{ m.documentoId || '' }}</td><td>{{ almacen(m.almacenId) }}</td>
                 <td class="num" [class.salida]="(m.cantidad ?? 0) < 0">{{ m.cantidad | number: '1.0-3' }}</td><td class="num">{{ m.costoUnitario | currency }}</td>
                 <td class="num">{{ m.existenciaFinal | number: '1.0-3' }}</td><td>{{ m.usuario }}</td></tr>
             } @empty { <tr><td colspan="8" class="muted">Sin movimientos</td></tr> }
@@ -58,6 +63,15 @@ export class Articulos {
   protected readonly movimientos = signal<S['ArticuloKardexResponse'][]>([]);
   protected readonly existencias = signal<S['ArticuloExistenciaResponse'][]>([]);
   protected readonly lotes = signal<S['LoteResponse'][]>([]);
+  private readonly almacenes = signal<Map<number, string>>(new Map());
+
+  constructor() {
+    this.http.get<Pagina<{ id: number; nombre: string }>>('/api/v1/catalogos/almacenes', { params: { size: 500 } })
+      .subscribe({ next: (p) => this.almacenes.set(new Map(p.content.map((a) => [a.id, a.nombre]))), error: () => {} });
+  }
+
+  protected almacen(id?: number): string { return (id != null && this.almacenes().get(id)) || (id != null ? `Almacén ${id}` : ''); }
+  protected documento(t?: string): string { return DOCUMENTOS[t ?? ''] ?? t ?? ''; }
 
   protected kardex(a: S['ArticuloResponse']): void {
     this.seleccionado.set(a);
