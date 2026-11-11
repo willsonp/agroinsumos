@@ -148,7 +148,8 @@ public class DevolucionService {
             var fl = porId.get(dl.getFacturaLineaId());
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(companiaId, fl.getArticuloId()),
                     f.getAlmacenId(), TipoMovimiento.DEVOLUCION_VENTA, dl.getCantidad(), fl.getCostoUnitario(),
-                    DOC_TIPO, d.getId()));
+                    DOC_TIPO, d.getId(), null,
+                    new com.agroinsumos.backend.inventario.kardex.LoteService.Referencia(FacturaService.DOC_TIPO, f.getId())));
         }
 
         var comprador = f.getClienteRnc() == null ? null

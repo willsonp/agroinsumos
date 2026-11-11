@@ -59,6 +59,8 @@ const GRUPOS: Record<string, { grupo: string; titulo: string }> = {
                   <mat-option [value]="null">Todos</mat-option>@for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
                 @if (pide('PROVEEDOR_REQUERIDO')) { <mat-form-field style="min-width:260px"><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId">
                   @for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
+                @if (pide('DIAS')) { <mat-form-field style="width:170px"><mat-label>Próximos días</mat-label>
+                  <input matInput type="number" min="0" max="365" [(ngModel)]="f.dias" /><mat-hint>0 = solo vencidos y hoy</mat-hint></mat-form-field> }
                 @if (pide('CON_EXISTENCIA')) { <mat-checkbox [(ngModel)]="f.conExistencia">Solo con existencia</mat-checkbox> }
                 <span class="espaciador"></span>
                 <button mat-flat-button [disabled]="faltaSuplidor()" (click)="consultar()"><span class="material-symbols-outlined">play_arrow</span> Consultar</button>
@@ -132,7 +134,7 @@ export class Reportes {
   private readonly hoy = new Date();
   protected f = { desde: isoFecha(new Date(this.hoy.getFullYear(), this.hoy.getMonth(), 1))!, hasta: isoFecha(this.hoy)!, corte: isoFecha(this.hoy)!,
     vendedorId: null as number | null, departamentoId: null as number | null, almacenId: null as number | null,
-    proveedorId: null as number | null, conExistencia: false };
+    proveedorId: null as number | null, conExistencia: false, dias: 7 };
   private readonly moneda = new Intl.NumberFormat('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   private readonly numero = new Intl.NumberFormat('es-DO', { maximumFractionDigits: 3 });
 
@@ -165,6 +167,7 @@ export class Reportes {
     if (this.pide('ALMACEN')) p['almacenId'] = this.f.almacenId;
     if (this.pide('PROVEEDOR') || this.pide('PROVEEDOR_REQUERIDO')) p['proveedorId'] = this.f.proveedorId;
     if (this.pide('CON_EXISTENCIA')) p['conExistencia'] = this.f.conExistencia;
+    if (this.pide('DIAS')) p['dias'] = Math.min(365, Math.max(0, Math.round(this.f.dias || 0)));
     return params(p);
   }
 

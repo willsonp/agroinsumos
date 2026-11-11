@@ -19,7 +19,7 @@ import { params, redondear } from '../../shared/http';
 import { TASAS } from '../../shared/calculo';
 import { Notificacion } from '../../core/notificacion.service';
 
-interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; }
+interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; lote?: string; vence?: string; }
 
 const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y servicios'], ['03', 'Arrendamientos'], ['04', 'Activos fijos'],
   ['05', 'Representación'], ['06', 'Otras deducciones admitidas'], ['07', 'Gastos financieros'], ['08', 'Gastos extraordinarios'],
@@ -32,7 +32,11 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
   templateUrl: './compras.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
     .celda { width: 100px; padding: 6px; text-align: right; } .total { font: var(--mat-sys-headline-small); color: var(--mat-sys-primary); }
-    section { margin-top: 16px; }`,
+    section { margin-top: 16px; }
+    .lote td { background: var(--mat-sys-surface-container-low); font: var(--mat-sys-body-small); color: var(--mat-sys-on-surface-variant);
+      .material-symbols-outlined { font-size: 18px; margin-right: 4px; } }
+    .lote .celda { margin: 0 12px 0 6px; text-align: left; } .lote .texto { width: 170px; } .lote .fecha { width: 150px; }
+    .lote.falta td { border-left: 3px solid var(--mat-sys-error); }`,
 })
 export class Compras {
   private readonly http = inject(HttpClient);
@@ -88,6 +92,13 @@ export class Compras {
 
   protected quitar(i: number): void { this.lineas.set(this.lineas().filter((_, j) => j !== i)); }
 
+  /** Solo artículos que controlan vencimiento: número de lote (opcional) y fecha (obligatoria). */
+  protected fijarLote(i: number, campo: 'lote' | 'vence', v: string): void {
+    this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, [campo]: v || undefined } : l)));
+  }
+  protected readonly faltaVencimiento = computed(() => this.lineas().some((l) => l.articulo.manejaVencimiento && !l.vence));
+  protected readonly hoy = new Date().toISOString().slice(0, 10);
+
   protected registrar(): void {
     const req: S['CompraRequest'] = {
       proveedorId: this.f.proveedorId!, condicion: this.f.condicion, diasCredito: this.f.condicion === 'CREDITO' ? this.f.diasCredito : undefined,
@@ -98,7 +109,9 @@ export class Compras {
       comentario: this.f.comentario || undefined,
       moneda: this.f.moneda, tasaCambio: this.f.moneda !== 'DOP' ? this.f.tasa ?? undefined : undefined,
       lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, costoUnitario: l.costo,
-        descuento: l.descuento || undefined, tasaItbis: l.tasa })),
+        descuento: l.descuento || undefined, tasaItbis: l.tasa,
+        lote: l.articulo.manejaVencimiento ? l.lote?.trim() || undefined : undefined,
+        fechaVencimiento: l.articulo.manejaVencimiento ? l.vence : undefined })),
     };
     this.http.post<S['CompraResponse']>('/api/v1/compras', req).subscribe({
       next: (c) => {

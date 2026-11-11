@@ -22,6 +22,21 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
           <div class="fila"><h2 style="flex:1">Kardex · {{ a.nombre }}</h2>
             @for (e of existencias(); track e.almacenId) { <span class="chip">Almacén {{ e.almacenId }}: {{ e.cantidad | number: '1.0-3' }}</span> }
             <button mat-button (click)="seleccionado.set(null)">Cerrar</button></div>
+          @if (a.manejaVencimiento) {
+            <h3>Lotes con existencia</h3>
+            <div class="tabla-contenedor"><table class="tabla">
+              <tr><th>Almacén</th><th>Lote</th><th>Vence</th><th>Estado</th><th class="num">Recibido</th><th class="num">Existencia</th></tr>
+              @for (l of lotes(); track l.id) {
+                <tr><td>{{ l.almacen }}</td><td>{{ l.numero || '—' }}</td><td>{{ l.fechaVencimiento ? (l.fechaVencimiento | date: 'dd/MM/yyyy') : 'Sin fecha' }}</td>
+                  <td>@if (l.diasParaVencer == null) { <span class="chip">Sin fecha</span> }
+                      @else if (l.diasParaVencer < 0) { <span class="chip error">Vencido hace {{ -l.diasParaVencer }} día(s)</span> }
+                      @else if (l.diasParaVencer <= 7) { <span class="chip warn">Vence {{ l.diasParaVencer === 0 ? 'hoy' : 'en ' + l.diasParaVencer + ' día(s)' }}</span> }
+                      @else { <span class="chip ok">En {{ l.diasParaVencer }} días</span> }</td>
+                  <td class="num">{{ l.cantidadRecibida | number: '1.0-3' }}</td><td class="num">{{ l.existencia | number: '1.0-3' }}</td></tr>
+              } @empty { <tr><td colspan="6" class="muted">Sin lotes con existencia</td></tr> }
+            </table></div>
+            <h3>Movimientos</h3>
+          }
           <div class="tabla-contenedor"><table class="tabla">
             <tr><th>Fecha</th><th>Movimiento</th><th>Documento</th><th>Almacén</th><th class="num">Cantidad</th><th class="num">Costo</th><th class="num">Existencia</th><th>Usuario</th></tr>
             @for (m of movimientos(); track m.id) {
@@ -34,7 +49,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
       }
     </div>`,
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px 8px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
-    .salida { color: var(--mat-sys-error); }`,
+    .salida { color: var(--mat-sys-error); } h3 { font: var(--mat-sys-title-small); margin: 16px 0 8px; }`,
 })
 export class Articulos {
   private readonly http = inject(HttpClient);
@@ -42,11 +57,16 @@ export class Articulos {
   protected readonly seleccionado = signal<S['ArticuloResponse'] | null>(null);
   protected readonly movimientos = signal<S['ArticuloKardexResponse'][]>([]);
   protected readonly existencias = signal<S['ArticuloExistenciaResponse'][]>([]);
+  protected readonly lotes = signal<S['LoteResponse'][]>([]);
 
   protected kardex(a: S['ArticuloResponse']): void {
     this.seleccionado.set(a);
     this.http.get<Pagina<S['ArticuloKardexResponse']>>(`/api/v1/inventario/articulos/${a.id}/kardex`).subscribe((p) => this.movimientos.set(p.content));
     this.http.get<S['ArticuloExistenciaResponse'][]>(`/api/v1/inventario/articulos/${a.id}/existencias`).subscribe((e) => this.existencias.set(e));
+    this.lotes.set([]);
+    if (a.manejaVencimiento) {
+      this.http.get<S['LoteResponse'][]>(`/api/v1/inventario/articulos/${a.id}/lotes`).subscribe((l) => this.lotes.set(l));
+    }
   }
 
   protected tipo(t?: string): string { return TIPOS[t ?? ''] ?? t ?? ''; }

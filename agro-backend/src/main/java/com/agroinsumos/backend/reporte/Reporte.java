@@ -22,8 +22,8 @@ public record Reporte(String codigo, String titulo, Grupo grupo, String descripc
         public String permiso() { return permiso; }
     }
 
-    /** PROVEEDOR_REQUERIDO: el reporte es de un solo suplidor (p.ej. estado de cuenta). */
-    public enum Filtro { RANGO_FECHAS, FECHA_CORTE, CLIENTE, VENDEDOR, DEPARTAMENTO, ALMACEN, PROVEEDOR, PROVEEDOR_REQUERIDO, CON_EXISTENCIA }
+    /** PROVEEDOR_REQUERIDO: el reporte es de un solo suplidor (p.ej. estado de cuenta). DIAS: horizonte en días (vencimientos). */
+    public enum Filtro { RANGO_FECHAS, FECHA_CORTE, CLIENTE, VENDEDOR, DEPARTAMENTO, ALMACEN, PROVEEDOR, PROVEEDOR_REQUERIDO, CON_EXISTENCIA, DIAS }
 
     public enum Tipo { TEXTO, ENTERO, NUMERO, MONEDA, PORCENTAJE, FECHA }
 
@@ -39,7 +39,7 @@ public record Reporte(String codigo, String titulo, Grupo grupo, String descripc
     }
 
     public record Parametros(LocalDate desde, LocalDate hasta, LocalDate corte, Long clienteId, Long vendedorId, Long departamentoId,
-                             Long almacenId, Long proveedorId, boolean conExistencia) {}
+                             Long almacenId, Long proveedorId, boolean conExistencia, Integer dias) {}
 
     /** Resultado listo para mostrar: totales de las columnas que totalizan (y márgenes recalculados). */
     public record Resultado(String codigo, String titulo, String subtitulo, List<Columna> columnas, List<Map<String, Object>> filas,

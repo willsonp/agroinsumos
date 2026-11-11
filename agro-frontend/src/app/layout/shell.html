@@ -81,6 +81,10 @@
         } @else { <span class="miga-opcion">Gestión Administrativa</span> }
       </nav>
       <span class="espaciador"></span>
+      <button mat-icon-button (click)="tema.alternar()" [matTooltip]="tema.oscuro() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+              [attr.aria-label]="tema.oscuro() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+        <span class="material-symbols-outlined">{{ tema.oscuro() ? 'light_mode' : 'dark_mode' }}</span>
+      </button>
       <button mat-button class="boton-usuario" [matMenuTriggerFor]="menuUsuario">
         <span class="avatar pequeno">{{ iniciales() }}</span>
         <span class="usuario-nombre">{{ auth.perfil()?.nombre }}</span>
@@ -90,6 +94,14 @@
           <strong>{{ auth.perfil()?.nombre }}</strong>
           <div class="muted">{{ nivel() }} · {{ auth.perfil()?.username }}</div>
         </div>
+        <mat-divider />
+        <div class="menu-titulo">Apariencia</div>
+        @for (o of [['claro', 'light_mode', 'Claro'], ['oscuro', 'dark_mode', 'Oscuro'], ['sistema', 'contrast', 'Según el sistema']]; track o[0]) {
+          <button mat-menu-item (click)="tema.fijar($any(o[0]))" [attr.aria-checked]="tema.modo() === o[0]" role="menuitemradio">
+            <span class="material-symbols-outlined">{{ o[1] }}</span> {{ o[2] }}
+            @if (tema.modo() === o[0]) { <span class="material-symbols-outlined marca-check">check</span> }
+          </button>
+        }
         <mat-divider />
         <button mat-menu-item (click)="auth.logout()">
           <span class="material-symbols-outlined">logout</span> Cerrar sesión

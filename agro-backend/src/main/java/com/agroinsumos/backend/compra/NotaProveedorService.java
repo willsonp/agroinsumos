@@ -139,7 +139,8 @@ public class NotaProveedorService {
         }
         for (var l : n.getLineas()) {
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
-                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad(), l.getCostoUnitario(), DOC_TIPO, n.getId()));
+                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad(), l.getCostoUnitario(), DOC_TIPO, n.getId(), null,
+                    new com.agroinsumos.backend.inventario.kardex.LoteService.Referencia(CompraService.DOC_TIPO, c.getId())));
         }
         return respuesta(n, c);
     }

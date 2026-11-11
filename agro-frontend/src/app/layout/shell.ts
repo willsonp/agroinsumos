@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../core/auth.service';
 import { Modulo, NAVEGACION, Opcion } from '../core/navegacion';
 import { colorModulo } from '../core/colores-modulo';
+import { TemaService } from '../core/tema.service';
 
 const NIVELES: Record<string, string> = { ADMIN: 'Administrador', SUPERVISOR: 'Supervisor', USUARIO: 'Usuario', OTRO: 'Consulta' };
 
@@ -24,6 +25,7 @@ const NIVELES: Record<string, string> = { ADMIN: 'Administrador', SUPERVISOR: 'S
 })
 export class Shell {
   protected readonly auth = inject(AuthService);
+  protected readonly tema = inject(TemaService);
   private readonly router = inject(Router);
   protected readonly color = colorModulo;
   protected readonly movil = toSignal(

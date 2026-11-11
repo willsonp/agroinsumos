@@ -35,9 +35,10 @@ public class ReporteController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate corte,
             @RequestParam(required = false) Long clienteId, @RequestParam(required = false) Long vendedorId,
             @RequestParam(required = false) Long departamentoId, @RequestParam(required = false) Long almacenId,
-            @RequestParam(required = false) Long proveedorId, @RequestParam(defaultValue = "false") boolean conExistencia) {
+            @RequestParam(required = false) Long proveedorId, @RequestParam(defaultValue = "false") boolean conExistencia,
+            @RequestParam(required = false) Integer dias) {
         return service.ejecutar(user.companiaId(), codigo, new Reporte.Parametros(desde, hasta, corte, clienteId, vendedorId,
-                departamentoId, almacenId, proveedorId, conExistencia));
+                departamentoId, almacenId, proveedorId, conExistencia, dias));
     }
 
     @Operation(summary = "El reporte en CSV para Excel")
@@ -48,9 +49,10 @@ public class ReporteController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate corte,
             @RequestParam(required = false) Long clienteId, @RequestParam(required = false) Long vendedorId,
             @RequestParam(required = false) Long departamentoId, @RequestParam(required = false) Long almacenId,
-            @RequestParam(required = false) Long proveedorId, @RequestParam(defaultValue = "false") boolean conExistencia) {
+            @RequestParam(required = false) Long proveedorId, @RequestParam(defaultValue = "false") boolean conExistencia,
+            @RequestParam(required = false) Integer dias) {
         byte[] datos = service.csv(user.companiaId(), codigo, new Reporte.Parametros(desde, hasta, corte, clienteId, vendedorId,
-                departamentoId, almacenId, proveedorId, conExistencia));
+                departamentoId, almacenId, proveedorId, conExistencia, dias));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + codigo + ".csv\"")
                 .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))

@@ -1897,6 +1897,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inventario/articulos/{id}/lotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lotes del artículo con su fecha de vencimiento (solo artículos que controlan vencimiento) */
+        get: operations["lotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inventario/articulos/{id}/kardex": {
         parameters: {
             query?: never;
@@ -2798,6 +2815,7 @@ export interface components {
             ubicacion?: string;
             imagenUrl?: string;
             preciosIncluyenItbis?: boolean;
+            manejaVencimiento?: boolean;
         };
         ArticuloResponse: {
             /** Format: int64 */
@@ -2830,6 +2848,7 @@ export interface components {
             ubicacion?: string;
             imagenUrl?: string;
             estado?: string;
+            manejaVencimiento?: boolean;
         };
         CuentaContableRequest: {
             codigo: string;
@@ -4119,6 +4138,9 @@ export interface components {
             costoUnitario: number;
             descuento?: number;
             tasaItbis?: number;
+            lote?: string;
+            /** Format: date */
+            fechaVencimiento?: string;
         };
         CompraRequest: {
             /** Format: int64 */
@@ -4158,6 +4180,9 @@ export interface components {
             importe?: number;
             itbis?: number;
             costoFinal?: number;
+            lote?: string;
+            /** Format: date */
+            fechaVencimiento?: string;
         };
         CompraResponse: {
             /** Format: int64 */
@@ -4598,7 +4623,7 @@ export interface components {
             grupoNombre?: string;
             descripcion?: string;
             legado?: string;
-            filtros?: ("RANGO_FECHAS" | "FECHA_CORTE" | "CLIENTE" | "VENDEDOR" | "DEPARTAMENTO" | "ALMACEN" | "PROVEEDOR" | "PROVEEDOR_REQUERIDO" | "CON_EXISTENCIA")[];
+            filtros?: ("RANGO_FECHAS" | "FECHA_CORTE" | "CLIENTE" | "VENDEDOR" | "DEPARTAMENTO" | "ALMACEN" | "PROVEEDOR" | "PROVEEDOR_REQUERIDO" | "CON_EXISTENCIA" | "DIAS")[];
             columnas?: components["schemas"]["ReporteColumna"][];
         };
         ReporteResultado: {
@@ -4671,6 +4696,20 @@ export interface components {
             numberOfElements?: number;
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        LoteResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            almacenId?: number;
+            almacen?: string;
+            numero?: string;
+            /** Format: date */
+            fechaVencimiento?: string;
+            cantidadRecibida?: number;
+            existencia?: number;
+            /** Format: int32 */
+            diasParaVencer?: number;
         };
         ArticuloKardexResponse: {
             /** Format: int64 */
@@ -9720,6 +9759,7 @@ export interface operations {
                 almacenId?: number;
                 proveedorId?: number;
                 conExistencia?: boolean;
+                dias?: number;
             };
             header?: never;
             path: {
@@ -9752,6 +9792,7 @@ export interface operations {
                 almacenId?: number;
                 proveedorId?: number;
                 conExistencia?: boolean;
+                dias?: number;
             };
             header?: never;
             path: {
@@ -9811,6 +9852,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["EtiquetaTamano"][];
+                };
+            };
+        };
+    };
+    lotes: {
+        parameters: {
+            query?: {
+                soloConExistencia?: boolean;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteResponse"][];
                 };
             };
         };

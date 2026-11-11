@@ -49,7 +49,7 @@ export const ARTICULOS: CatalogoConfig = {
   columnas: [{ campo: 'codigoBarra', etiqueta: 'Código' }, { campo: 'nombre', etiqueta: 'Nombre' }, { campo: 'tipo', etiqueta: 'Tipo' },
     { campo: 'precioContadoConItbis', etiqueta: 'Precio (con ITBIS)', tipo: 'moneda' }, { campo: 'costoPromedio', etiqueta: 'Costo prom.', tipo: 'moneda' },
     { campo: 'existencia', etiqueta: 'Existencia', tipo: 'numero' }, { campo: 'estado', etiqueta: 'Estado', tipo: 'estado' }],
-  nuevo: { tipo: 'B', indicadorItbis: 1, costo: 0, precioContado: 0, preciosIncluyenItbis: true, descuentoMaximo: 0, stockMinimo: 0 },
+  nuevo: { tipo: 'B', indicadorItbis: 1, costo: 0, precioContado: 0, preciosIncluyenItbis: true, descuentoMaximo: 0, stockMinimo: 0, manejaVencimiento: false },
   // El backend guarda precios SIN ITBIS: al editar se muestran con ITBIS para que la casilla sea coherente
   alEditar: (r) => ({ ...r, precioContado: r['precioContadoConItbis'], precioCredito: r['precioCreditoConItbis'],
     precioMayor: r['precioMayorConItbis'], preciosIncluyenItbis: true }),
@@ -70,6 +70,7 @@ export const ARTICULOS: CatalogoConfig = {
     { nombre: 'descuentoMaximo', etiqueta: 'Descuento máximo %', tipo: 'numero', min: 0, max: 100 },
     { nombre: 'stockMinimo', etiqueta: 'Stock mínimo', tipo: 'numero', min: 0 },
     { nombre: 'ubicacion', etiqueta: 'Ubicación' },
+    { nombre: 'manejaVencimiento', etiqueta: 'Controla fecha de vencimiento (lotes): la compra pedirá la fecha de cada lote', tipo: 'check', anchoCompleto: true },
   ],
 };
 

@@ -1,6 +1,6 @@
 .pos { max-width: 1500px; }
 .progreso { position: sticky; top: 64px; z-index: 3; }
-.aviso { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; background: #fff1c2; flex-wrap: wrap; }
+.aviso { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; background: var(--aviso-fondo); color: var(--aviso-texto); flex-wrap: wrap; }
 .columnas { display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
 @media (max-width: 1000px) { .columnas { grid-template-columns: 1fr; } }
 .lineas { width: 100%; border-collapse: collapse;

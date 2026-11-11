@@ -34,7 +34,9 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
             @DecimalMin("0") @DecimalMax("100") BigDecimal descuentoMaximo,
             @DecimalMin("0") BigDecimal stockMinimo, @Size(max = 50) String ubicacion, @Size(max = 255) String imagenUrl,
             /** true: los precios enviados incluyen ITBIS y se convierten a base (precio / (1 + tasa)). */
-            Boolean preciosIncluyenItbis) {}
+            Boolean preciosIncluyenItbis,
+            /** Controla lotes y fechas de vencimiento. */
+            Boolean manejaVencimiento) {}
 
     public record Response(Long id, String codigoBarra, String referencia, String nombre, String descripcion,
                            Articulo.Tipo tipo, Long departamentoId, Long unidadId, Long proveedorId, int indicadorItbis,
@@ -42,7 +44,7 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                            BigDecimal precioCredito, BigDecimal precioMayor, BigDecimal precioContadoConItbis,
                            BigDecimal precioCreditoConItbis, BigDecimal precioMayorConItbis, BigDecimal descuentoMaximo,
                            BigDecimal stockMinimo, BigDecimal existencia, String ubicacion, String imagenUrl,
-                           String estado) {}
+                           String estado, boolean manejaVencimiento) {}
 
     private final ArticuloRepository repo;
     private final ExistenciaRepository existencias;
@@ -101,6 +103,7 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
         a.setStockMinimo(cero(r.stockMinimo()));
         a.setUbicacion(r.ubicacion());
         a.setImagenUrl(r.imagenUrl());
+        a.setManejaVencimiento(Boolean.TRUE.equals(r.manejaVencimiento()) && r.tipo() == Articulo.Tipo.B);
     }
 
     @Override
@@ -110,7 +113,8 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                 a.getTipo(), a.getDepartamentoId(), a.getUnidadId(), a.getProveedorId(), a.getIndicadorItbis(),
                 a.getCosto(), a.getCostoPromedio(), a.getPrecioContado(), a.getPrecioCredito(), a.getPrecioMayor(),
                 conItbis(a, a.getPrecioContado()), conItbis(a, a.getPrecioCredito()), conItbis(a, a.getPrecioMayor()),
-                a.getDescuentoMaximo(), a.getStockMinimo(), existencia, a.getUbicacion(), a.getImagenUrl(), a.getEstado());
+                a.getDescuentoMaximo(), a.getStockMinimo(), existencia, a.getUbicacion(), a.getImagenUrl(), a.getEstado(),
+                a.isManejaVencimiento());
     }
 
     /** Búsqueda por código de barras para el punto de venta (legacy ConsultaArticulo_PorCodigo). */

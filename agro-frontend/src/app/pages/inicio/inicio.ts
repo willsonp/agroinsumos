@@ -140,6 +140,7 @@ export class Inicio {
   private readonly ventas = signal<Resultado | null>(null);
   private readonly vencidas = signal<Resultado | null>(null);
   private readonly bajoMinimo = signal<Resultado | null>(null);
+  private readonly porVencer = signal<Resultado | null>(null);
   private readonly caja = signal<S['CajaSesionResponse'] | null | undefined>(undefined);
 
   private readonly dinero = new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' });
@@ -173,6 +174,13 @@ export class Inicio {
       k.push({ titulo: 'Bajo el mínimo', valor: String(bm.filas?.length ?? 0),
         detalle: 'artículo(s) por reponer', icono: 'inventory', ruta: '/reportes/inventario', ...c });
     }
+    const pv = this.porVencer();
+    if (pv && pv.filas?.length) {
+      const vencidos = pv.filas.filter((f) => (f as Record<string, unknown>)['estado'] === 'VENCIDO').length;
+      k.push({ titulo: 'Por vencer (7 días)', valor: String(pv.filas.length),
+        detalle: vencidos ? `lote(s) · ${vencidos} ya vencido(s)` : `lote(s) · valor ${this.dinero.format(Number(pv.totales?.['valor'] ?? 0))}`,
+        icono: 'event_upcoming', ruta: '/reportes/inventario', tono: '#b3261e', fondo: 'light-dark(#ffdad6, #5c1a16)' });
+    }
     return k;
   });
 
@@ -183,7 +191,10 @@ export class Inicio {
         .subscribe((r) => destino.set(r));
     if (this.auth.puede('REP_VENTAS')) reporte('ventas-por-fecha', { desde: hoy, hasta: hoy }, this.ventas);
     if (this.auth.puede('REP_CXC_CAJA')) reporte('facturas-vencidas', { corte: hoy }, this.vencidas);
-    if (this.auth.puede('REP_INVENTARIO')) reporte('bajo-minimo', {}, this.bajoMinimo);
+    if (this.auth.puede('REP_INVENTARIO')) {
+      reporte('bajo-minimo', {}, this.bajoMinimo);
+      reporte('productos-por-vencer', { dias: 7 }, this.porVencer);
+    }
     if (this.auth.puede('CAJA_SESION')) {
       this.http.get<S['CajaSesionResponse'] | null>('/api/v1/caja/sesiones/actual').pipe(catchError(() => of(null)))
         .subscribe((c) => this.caja.set(c));

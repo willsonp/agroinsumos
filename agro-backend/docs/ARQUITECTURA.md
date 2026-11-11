@@ -437,6 +437,35 @@ Migración `V19__caja_chica.sql` (opción `CAJA_CHICA` en el menú Caja). Sustit
 migraciones V1–V19, la migración completa de datos reales (`00_pgloader.load` + scripts 01–08, resultados idénticos a
 PostgreSQL 16), autenticación SCRAM-SHA-256, respaldo/restauración y las 37 pantallas. No requiere cambios.
 
+## 5.12 Lotes y fechas de vencimiento
+Migración `V20__lotes_vencimiento.sql`. El sistema anterior no lo manejaba.
+
+- **Opcional por artículo**: casilla "Controla fecha de vencimiento (lotes)" (`articulo.maneja_vencimiento`, desmarcada por
+  defecto). Los artículos sin la casilla no cambian en nada.
+- **Compra**: para esos artículos cada línea exige la fecha de vencimiento (`VENCIMIENTO_REQUERIDO`) y admite el número de
+  lote del suplidor; no se acepta un lote ya vencido (`LOTE_VENCIDO`). Una misma compra puede traer varios lotes del mismo
+  artículo (una línea por lote).
+- **Existencia por lote** (`lote`: artículo, almacén, número, fecha, recibido, existencia) y trazabilidad
+  (`lote_movimiento`: qué lote movió cada documento). Todo pasa por `InventarioService.mover` → `LoteService`, así que
+  aplica a ventas, conduces, devoluciones, ajustes, entradas/salidas, transferencias, notas de suplidor y anulaciones:
+  - salidas por **FEFO** (vence primero, sale primero); las **ventas** dejan para el final los lotes ya vencidos y los
+    **ajustes/salidas** (bajas) los toman primero;
+  - **reversiones** vuelven al lote de origen: anulación de compra o conduce, devolución de la factura (referencia a la
+    factura), devolución al suplidor (referencia a la compra); una **transferencia** recrea el lote con la misma fecha en el
+    almacén destino;
+  - una entrada sin dato de lote (ajuste por conteo) va al lote "sin fecha" del almacén.
+  La existencia que había antes de marcar el artículo no tiene lote (no se rastrea); conviene registrar su lote con un ajuste.
+- **Reporte "Productos por vencer"** (Reportes → Inventario): lotes con existencia vencidos, que vencen hoy o en los próximos
+  N días (7 por defecto; filtro `DIAS`, 0 = solo vencidos y hoy), por almacén y departamento, con valor al costo.
+  Indicador "Por vencer (7 días)" en el inicio. El kárdex del artículo muestra sus lotes con el estado de cada uno.
+- `GET /api/v1/inventario/articulos/{id}/lotes`.
+
+## 5.13 Modo claro / oscuro
+El tema de Material se genera con `theme-type: color-scheme` (valores `light-dark()`); `TemaService` fija `color-scheme`
+en `<html>`: **Claro**, **Oscuro** o **Según el sistema** (botón en la barra superior y menú del usuario). La preferencia se
+guarda en el navegador y `index.html` la aplica antes de pintar. Los colores propios (módulos, chips, avisos) tienen su
+versión oscura; la impresión, el ticket y la vista previa de etiquetas son siempre claros (papel).
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

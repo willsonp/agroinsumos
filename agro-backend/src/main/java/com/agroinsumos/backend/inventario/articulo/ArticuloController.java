@@ -27,6 +27,7 @@ public class ArticuloController extends CrudController<ArticuloService.Request, 
     private final ArticuloService service;
     private final ExistenciaRepository existencias;
     private final MovimientoInventarioRepository movimientos;
+    private final com.agroinsumos.backend.inventario.kardex.LoteService lotes;
 
     public record ExistenciaResponse(Long almacenId, BigDecimal cantidad) {}
 
@@ -54,6 +55,15 @@ public class ArticuloController extends CrudController<ArticuloService.Request, 
         service.cargar(user.companiaId(), id);
         return existencias.findByArticuloId(id).stream()
                 .map(e -> new ExistenciaResponse(e.getAlmacenId(), e.getCantidad())).toList();
+    }
+
+    @Operation(summary = "Lotes del artículo con su fecha de vencimiento (solo artículos que controlan vencimiento)")
+    @PreAuthorize("@permisos.tiene('INV_ARTICULOS','COMPRAS_REGISTRO','REP_INVENTARIO')")
+    @GetMapping("/{id}/lotes")
+    public List<com.agroinsumos.backend.inventario.kardex.LoteService.LoteResponse> lotes(AuthUser user, @PathVariable Long id,
+            @RequestParam(defaultValue = "true") boolean soloConExistencia) {
+        service.cargar(user.companiaId(), id);
+        return lotes.lotes(id, soloConExistencia);
     }
 
     @Operation(summary = "Kardex (movimientos) del artículo, del más reciente al más antiguo")

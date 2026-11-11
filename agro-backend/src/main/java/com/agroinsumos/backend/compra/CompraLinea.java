@@ -36,4 +36,9 @@ public class CompraLinea {
     /** Costo unitario que entra al inventario: (importe + flete prorrateado) / cantidad. El ITBIS es adelantado, no costo. */
     @Column(name = "costo_final", nullable = false, precision = 18, scale = 4)
     private BigDecimal costoFinal;
+    /** Solo artículos con vencimiento: número de lote del suplidor (opcional) y fecha de vencimiento (obligatoria). */
+    @Column(length = 40)
+    private String lote;
+    @Column(name = "fecha_vencimiento")
+    private java.time.LocalDate fechaVencimiento;
 }

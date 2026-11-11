@@ -36,7 +36,8 @@ abstract class CatalogoBase implements ReportesCatalogo {
                 .addValue("departamento", p.departamentoId(), Types.BIGINT)
                 .addValue("almacen", p.almacenId(), Types.BIGINT)
                 .addValue("proveedor", p.proveedorId(), Types.BIGINT)
-                .addValue("conExistencia", p.conExistencia(), Types.BOOLEAN);
+                .addValue("conExistencia", p.conExistencia(), Types.BOOLEAN)
+                .addValue("dias", p.dias() == null ? 7 : p.dias(), Types.INTEGER);
         return jdbc.queryForList(sql, m);
     }
 }

@@ -29,7 +29,7 @@ const TIPOS_ANULACION: [string, string][] = [['01', 'Deterioro de factura preimp
     .grid-anul { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px 12px; align-items: start;
       .motivo { grid-column: span 2; } .registrar { margin-top: 8px; justify-self: start; } }
     @media (max-width: 600px) { .grid-anul .motivo { grid-column: auto; } }
-    .advertencias { background: #fff1c2; border-radius: 8px; padding: 8px 16px; li { margin: 4px 0; } }`,
+    .advertencias { background: var(--aviso-fondo); color: var(--aviso-texto); border-radius: 8px; padding: 8px 16px; li { margin: 4px 0; } }`,
 })
 export class Formatos {
   private readonly http = inject(HttpClient);

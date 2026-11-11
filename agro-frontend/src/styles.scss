@@ -2,12 +2,26 @@
 
 html {
   height: 100%;
-  color-scheme: light;
+  /* Claro, oscuro o según el sistema: TemaService fija color-scheme; el tema usa light-dark() */
+  color-scheme: light dark;
   @include mat.theme((
-    color: (primary: mat.$green-palette, tertiary: mat.$orange-palette),
+    color: (primary: mat.$green-palette, tertiary: mat.$orange-palette, theme-type: color-scheme),
     typography: Roboto,
     density: -1,
   ));
+  /* En oscuro, el verde por defecto de Material es neón (#02e600): se usa uno más sobrio y legible */
+  --mat-sys-primary: light-dark(#026e00, #7fd88c);
+  --mat-sys-on-primary: light-dark(#ffffff, #00390c);
+  --mat-sys-primary-container: light-dark(#77ff61, #1f5a28);
+  --mat-sys-on-primary-container: light-dark(#015300, #a8f5b2);
+  --mat-sys-inverse-primary: light-dark(#7fd88c, #026e00);
+  --mat-sys-surface-tint: light-dark(#026e00, #7fd88c);
+  --mat-sys-primary-fixed-dim: light-dark(#02e600, #7fd88c);
+}
+
+:root {
+  --aviso-fondo: light-dark(#fff1c2, #3d3200);
+  --aviso-texto: light-dark(#6b4e00, #ffe08a);
 }
 
 body {
@@ -34,6 +48,9 @@ body {
 .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px 12px; align-items: start; }
 .grid-form .ancho-completo { grid-column: 1 / -1; }
 .espaciador { flex: 1; }
+/* El buscador de artículos debajo de otro campo: espacio para la etiqueta flotante (no se monta sobre el borde) */
+app-articulo-buscador { display: block; }
+mat-form-field + app-articulo-buscador, .fila + app-articulo-buscador, .grid-form + app-articulo-buscador { margin-top: 14px; }
 /* La etiqueta flotante (outline) sobresale ~8px por encima del campo: el contenido del diálogo deja ese espacio
    arriba para que la etiqueta del primer campo no quede recortada. */
 .mat-mdc-dialog-content.mdc-dialog__content { padding-top: 12px !important; }
@@ -50,10 +67,10 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
 
 .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font: var(--mat-sys-label-medium);
   background: var(--mat-sys-surface-container-high); }
-.chip.ok { background: #d7f5dd; color: #0f5223; }
-.chip.warn { background: #fff1c2; color: #6b4e00; }
-.chip.error { background: #ffdad6; color: #93000a; }
-.chip.info { background: #dbe7ff; color: #0b3b8c; }
+.chip.ok { background: light-dark(#d7f5dd, #1d4a2b); color: light-dark(#0f5223, #b6f0c4); }
+.chip.warn { background: var(--aviso-fondo); color: var(--aviso-texto); }
+.chip.error { background: light-dark(#ffdad6, #5c1a16); color: light-dark(#93000a, #ffdad6); }
+.chip.info { background: light-dark(#dbe7ff, #1b3561); color: light-dark(#0b3b8c, #d6e3ff); }
 
 .snack-error { --mat-snack-bar-container-color: var(--mat-sys-error-container);
   --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container); }
@@ -62,6 +79,7 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
 
 /* ---------- Impresión (ticket / factura) ---------- */
 @media print {
+  html { color-scheme: light !important; }   /* se imprime siempre en claro */
   body { background: white; }
   /* Si hay un diálogo abierto (ticket), se imprime solo el diálogo */
   body:has(.cdk-overlay-container .mat-mdc-dialog-container) app-root { display: none; }

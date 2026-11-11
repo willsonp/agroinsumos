@@ -22,6 +22,27 @@ class ReportesInventario extends CatalogoBase {
     @Override
     public List<Reporte> reportes() {
         return List.of(
+                reporte("productos-por-vencer", "Productos por vencer", INVENTARIO,
+                        "Lotes con existencia ya vencidos, que vencen hoy o en los próximos días (7 por defecto). Solo artículos que controlan vencimiento.",
+                        null, List.of(DIAS, ALMACEN, DEPARTAMENTO),
+                        List.of(Columna.texto("estado", "Estado"), Columna.texto("articulo", "Artículo"), Columna.texto("codigo", "Código"),
+                                Columna.texto("almacen", "Almacén"), Columna.texto("lote", "Lote"), Columna.fecha("vence", "Vence"),
+                                Columna.texto("dias_texto", "Días"), Columna.numero("existencia", "Existencia"),
+                                Columna.monedaSinTotal("costo", "Costo promedio"), Columna.moneda("valor", "Valor al costo")),
+                        """
+                        select case when l.fecha_vencimiento < :corte then 'VENCIDO'
+                                    when l.fecha_vencimiento = :corte then 'Vence hoy' else 'Por vencer' end estado,
+                               a.nombre articulo, coalesce(a.codigo_barra, a.referencia) codigo, al.nombre almacen,
+                               nullif(l.numero, '') lote, l.fecha_vencimiento vence,
+                               case when l.fecha_vencimiento < :corte then 'hace ' || (cast(:corte as date) - l.fecha_vencimiento)
+                                    when l.fecha_vencimiento = :corte then 'hoy'
+                                    else 'en ' || (l.fecha_vencimiento - cast(:corte as date)) end dias_texto,
+                               l.existencia, round(a.costo_promedio, 2) costo, round(l.existencia * a.costo_promedio, 2) valor
+                          from lote l join articulo a on a.id = l.articulo_id join almacen al on al.id = l.almacen_id
+                         where l.compania_id = :cia and l.existencia > 0 and l.fecha_vencimiento is not null
+                           and l.fecha_vencimiento <= cast(:corte as date) + cast(:dias as int)
+                           and (:almacen is null or l.almacen_id = :almacen) and (:departamento is null or a.departamento_id = :departamento)
+                         order by l.fecha_vencimiento, a.nombre"""),
                 reporte("inventario-valorizado", "Inventario valorizado", INVENTARIO,
                         "Existencia de cada artículo a costo promedio y a precio de venta de contado (con ITBIS).",
                         "RptListadoArticuloInventarioXCosto", List.of(ALMACEN, DEPARTAMENTO, CON_EXISTENCIA),

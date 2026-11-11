@@ -51,6 +51,14 @@
                 <option [ngValue]="18">18</option><option [ngValue]="16">16</option><option [ngValue]="0">0</option></select></td>
               <td class="num">{{ l.cantidad * l.costo - l.descuento | currency }}</td>
               <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
+            @if (l.articulo.manejaVencimiento) {
+              <tr class="lote" [class.falta]="!l.vence"><td colspan="7">
+                <span class="material-symbols-outlined">event</span> Lote del suplidor
+                <input class="celda texto" maxlength="40" placeholder="No. lote (opcional)" [ngModel]="l.lote" (ngModelChange)="fijarLote(i, 'lote', $event)" aria-label="Número de lote" />
+                Vence <input class="celda fecha" type="date" required [min]="hoy" [ngModel]="l.vence" (ngModelChange)="fijarLote(i, 'vence', $event)" aria-label="Fecha de vencimiento" />
+                @if (!l.vence) { <span class="error-texto">Indique la fecha de vencimiento</span> }
+              </td></tr>
+            }
           } @empty { <tr><td colspan="7" class="muted">Agregue los artículos de la factura del suplidor</td></tr> }
         </table>
       </div>
@@ -58,7 +66,7 @@
         <span>Subtotal {{ totales().subtotal | currency }} · ITBIS {{ totales().itbis | currency }} · Flete {{ flete() | currency }}</span>
         <span class="espaciador"></span><span class="total">{{ totales().total | currency: f.moneda }}</span>
         <button mat-button (click)="nueva.set(false)">Cancelar</button>
-        <button mat-flat-button [disabled]="!f.proveedorId || !lineas().length || (f.moneda !== 'DOP' && !f.tasa)" (click)="registrar()">Registrar compra</button>
+        <button mat-flat-button [disabled]="!f.proveedorId || !lineas().length || (f.moneda !== 'DOP' && !f.tasa) || faltaVencimiento()" (click)="registrar()">Registrar compra</button>
       </div>
     </div>
   }

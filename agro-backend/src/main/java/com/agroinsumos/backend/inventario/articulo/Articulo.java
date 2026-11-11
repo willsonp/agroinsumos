@@ -61,6 +61,9 @@ public class Articulo extends Auditable implements Catalogo {
     private BigDecimal stockMinimo = BigDecimal.ZERO;
     @Column(length = 50)
     private String ubicacion;
+    /** Controla lotes con fecha de vencimiento: la compra exige la fecha y las salidas descuentan por lote. */
+    @Column(name = "maneja_vencimiento", nullable = false)
+    private boolean manejaVencimiento;
     @Column(name = "imagen_url")
     private String imagenUrl;
     @Column(nullable = false, length = 1)

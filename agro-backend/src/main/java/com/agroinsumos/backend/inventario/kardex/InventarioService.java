@@ -23,12 +23,23 @@ public class InventarioService {
 
     private final JdbcTemplate jdbc;
     private final MovimientoInventarioRepository movimientos;
+    private final LoteService lotes;
 
     @Value("${app.inventario.permitir-negativo:false}")
     private boolean permitirNegativo;
 
+    /**
+     * @param lote       solo en entradas de compra de artículos con vencimiento: número y fecha del lote
+     * @param referencia documento original cuando el movimiento lo revierte (p.ej. la factura de una devolución)
+     */
     public record Movimiento(Articulo articulo, Long almacenId, TipoMovimiento tipo, BigDecimal cantidad,
-                             BigDecimal costoUnitario, String documentoTipo, Long documentoId) {}
+                             BigDecimal costoUnitario, String documentoTipo, Long documentoId,
+                             LoteService.LoteEntrada lote, LoteService.Referencia referencia) {
+        public Movimiento(Articulo articulo, Long almacenId, TipoMovimiento tipo, BigDecimal cantidad,
+                          BigDecimal costoUnitario, String documentoTipo, Long documentoId) {
+            this(articulo, almacenId, tipo, cantidad, costoUnitario, documentoTipo, documentoId, null, null);
+        }
+    }
 
     /**
      * Aplica el movimiento: bloquea la fila de existencia (UPSERT + FOR UPDATE implícito),
@@ -73,6 +84,7 @@ public class InventarioService {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         mov.setUsuario(auth == null ? "sistema" : auth.getName());
         movimientos.save(mov);
+        lotes.aplicar(a, m, mov.getId());
         return fin;
     }
 

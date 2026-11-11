@@ -7,6 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
+    <script>
+      // Aplica el modo claro/oscuro guardado antes de pintar (evita el destello claro al abrir en modo oscuro)
+      try { var t = localStorage.getItem('agro.tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.style.colorScheme = t === 'claro' ? 'light' : 'dark'; } catch (e) {}
+    </script>
   </head>
   <body>
     <app-root></app-root>

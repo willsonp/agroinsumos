@@ -85,13 +85,23 @@ public class ReporteService {
         if (r.filtros().contains(Reporte.Filtro.PROVEEDOR_REQUERIDO) && p.proveedorId() == null) {
             throw new BusinessException("PROVEEDOR_REQUERIDO", "Elija el suplidor");
         }
+        Integer dias = p.dias();
+        if (r.filtros().contains(Reporte.Filtro.DIAS)) {
+            if (dias == null) dias = 7;
+            if (dias < 0 || dias > 365) throw new BusinessException("DIAS_INVALIDOS", "Indique entre 0 y 365 días");
+            if (corte == null) corte = hoy;
+        }
         return new Reporte.Parametros(desde, hasta, corte, p.clienteId(), p.vendedorId(), p.departamentoId(), p.almacenId(),
-                p.proveedorId(), p.conExistencia());
+                p.proveedorId(), p.conExistencia(), dias);
     }
 
     private static String subtitulo(Reporte r, Reporte.Parametros p) {
         if (r.filtros().contains(Reporte.Filtro.RANGO_FECHAS)) return "Del " + DMY.format(p.desde()) + " al " + DMY.format(p.hasta());
         if (r.filtros().contains(Reporte.Filtro.FECHA_CORTE)) return "Al " + DMY.format(p.corte());
+        if (r.filtros().contains(Reporte.Filtro.DIAS)) {
+            return p.dias() == 0 ? "Vencidos y que vencen hoy (" + DMY.format(p.corte()) + ")"
+                    : "Vencidos y que vencen hasta el " + DMY.format(p.corte().plusDays(p.dias())) + " (próximos " + p.dias() + " días)";
+        }
         return "";
     }
 

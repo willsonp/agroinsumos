@@ -62,7 +62,7 @@ class ReportesIntegrationTest extends IntegrationTestBase {
     @Test
     void todosLosReportesCorrenYCuadran() throws Exception {
         List<String> codigos = JsonPath.read(getJson(admin, "/api/v1/reportes"), "$[*].codigo");
-        assertThat(codigos).hasSize(20);
+        assertThat(codigos).hasSize(21);
         for (String c : codigos) getJson(admin, "/api/v1/reportes/" + c + "?proveedorId=" + proveedor);   // todos ejecutan sin error
 
         String vf = getJson(admin, "/api/v1/reportes/ventas-por-fecha");
