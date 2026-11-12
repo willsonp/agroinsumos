@@ -26,4 +26,11 @@ export function descargar(blob: Blob, nombre: string): void {
   URL.revokeObjectURL(url);
 }
 
-export const redondear = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+/**
+ * Redondeo a 2 decimales, mitad hacia arriba (HALF_UP, como BigDecimal en el backend). Se corrige primero el error
+ * binario del producto: 15.25 × 1.18 da 17.994999… en JavaScript y debe redondear a 18.00, no a 17.99.
+ */
+export const redondear = (n: number) => {
+  const centavos = Number((Math.abs(n) * 100).toPrecision(12));
+  return (Math.sign(n) * Math.round(centavos)) / 100 || 0;
+};

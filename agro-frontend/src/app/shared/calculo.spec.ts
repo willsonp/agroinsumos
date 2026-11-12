@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calcular, precioLista } from './calculo';
+import { calcular, importeConItbis, precioLista } from './calculo';
+import { redondear } from './http';
 
 const art = (precioContado: number, indicadorItbis = 1, extra = {}) =>
   ({ id: 1, nombre: 'X', precioContado, precioCredito: 0, precioMayor: 0, indicadorItbis, ...extra }) as never;
@@ -50,5 +51,20 @@ describe('presentaciones (saco/caja)', () => {
 
   it('un artículo sin presentación ignora el indicador de empaque', () => {
     expect(precioLista(art(30), 'CONTADO', true)).toBe(30);
+  });
+});
+
+describe('redondeo (HALF_UP como el backend)', () => {
+  it('corrige el error binario: 15.25 × 1.18 = 17.995 → 18.00', () => {
+    expect(redondear(15.25 * 1.18)).toBe(18);
+    expect(redondear(1.005)).toBe(1.01);
+    expect(redondear(-2.675)).toBe(-2.68);
+    expect(redondear(0)).toBe(0);
+  });
+
+  it('1.5 lb a RD$12.00 con ITBIS: el importe de la línea coincide con el total', () => {
+    const linea = { articulo: art(10.1695), cantidad: 1.5, descuentoPorcentaje: 0 };
+    expect(importeConItbis(linea, 'CONTADO', false)).toBe(18);
+    expect(calcular([linea], 'CONTADO', false).total).toBe(18);
   });
 });
