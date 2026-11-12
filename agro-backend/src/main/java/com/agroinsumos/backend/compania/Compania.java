@@ -44,6 +44,13 @@ public class Compania extends Auditable {
     @Column(name = "acepta_contabilidad", nullable = false)
     private boolean aceptaContabilidad;
     /** ECF = facturación electrónica; NCF = comprobantes serie B; NINGUNO = sin comprobante fiscal. */
+    /** Frase bajo el encabezado del ticket ("Donde tu dinero rinde más"). */
+    @Column(length = 100)
+    private String lema;
+    /** Mensaje al pie del ticket ("¡Comprometidos con tu satisfacción!"). */
+    @Column(name = "pie_ticket", length = 150)
+    private String pieTicket;
+
     @Column(name = "modo_comprobante", nullable = false, length = 7)
     private String modoComprobante = "ECF";
 

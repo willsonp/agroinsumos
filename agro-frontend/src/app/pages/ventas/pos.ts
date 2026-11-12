@@ -18,6 +18,7 @@ import { params } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { PagoDialog } from './pago-dialog';
 import { TicketDialog } from './ticket-dialog';
+import { CreditoDialog, CreditoDatos } from './credito-dialog';
 import { ComprobanteService } from '../../core/comprobante.service';
 
 type Cliente = S['ClienteResponse'];
@@ -54,7 +55,6 @@ export class Pos {
     const t = [31, 44, 45].includes(this.cliente()?.tipoEcfPreferido ?? 0) ? this.cliente()!.tipoEcfPreferido! : 32;
     return ({ 31: 'Crédito fiscal', 44: 'Régimen especial', 45: 'Gubernamental' }[t] ?? 'Consumo') + this.comp.entreParentesis(t);
   });
-  protected readonly puedeCredito = computed(() => (this.cliente()?.diasCredito ?? 0) > 0);
 
   protected readonly precio = (l: LineaCarrito) => precioLista(l.articulo, this.lista(), l.empaque) * (1 + (this.exento() ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]) / 100);
   protected readonly importe = (l: LineaCarrito) => importeConItbis(l, this.lista(), this.exento());
@@ -105,10 +105,15 @@ export class Pos {
 
   protected venderACredito(): void {
     if (!this.validar()) return;
-    this.procesando.set(true);
-    this.http.post<S['FacturaResponse']>('/api/v1/ventas/facturas', this.request('CREDITO')).subscribe({
-      next: (f) => this.terminar(f),
-      error: (e) => { this.procesando.set(false); this.notif.error(e); },
+    const c = this.cliente()!;
+    this.dialog.open(CreditoDialog, { data: { cliente: c.nombre!, diasSugeridos: c.diasCredito ?? 0, total: this.totales().total,
+      limiteCredito: c.limiteCredito } satisfies CreditoDatos }).afterClosed().subscribe((dias?: number) => {
+      if (!dias) return;
+      this.procesando.set(true);
+      this.http.post<S['FacturaResponse']>('/api/v1/ventas/facturas', { ...this.request('CREDITO'), diasCredito: dias }).subscribe({
+        next: (f) => this.terminar(f),
+        error: (e) => { this.procesando.set(false); this.notif.error(e); },
+      });
     });
   }
 

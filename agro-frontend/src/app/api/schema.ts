@@ -425,6 +425,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ventas/facturas/{id}/ticket/impresion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registra una impresión del ticket (la primera es el original; las demás, reimpresiones) */
+        post: operations["imprimir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ventas/facturas/{id}/anular": {
         parameters: {
             query?: never;
@@ -717,7 +734,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Envía las etiquetas a una impresora de red registrada (puerto RAW 9100) */
-        post: operations["imprimir"];
+        post: operations["imprimir_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1726,6 +1743,23 @@ export interface paths {
             cookie?: never;
         };
         get: operations["obtener_17"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ventas/facturas/{id}/ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Datos del ticket POS: contacto del cliente, quién atendió, fecha de firma e impresiones previas */
+        get: operations["ticket"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3236,6 +3270,8 @@ export interface components {
             /** Format: email */
             correo?: string;
             sitioWeb?: string;
+            lema?: string;
+            pieTicket?: string;
             modoComprobante?: string;
         };
         CompaniaResponse: {
@@ -3248,6 +3284,8 @@ export interface components {
             telefono?: string;
             correo?: string;
             sitioWeb?: string;
+            lema?: string;
+            pieTicket?: string;
             modoComprobante?: string;
         };
         FacturaCrearFacturaRequest: {
@@ -3339,6 +3377,10 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             lineas?: components["schemas"]["FacturaLineaResponse"][];
+        };
+        TicketFacturaImpresionResponse: {
+            /** Format: int32 */
+            impresiones?: number;
         };
         FacturaAnularRequest: {
             motivo: string;
@@ -4565,6 +4607,17 @@ export interface components {
             sorted?: boolean;
             unsorted?: boolean;
         };
+        TicketFacturaTicketResponse: {
+            /** Format: int64 */
+            clienteId?: number;
+            clienteTelefono?: string;
+            clienteDireccion?: string;
+            atendio?: string;
+            /** Format: date-time */
+            fechaFirma?: string;
+            /** Format: int32 */
+            impresiones?: number;
+        };
         PageDevolucionResponse: {
             /** Format: int64 */
             totalElements?: number;
@@ -5565,10 +5618,14 @@ export interface components {
             /** Format: int64 */
             id?: number;
             nombre?: string;
+            nombreComercial?: string;
             rnc?: string;
             direccion?: string;
+            telefono?: string;
             correo?: string;
             sitioWeb?: string;
+            lema?: string;
+            pieTicket?: string;
             itbis?: number;
             aceptaContabilidad?: boolean;
             modoComprobante?: string;
@@ -7016,6 +7073,28 @@ export interface operations {
             };
         };
     };
+    imprimir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TicketFacturaImpresionResponse"];
+                };
+            };
+        };
+    };
     anular: {
         parameters: {
             query?: never;
@@ -7594,7 +7673,7 @@ export interface operations {
             };
         };
     };
-    imprimir: {
+    imprimir_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -9699,6 +9778,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FacturaResponse"];
+                };
+            };
+        };
+    };
+    ticket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TicketFacturaTicketResponse"];
                 };
             };
         };

@@ -503,6 +503,23 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   emitir 41/43 en modo sin comprobante. El ticket se rotula según el número emitido, no el modo actual.
 - Cambiar de modo no altera documentos ya emitidos. Prueba: `ModoComprobanteIntegrationTest`.
 
+## 5.16 Ticket POS y venta a crédito
+
+- **Ticket (80 mm)** con el formato del sistema anterior: nombre comercial, "PUNTO DE VENTA", razón social, RNC,
+  dirección, teléfono y lema; título y número del comprobante; fecha/hora de emisión y número de transacción; cliente
+  (razón social, RNC, código, teléfono, dirección); "*** FACTURA CONTADO/CRÉDITO ***", condición y vencimiento;
+  detalle (cantidad, unidad, precio sin ITBIS, valor con ITBIS); C/Item, Sub-Total, ITBIS, TOTAL; formas de pago y
+  devuelta (o balance pendiente si es a crédito); "Impresión: Original/Reimpresión"; "Le atendió"; mensaje al pie;
+  y, si es e-CF, QR, código de seguridad y fecha de firma digital.
+- `GET /ventas/facturas/{id}/ticket` da lo que la factura no trae (contacto del cliente, usuario, fecha de firma,
+  impresiones previas) y `POST /ventas/facturas/{id}/ticket/impresion` cuenta cada impresión (`factura.impresiones`,
+  V23): la primera sale como "Original" y las demás como "Reimpresión". Los permite `VENTAS_POS` o `VENTAS_FACTURAS`.
+- Lema y mensaje al pie: `compania.lema` y `compania.pie_ticket` (V23), en Administración → Empresa.
+- **Venta a crédito**: como en el sistema anterior, los días se eligen al facturar (15/30/45/60 o los que se
+  escriban; por defecto los del cliente o 15). `diasCredito` del request tiene prioridad sobre el del cliente; se
+  sigue validando el límite de crédito. La migración asigna a cada cliente los días que más usó en sus facturas.
+  Prueba: `TicketYCreditoIntegrationTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

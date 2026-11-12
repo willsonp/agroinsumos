@@ -28,6 +28,11 @@ import { Notificacion } from '../../core/notificacion.service';
             <mat-form-field><mat-label>Correo</mat-label><input matInput type="email" [(ngModel)]="d.correo" maxlength="100" /></mat-form-field>
             <mat-form-field><mat-label>Sitio web</mat-label><input matInput [(ngModel)]="d.sitioWeb" maxlength="100" /></mat-form-field>
           </div>
+          <h3>Ticket del punto de venta</h3>
+          <div class="grid-form">
+            <mat-form-field><mat-label>Lema (debajo del encabezado)</mat-label><input matInput [(ngModel)]="d.lema" maxlength="100" placeholder="Donde tu dinero rinde más" /></mat-form-field>
+            <mat-form-field class="ancho-completo"><mat-label>Mensaje al pie del ticket</mat-label><input matInput [(ngModel)]="d.pieTicket" maxlength="150" placeholder="¡Comprometidos con tu satisfacción!" /></mat-form-field>
+          </div>
           <h3>Comprobante fiscal de las ventas</h3>
           <div class="grid-form">
             <mat-form-field><mat-label>Modo de comprobante</mat-label>
@@ -57,7 +62,7 @@ export class Empresa {
 
   protected guardar(d: S['CompaniaResponse']): void {
     const req: S['CompaniaRequest'] = { nombre: d.nombre!, nombreComercial: d.nombreComercial || undefined, direccion: d.direccion || undefined,
-      telefono: d.telefono || undefined, correo: d.correo || undefined, sitioWeb: d.sitioWeb || undefined, modoComprobante: d.modoComprobante };
+      telefono: d.telefono || undefined, correo: d.correo || undefined, sitioWeb: d.sitioWeb || undefined, lema: d.lema || undefined, pieTicket: d.pieTicket || undefined, modoComprobante: d.modoComprobante };
     this.http.put<S['CompaniaResponse']>('/api/v1/admin/empresa', req).subscribe({
       next: (r) => { this.datos.set({ ...r }); this.notif.ok('Datos de la empresa guardados'); this.auth.cargarPerfil().subscribe(); }, error: (e) => this.notif.error(e) });
   }

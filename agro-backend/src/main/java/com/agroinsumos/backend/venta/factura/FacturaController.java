@@ -29,6 +29,7 @@ public class FacturaController {
 
     private final FacturaService service;
     private final DevolucionService devoluciones;
+    private final TicketFacturaService tickets;
 
     @Operation(summary = "Factura: valida precios/crédito, descarga inventario y emite el e-CF firmado (una transacción)")
     @PreAuthorize("@permisos.tiene('VENTAS_POS')")
@@ -63,5 +64,19 @@ public class FacturaController {
     @GetMapping("/{id}/devoluciones")
     public List<DevolucionService.Response> devoluciones(AuthUser user, @PathVariable Long id) {
         return devoluciones.deFactura(user.companiaId(), id);
+    }
+
+    @Operation(summary = "Datos del ticket POS: contacto del cliente, quién atendió, fecha de firma e impresiones previas")
+    @PreAuthorize("@permisos.tiene('VENTAS_POS', 'VENTAS_FACTURAS')")
+    @GetMapping("/{id}/ticket")
+    public TicketFacturaService.TicketResponse ticket(AuthUser user, @PathVariable Long id) {
+        return tickets.datos(user.companiaId(), id);
+    }
+
+    @Operation(summary = "Registra una impresión del ticket (la primera es el original; las demás, reimpresiones)")
+    @PreAuthorize("@permisos.tiene('VENTAS_POS', 'VENTAS_FACTURAS')")
+    @PostMapping("/{id}/ticket/impresion")
+    public TicketFacturaService.ImpresionResponse imprimir(AuthUser user, @PathVariable Long id) {
+        return new TicketFacturaService.ImpresionResponse(tickets.registrarImpresion(user.companiaId(), id));
     }
 }

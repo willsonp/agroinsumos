@@ -1,8 +1,27 @@
-.ticket { width: 300px; margin: 0 auto; font: 13px/1.35 'Courier New', monospace; color: #000; background: #fff; padding: 8px; color-scheme: light; }
+// Ticket térmico de 80 mm: monoespaciado, negro sobre blanco aunque la app esté en modo oscuro
+.ticket { width: 300px; margin: 0 auto; font: 12.5px/1.4 'Courier New', Courier, monospace; color: #000; background: #fff; padding: 10px 8px; color-scheme: light; }
 .centro { text-align: center; }
-.pequeno { font-size: 11px; }
-hr { border: none; border-top: 1px dashed #555; margin: 6px 0; }
+.negrita { font-weight: 700; }
+.empresa { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+.subtitulo { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.comprobante { font-weight: 700; margin-top: 8px; }
+.aviso { margin: 6px 0; }
+.bloque { margin-top: 6px; }
+.pie { font-style: italic; margin: 8px 0; }
+.qr { margin: 6px 0; }
+hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
 table { width: 100%; border-collapse: collapse; }
-.detalle td { padding-bottom: 4px; }
-.total td { font-weight: 700; font-size: 15px; }
-@media print { .ticket { width: 72mm; } }
+th, td { text-align: right; padding: 0; vertical-align: top; }
+.izq { text-align: left; }
+.detalle { table-layout: fixed; font-size: 11.5px; }
+.detalle th, .detalle td { padding-left: 4px; white-space: pre; overflow: hidden; }
+.detalle th:first-child, .detalle td:first-child { padding-left: 0; }
+.detalle .desc td { white-space: normal; }
+.detalle thead th { font-weight: 700; border-bottom: 1px dashed #000; padding-bottom: 3px; }
+.detalle .desc td { text-align: left; padding-top: 4px; }
+.detalle .linea td { padding-bottom: 4px; border-bottom: 1px solid #ccc; }
+.totales td:first-child { text-align: left; }
+.totales { margin-top: 4px; }
+.total td { font-weight: 700; font-size: 20px; padding-top: 4px; }
+@media print { .ticket { width: 72mm; padding: 0; } }
+.detalle thead th { overflow: visible; }

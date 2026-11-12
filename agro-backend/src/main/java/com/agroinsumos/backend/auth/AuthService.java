@@ -70,8 +70,9 @@ public class AuthService {
         Set<String> permisos = u.getNivel() == Nivel.ADMIN ? Set.of("*") : menus.codigosPermitidos(usuarioId);
         return new PerfilResponse(u.getId(), u.getUsername(), u.nombreCompleto(), u.getCorreo(), u.getNivel(),
                 u.getTurnoId(),
-                new CompaniaInfo(c.getId(), c.getNombre(), c.getRnc(), c.getDireccion(), c.getCorreo(),
-                        c.getSitioWeb(), c.getItbis(), c.isAceptaContabilidad(), c.getModoComprobante()),
+                new CompaniaInfo(c.getId(), c.getNombre(), c.getNombreComercial(), c.getRnc(), c.getDireccion(), c.getTelefono(),
+                        c.getCorreo(), c.getSitioWeb(), c.getLema(), c.getPieTicket(), c.getItbis(), c.isAceptaContabilidad(),
+                        c.getModoComprobante()),
                 permisos);
     }
 

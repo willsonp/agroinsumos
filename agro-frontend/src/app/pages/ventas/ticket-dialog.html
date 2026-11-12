@@ -1,48 +1,68 @@
 <mat-dialog-content>
   <div class="ticket" id="ticket">
     <div class="centro">
-      <strong>{{ cia?.nombre }}</strong><br />
-      RNC {{ cia?.rnc }}<br />
-      {{ cia?.direccion }}
+      <div class="empresa">{{ cia?.nombreComercial || cia?.nombre }}</div>
+      <div class="subtitulo">PUNTO DE VENTA</div>
+      @if (cia?.nombreComercial && cia?.nombreComercial !== cia?.nombre) { <div class="negrita">{{ cia?.nombre }}</div> }
+      <div>RNC: {{ cia?.rnc }}</div>
+      @if (cia?.direccion) { <div>{{ cia?.direccion }}</div> }
+      @if (cia?.telefono) { <div>Tel: {{ cia?.telefono }}</div> }
+      @if (cia?.lema) { <div>{{ cia?.lema }}</div> }
+      <div class="comprobante">{{ nombreEcf | uppercase }}</div>
+      @if (numeroFiscal) { <div><span class="negrita">{{ f.encf?.startsWith('E') ? 'e-NCF' : 'NCF' }}:</span> {{ f.encf }}</div> }
     </div>
     <hr />
-    <div class="centro"><strong>{{ nombreEcf }}</strong></div>
-    @if (numeroFiscal) { <div><strong>{{ numeroFiscal }}</strong></div> }
-    <div>Factura No. {{ datos.factura.numero }} · {{ datos.factura.fecha | date: 'dd/MM/yyyy' }}</div>
-    <div>Cliente: {{ datos.factura.clienteNombre }}</div>
-    @if (datos.factura.clienteRnc) { <div>RNC/Cédula: {{ datos.factura.clienteRnc }}</div> }
-    @if (datos.factura.condicion === 'CREDITO') {
-      <div>Crédito {{ datos.factura.diasCredito }} días · Vence {{ datos.factura.fechaVencimiento | date: 'dd/MM/yyyy' }}</div>
-    }
+    <div><span class="negrita">FECHA EMISION:</span> {{ f.fecha | date: 'dd/MM/yyyy' }} {{ f.creadoEn | date: 'HH:mm:ss' : '-0400' }}</div>
+    <div><span class="negrita">Transaccion Nro.:</span> {{ f.numero }}</div>
     <hr />
-    <table>
-      @for (l of datos.factura.lineas; track l.id) {
-        <tr><td colspan="2">{{ l.descripcion }}</td></tr>
-        <tr class="detalle">
-          <td>{{ l.cantidad | number: '1.0-3' }}@if (mostrarUnidad(l.unidad)) { {{ l.unidad }} } x {{ l.precioUnitario | currency }}@if ((l.descuento ?? 0) > 0) { · desc. {{ l.descuento | currency }} }</td>
-          <td class="num">{{ l.importe | currency }}</td>
-        </tr>
-      }
+    <div><span class="negrita">Razon Social:</span> {{ f.clienteNombre }}</div>
+    @if (f.clienteRnc) { <div><span class="negrita">RNC Cliente:</span> {{ f.clienteRnc }}</div> }
+    <div class="centro negrita aviso">*** FACTURA {{ f.condicion === 'CREDITO' ? 'CRÉDITO' : 'CONTADO' }} ***</div>
+    <div><span class="negrita">Condicion de pago:</span> {{ f.condicion === 'CREDITO' ? 'Crédito ' + f.diasCredito + ' días' : 'Contado' }}</div>
+    <div><span class="negrita">Fecha vencimiento:</span> {{ (f.fechaVencimiento ?? f.fecha) | date: 'dd/MM/yyyy' }}</div>
+    <div class="bloque"><span class="negrita">Codigo:</span> {{ f.clienteId }}</div>
+    <div><span class="negrita">Telefono:</span> {{ extra()?.clienteTelefono }}</div>
+    <div><span class="negrita">Direccion:</span> {{ extra()?.clienteDireccion }}</div>
+    <hr />
+    <table class="detalle">
+      <colgroup><col style="width:12%" /><col style="width:27%" /><col style="width:15%" /><col style="width:23%" /><col style="width:23%" /></colgroup>
+      <thead><tr><th class="izq" colspan="2">Cant. Descripcion</th><th>Und</th><th>Precio</th><th>Valor</th></tr></thead>
+      <tbody>
+        @for (l of f.lineas; track l.id) {
+          <tr class="desc"><td colspan="5">{{ l.descripcion }}</td></tr>
+          <tr class="linea">
+            <td class="izq">{{ l.cantidad | number: '1.2-3' }}</td><td></td><td>{{ (l.unidad || 'UND') | uppercase | slice: 0 : 4 }}</td>
+            <td>{{ l.precioUnitario | number: '1.2-2' }}</td><td>{{ valor(l) | number: '1.2-2' }}</td>
+          </tr>
+          @if ((l.descuento ?? 0) > 0) { <tr class="linea"><td colspan="4" class="izq">  Descuento</td><td>-{{ l.descuento | number: '1.2-2' }}</td></tr> }
+        }
+      </tbody>
+    </table>
+    <table class="totales">
+      <tr><td>C/Item {{ items }}</td><td></td></tr>
+      <tr><td>Sub-Total</td><td>{{ subtotal | number: '1.2-2' }}</td></tr>
+      @if ((f.totalDescuento ?? 0) > 0) { <tr><td>Descuento</td><td>{{ f.totalDescuento | number: '1.2-2' }}</td></tr> }
+      <tr><td>ITBIS</td><td>{{ f.totalItbis | number: '1.2-2' }}</td></tr>
+      <tr class="total"><td>TOTAL :</td><td>{{ f.total | number: '1.2-2' }}</td></tr>
     </table>
     <hr />
-    <table>
-      <tr><td>Subtotal</td><td class="num">{{ (datos.factura.montoGravado ?? 0) + (datos.factura.montoExento ?? 0) | currency }}</td></tr>
-      @if ((datos.factura.totalDescuento ?? 0) > 0) { <tr><td>Descuento</td><td class="num">{{ datos.factura.totalDescuento | currency }}</td></tr> }
-      <tr><td>ITBIS</td><td class="num">{{ datos.factura.totalItbis | currency }}</td></tr>
-      <tr class="total"><td>TOTAL</td><td class="num">{{ datos.factura.total | currency }}</td></tr>
+    <table class="totales">
       @if (datos.recibo; as r) {
-        @for (p of r.pagos; track $index) { <tr><td>{{ p.forma }}</td><td class="num">{{ p.monto | currency }}</td></tr> }
-        @if ((r.devuelta ?? 0) > 0) { <tr><td>Devuelta</td><td class="num">{{ r.devuelta | currency }}</td></tr> }
+        @for (p of r.pagos; track $index) { <tr><td>{{ forma(p.forma) }}:</td><td>{{ p.monto | number: '1.2-2' }}</td></tr> }
+        @if ((r.devuelta ?? 0) > 0) { <tr><td>Devuelta:</td><td>{{ r.devuelta | number: '1.2-2' }}</td></tr> }
+      } @else if (f.condicion === 'CREDITO') {
+        <tr><td>Balance pendiente:</td><td>{{ f.balance | number: '1.2-2' }}</td></tr>
       }
+      <tr><td>Impresion:</td><td>{{ impresion() }}</td></tr>
     </table>
+    <hr />
+    @if (extra()?.atendio) { <div><span class="negrita">Le Atendio:</span> {{ extra()?.atendio }}</div> }
+    @if (cia?.pieTicket) { <div class="centro pie">{{ cia?.pieTicket }}</div> }
     @if (timbre(); as t) {
-      <hr />
-      <div class="centro">
-        <app-qr [valor]="t.url!" [tamano]="150" /><br />
-        Código de seguridad: <strong>{{ t.codigoSeguridad }}</strong>
-      </div>
+      <div class="centro qr"><app-qr [valor]="t.url!" [tamano]="150" /></div>
+      <div><span class="negrita">Codigo de seguridad:</span> {{ t.codigoSeguridad }}</div>
+      @if (extra()?.fechaFirma; as ff) { <div><span class="negrita">Fecha de Firma Digital:</span> {{ ff | date: 'dd-MM-yyyy HH:mm:ss' }}</div> }
     }
-    <div class="centro pequeno">¡Gracias por su compra!</div>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="no-imprimir">

@@ -193,6 +193,13 @@ UPDATE factura f SET total_itbis = s.itbis, monto_gravado = greatest(f.total - s
 FROM (SELECT factura_id, sum(itbis) itbis FROM factura_linea GROUP BY 1) s
 WHERE s.factura_id = f.id AND s.itbis <= f.total;
 
+-- El sistema anterior no guardaba días de crédito en el cliente (se elegían al facturar): se toman los que más
+-- usó cada cliente en sus facturas a crédito. Así el punto de venta los propone; se pueden cambiar en cada venta.
+UPDATE cliente c SET dias_credito = s.dias
+FROM (SELECT cliente_id, mode() WITHIN GROUP (ORDER BY dias_credito) dias
+        FROM factura WHERE condicion = 'CREDITO' AND dias_credito > 0 GROUP BY cliente_id) s
+WHERE s.cliente_id = c.id AND c.dias_credito = 0;
+
 -- ---------------------------------------------------------------- Contadores y secuencias
 INSERT INTO contador_documento (compania_id, clave, ultimo)
 SELECT :cia, 'FACTURA', coalesce(max(numero), 0) FROM factura WHERE compania_id = :cia

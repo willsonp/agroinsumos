@@ -53,11 +53,9 @@
       <button mat-flat-button class="cobrar" [disabled]="procesando() || !cajaAbierta() || !lineas().length" (click)="cobrar()">
         <span class="material-symbols-outlined">payments</span> Cobrar
       </button>
-      @if (puedeCredito()) {
-        <button mat-stroked-button [disabled]="procesando() || !lineas().length" (click)="venderACredito()">
-          Venta a crédito ({{ cliente()?.diasCredito }} días)
-        </button>
-      }
+      <button mat-stroked-button [disabled]="procesando() || !lineas().length || !cliente()" (click)="venderACredito()">
+        <span class="material-symbols-outlined">event_upcoming</span> Venta a crédito@if (cliente()?.diasCredito) { ({{ cliente()?.diasCredito }} días) }
+      </button>
       <button mat-button [disabled]="procesando()" (click)="nuevaVenta()">Limpiar</button>
     </aside>
   </div>

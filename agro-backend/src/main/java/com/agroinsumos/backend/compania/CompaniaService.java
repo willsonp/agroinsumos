@@ -18,14 +18,15 @@ public class CompaniaService {
     public record Request(@NotBlank @Size(max = 150) String nombre, @Size(max = 150) String nombreComercial,
                           @Size(max = 200) String direccion, @Size(max = 30) String telefono,
                           @Email @Size(max = 100) String correo, @Size(max = 100) String sitioWeb,
+                          @Size(max = 100) String lema, @Size(max = 150) String pieTicket,
                           /** ECF (facturación electrónica), NCF (serie B) o NINGUNO (sin comprobante fiscal). Vacío = no cambia. */
                           @Pattern(regexp = "ECF|NCF|NINGUNO") String modoComprobante) {}
 
     public record Response(Long id, String nombre, String nombreComercial, String rnc, String direccion, String telefono,
-                           String correo, String sitioWeb, String modoComprobante) {
+                           String correo, String sitioWeb, String lema, String pieTicket, String modoComprobante) {
         static Response de(Compania c) {
             return new Response(c.getId(), c.getNombre(), c.getNombreComercial(), c.getRnc(), c.getDireccion(), c.getTelefono(),
-                    c.getCorreo(), c.getSitioWeb(), c.getModoComprobante());
+                    c.getCorreo(), c.getSitioWeb(), c.getLema(), c.getPieTicket(), c.getModoComprobante());
         }
     }
 
@@ -44,6 +45,8 @@ public class CompaniaService {
         c.setTelefono(vacio(r.telefono()));
         c.setCorreo(vacio(r.correo()));
         c.setSitioWeb(vacio(r.sitioWeb()));
+        c.setLema(vacio(r.lema()));
+        c.setPieTicket(vacio(r.pieTicket()));
         if (r.modoComprobante() != null) c.setModoComprobante(r.modoComprobante());
         return Response.de(c);
     }
