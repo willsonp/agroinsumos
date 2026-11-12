@@ -23,6 +23,9 @@ public class CotizacionLinea {
     private Long articuloId;
     @Column(nullable = false, precision = 14, scale = 3)
     private BigDecimal cantidad;
+    /** Unidades base que equivale cada unidad de la línea (1 = unidad base; 100 = saco de 100 lb). */
+    @Column(nullable = false, precision = 14, scale = 3)
+    private BigDecimal factor = BigDecimal.ONE;
     @Column(name = "precio_unitario", nullable = false, precision = 18, scale = 4)
     private BigDecimal precioUnitario;
     @Column(nullable = false, precision = 18, scale = 2)

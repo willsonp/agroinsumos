@@ -120,7 +120,8 @@ public class FacturaService {
             l.setLinea(calc.numero());
             l.setArticuloId(lp.articulo().getId());
             l.setDescripcion(lp.articulo().getNombre());
-            l.setUnidad(unidades.cargar(companiaId, lp.articulo().getUnidadId()).getNombre());
+            l.setUnidad(lp.unidad() != null ? lp.unidad() : unidades.cargar(companiaId, lp.articulo().getUnidadId()).getNombre());
+            l.setFactor(lp.factor());
             l.setCantidad(lp.cantidad());
             l.setPrecioUnitario(lp.precioUnitario());
             l.setDescuento(calc.descuento());
@@ -128,10 +129,11 @@ public class FacturaService {
             l.setTasaItbis(lp.tasaItbis());
             l.setImporte(calc.montoItem());
             l.setItbis(PreciosVentaService.itbisLinea(calc.montoItem(), lp.tasaItbis()));
-            l.setCostoUnitario(lp.articulo().getCostoPromedio());
+            // Costo de la unidad vendida (un saco = 100 × costo de la libra): utilidad = cantidad × (precio − costo)
+            l.setCostoUnitario(lp.articulo().getCostoPromedio().multiply(lp.factor()).setScale(4, RoundingMode.HALF_UP));
             f.getLineas().add(l);
             descuentos = descuentos.add(calc.descuento());
-            costo = costo.add(lp.cantidad().multiply(lp.articulo().getCostoPromedio()));
+            costo = costo.add(lp.cantidadBase().multiply(lp.articulo().getCostoPromedio()));
         }
         f.setMontoGravado(tot.montoGravadoTotal());
         f.setMontoExento(tot.montoExento());
@@ -144,7 +146,7 @@ public class FacturaService {
 
         for (LineaPreparada lp : mercanciaEntregada ? List.<LineaPreparada>of() : lineas) {
             inventario.mover(new InventarioService.Movimiento(lp.articulo(), almacen.getId(), TipoMovimiento.VENTA,
-                    lp.cantidad(), lp.articulo().getCostoPromedio(), DOC_TIPO, f.getId()));
+                    lp.cantidadBase(), lp.articulo().getCostoPromedio(), DOC_TIPO, f.getId()));
         }
 
         int tipoEcf = r.tipoEcf() != null ? r.tipoEcf() : cliente.getTipoEcfPreferido();

@@ -1,5 +1,6 @@
 package com.agroinsumos.backend.inventario.articulo;
 
+import com.agroinsumos.backend.catalogo.cliente.TipoPrecio;
 import com.agroinsumos.backend.catalogo.departamento.DepartamentoService;
 import com.agroinsumos.backend.catalogo.proveedor.ProveedorService;
 import com.agroinsumos.backend.catalogo.unidad.UnidadService;
@@ -36,7 +37,11 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
             /** true: los precios enviados incluyen ITBIS y se convierten a base (precio / (1 + tasa)). */
             Boolean preciosIncluyenItbis,
             /** Controla lotes y fechas de vencimiento. */
-            Boolean manejaVencimiento) {}
+            Boolean manejaVencimiento,
+            /** Presentación opcional (Saco, Caja): equivale a factorEmpaque unidades base. Precios vacíos = base × factor. */
+            Long unidadEmpaqueId, @DecimalMin(value = "1", inclusive = false) BigDecimal factorEmpaque,
+            @DecimalMin("0") BigDecimal precioEmpaqueContado, @DecimalMin("0") BigDecimal precioEmpaqueCredito,
+            @DecimalMin("0") BigDecimal precioEmpaqueMayor, @Size(max = 20) String codigoBarraEmpaque) {}
 
     public record Response(Long id, String codigoBarra, String referencia, String nombre, String descripcion,
                            Articulo.Tipo tipo, Long departamentoId, Long unidadId, Long proveedorId, int indicadorItbis,
@@ -44,7 +49,10 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                            BigDecimal precioCredito, BigDecimal precioMayor, BigDecimal precioContadoConItbis,
                            BigDecimal precioCreditoConItbis, BigDecimal precioMayorConItbis, BigDecimal descuentoMaximo,
                            BigDecimal stockMinimo, BigDecimal existencia, String ubicacion, String imagenUrl,
-                           String estado, boolean manejaVencimiento) {}
+                           String estado, boolean manejaVencimiento,
+                           String unidad, Long unidadEmpaqueId, String unidadEmpaque, BigDecimal factorEmpaque,
+                           BigDecimal precioEmpaqueContadoConItbis, BigDecimal precioEmpaqueCreditoConItbis,
+                           BigDecimal precioEmpaqueMayorConItbis, String codigoBarraEmpaque) {}
 
     private final ArticuloRepository repo;
     private final ExistenciaRepository existencias;
@@ -76,6 +84,27 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
         if (cb != null && !Objects.equals(cb, a.getCodigoBarra()) && repo.existsByCompaniaIdAndCodigoBarra(companiaId, cb)) {
             throw new BusinessException(HttpStatus.CONFLICT, "CODIGO_BARRA_DUPLICADO", "Ya existe un artículo con el código " + cb);
         }
+        if (r.unidadEmpaqueId() != null) {
+            unidades.cargarActiva(companiaId, r.unidadEmpaqueId());
+            if (r.factorEmpaque() == null) {
+                throw new BusinessException("FACTOR_REQUERIDO", "Indique cuántas unidades base trae la presentación (p.ej. 100 libras por saco)");
+            }
+            if (r.unidadEmpaqueId().equals(r.unidadId())) {
+                throw new BusinessException("EMPAQUE_INVALIDO", "La presentación debe ser una unidad distinta de la unidad base");
+            }
+            if (r.tipo() != Articulo.Tipo.B) throw new BusinessException("EMPAQUE_INVALIDO", "Los servicios no tienen presentación");
+        }
+        String cbe = r.unidadEmpaqueId() == null ? null : blank(r.codigoBarraEmpaque());
+        if (cbe != null) {
+            if (cbe.equals(cb)) throw new BusinessException("CODIGO_BARRA_DUPLICADO", "El código de la presentación debe ser distinto del de la unidad");
+            if (!Objects.equals(cbe, a.getCodigoBarraEmpaque()) && (repo.existsByCompaniaIdAndCodigoBarra(companiaId, cbe)
+                    || repo.existsByCompaniaIdAndCodigoBarraEmpaque(companiaId, cbe))) {
+                throw new BusinessException(HttpStatus.CONFLICT, "CODIGO_BARRA_DUPLICADO", "Ya existe un artículo con el código " + cbe);
+            }
+        }
+        if (cb != null && !Objects.equals(cb, a.getCodigoBarra()) && repo.existsByCompaniaIdAndCodigoBarraEmpaque(companiaId, cb)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "CODIGO_BARRA_DUPLICADO", "Ya existe una presentación con el código " + cb);
+        }
         if (a.getId() != null && a.getTipo() != r.tipo() && existencias.totalArticulo(a.getId()).signum() != 0) {
             throw new BusinessException("TIPO_CON_EXISTENCIA", "No se puede cambiar el tipo de un artículo con existencia");
         }
@@ -104,6 +133,13 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
         a.setUbicacion(r.ubicacion());
         a.setImagenUrl(r.imagenUrl());
         a.setManejaVencimiento(Boolean.TRUE.equals(r.manejaVencimiento()) && r.tipo() == Articulo.Tipo.B);
+        boolean empaque = r.unidadEmpaqueId() != null;
+        a.setUnidadEmpaqueId(empaque ? r.unidadEmpaqueId() : null);
+        a.setFactorEmpaque(empaque ? r.factorEmpaque() : null);
+        a.setPrecioEmpaqueContado(empaque ? opcional(base(cero(r.precioEmpaqueContado()), conItbis, factor)) : null);
+        a.setPrecioEmpaqueCredito(empaque ? opcional(base(cero(r.precioEmpaqueCredito()), conItbis, factor)) : null);
+        a.setPrecioEmpaqueMayor(empaque ? opcional(base(cero(r.precioEmpaqueMayor()), conItbis, factor)) : null);
+        a.setCodigoBarraEmpaque(empaque ? blank(r.codigoBarraEmpaque()) : null);
     }
 
     @Override
@@ -114,12 +150,18 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                 a.getCosto(), a.getCostoPromedio(), a.getPrecioContado(), a.getPrecioCredito(), a.getPrecioMayor(),
                 conItbis(a, a.getPrecioContado()), conItbis(a, a.getPrecioCredito()), conItbis(a, a.getPrecioMayor()),
                 a.getDescuentoMaximo(), a.getStockMinimo(), existencia, a.getUbicacion(), a.getImagenUrl(), a.getEstado(),
-                a.isManejaVencimiento());
+                a.isManejaVencimiento(), nombreUnidad(a.getUnidadId()), a.getUnidadEmpaqueId(), nombreUnidad(a.getUnidadEmpaqueId()),
+                a.getFactorEmpaque(),
+                // Solo los precios propios de la presentación (null = se usa el precio base × factor)
+                propio(a, a.getPrecioEmpaqueContado()), propio(a, a.getPrecioEmpaqueCredito()), propio(a, a.getPrecioEmpaqueMayor()),
+                a.getCodigoBarraEmpaque());
     }
 
     /** Búsqueda por código de barras para el punto de venta (legacy ConsultaArticulo_PorCodigo). */
     public Response porCodigo(Long companiaId, String codigo) {
+        // También por el código de la presentación (caja/saco): el punto de venta lo agrega como presentación
         return repo.findByCompaniaIdAndCodigoBarra(companiaId, codigo.trim())
+                .or(() -> repo.findByCompaniaIdAndCodigoBarraEmpaque(companiaId, codigo.trim()))
                 .filter(a -> "A".equals(a.getEstado()))
                 .map(this::respuesta)
                 .orElseThrow(() -> new NotFoundException("Artículo con código", codigo));
@@ -136,4 +178,18 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
     private static String blank(String s) { return s == null || s.isBlank() ? null : s.trim(); }
 
     private static BigDecimal cero(BigDecimal b) { return b == null ? BigDecimal.ZERO : b; }
+
+    private static BigDecimal propio(Articulo a, BigDecimal precio) { return a.tieneEmpaque() && precio != null ? conItbis(a, precio) : null; }
+
+    /** Precio de presentación en cero = no definido (se usa precio base × factor). */
+    private static BigDecimal opcional(BigDecimal b) { return b == null || b.signum() == 0 ? null : b; }
+
+    public String nombreUnidad(Long unidadId) {
+        if (unidadId == null) return null;
+        try {
+            return unidades.cargar(null, unidadId).getNombre();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
 }

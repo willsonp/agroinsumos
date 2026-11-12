@@ -61,6 +61,20 @@ public class Articulo extends Auditable implements Catalogo {
     private BigDecimal stockMinimo = BigDecimal.ZERO;
     @Column(length = 50)
     private String ubicacion;
+    /** Presentación (empaque) opcional: se compra/vende por Saco/Caja; equivale a factorEmpaque unidades base. */
+    @Column(name = "unidad_empaque_id")
+    private Long unidadEmpaqueId;
+    @Column(name = "factor_empaque", precision = 14, scale = 3)
+    private BigDecimal factorEmpaque;
+    @Column(name = "precio_empaque_contado", precision = 18, scale = 4)
+    private BigDecimal precioEmpaqueContado;
+    @Column(name = "precio_empaque_credito", precision = 18, scale = 4)
+    private BigDecimal precioEmpaqueCredito;
+    @Column(name = "precio_empaque_mayor", precision = 18, scale = 4)
+    private BigDecimal precioEmpaqueMayor;
+    @Column(name = "codigo_barra_empaque", length = 20)
+    private String codigoBarraEmpaque;
+
     /** Controla lotes con fecha de vencimiento: la compra exige la fecha y las salidas descuentan por lote. */
     @Column(name = "maneja_vencimiento", nullable = false)
     private boolean manejaVencimiento;
@@ -80,6 +94,20 @@ public class Articulo extends Auditable implements Catalogo {
     }
 
     public boolean inventariable() { return tipo == Tipo.B; }
+
+    public boolean tieneEmpaque() { return unidadEmpaqueId != null && factorEmpaque != null && factorEmpaque.compareTo(BigDecimal.ONE) > 0; }
+
+    /** Precio de la presentación (sin ITBIS): el propio de la lista o, si no está definido, precio base × factor. */
+    public BigDecimal precioEmpaque(TipoPrecio lista) {
+        BigDecimal p = switch (lista) {
+            case CONTADO -> precioEmpaqueContado;
+            case CREDITO -> precioEmpaqueCredito;
+            case MAYOR -> precioEmpaqueMayor;
+        };
+        if (p == null || p.signum() == 0) p = lista == TipoPrecio.CONTADO ? null : precioEmpaqueContado;
+        if (p != null && p.signum() > 0) return p;
+        return precio(lista).multiply(factorEmpaque).setScale(4, java.math.RoundingMode.HALF_UP);
+    }
 
     public BigDecimal precio(TipoPrecio lista) {
         BigDecimal p = switch (lista) {

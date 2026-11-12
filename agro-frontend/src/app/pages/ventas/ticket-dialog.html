@@ -19,7 +19,7 @@
       @for (l of datos.factura.lineas; track l.id) {
         <tr><td colspan="2">{{ l.descripcion }}</td></tr>
         <tr class="detalle">
-          <td>{{ l.cantidad | number: '1.0-3' }} x {{ l.precioUnitario | currency }}@if ((l.descuento ?? 0) > 0) { · desc. {{ l.descuento | currency }} }</td>
+          <td>{{ l.cantidad | number: '1.0-3' }}@if (mostrarUnidad(l.unidad)) { {{ l.unidad }} } x {{ l.precioUnitario | currency }}@if ((l.descuento ?? 0) > 0) { · desc. {{ l.descuento | currency }} }</td>
           <td class="num">{{ l.importe | currency }}</td>
         </tr>
       }

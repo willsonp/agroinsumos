@@ -39,7 +39,7 @@ public class CotizacionService {
                                   Integer tipoEcf, Long almacenId) {}
 
     public record LineaResponse(int linea, Long articuloId, BigDecimal cantidad, BigDecimal precioUnitario,
-                                BigDecimal descuento, BigDecimal importe, BigDecimal itbis) {}
+                                BigDecimal descuento, BigDecimal importe, BigDecimal itbis, BigDecimal factor) {}
 
     public record Response(Long id, long numero, LocalDate fecha, LocalDate validaHasta, Long clienteId,
                            String clienteNombre, Long vendedorId, TipoPrecio tipoPrecio, String comentario, BigDecimal totalItbis,
@@ -49,7 +49,7 @@ public class CotizacionService {
                     clienteNombre, c.getVendedorId(), c.getTipoPrecio(), c.getComentario(), c.getTotalItbis(), c.getTotal(),
                     c.getEstado(), c.getFacturaId(), c.getLineas().stream().map(l -> new LineaResponse(l.getLinea(),
                     l.getArticuloId(), l.getCantidad(), l.getPrecioUnitario(), l.getDescuento(), l.getImporte(),
-                    l.getItbis())).toList());
+                    l.getItbis(), l.getFactor())).toList());
         }
     }
 
@@ -83,6 +83,7 @@ public class CotizacionService {
             l.setLinea(calc.numero());
             l.setArticuloId(lp.articulo().getId());
             l.setCantidad(lp.cantidad());
+            l.setFactor(lp.factor());
             l.setPrecioUnitario(lp.precioUnitario());
             l.setDescuento(calc.descuento());
             l.setImporte(calc.montoItem());
@@ -105,7 +106,7 @@ public class CotizacionService {
             throw new BusinessException("COTIZACION_VENCIDA", "La cotización venció el " + c.getValidaHasta());
         }
         var lineas = c.getLineas().stream().map(l -> new LineaVentaRequest(l.getArticuloId(), l.getCantidad(),
-                l.getPrecioUnitario(), porcentaje(l))).toList();
+                l.getPrecioUnitario(), porcentaje(l), l.getFactor().compareTo(BigDecimal.ONE) != 0)).toList();
         var req = new FacturaDtos.CrearFacturaRequest(c.getClienteId(), r.condicion(), r.diasCredito(), c.getTipoPrecio(),
                 r.tipoEcf(), r.almacenId(), c.getVendedorId(), c.getComentario(), null, lineas);
         Factura f = facturas.crearEntidad(companiaId, usuario, req, true, c.getId());

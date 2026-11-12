@@ -33,7 +33,7 @@ public final class FacturaDtos {
     public record LineaResponse(Long id, int linea, Long articuloId, String descripcion, String unidad,
                                 BigDecimal cantidad, BigDecimal precioUnitario, BigDecimal descuento,
                                 int indicadorItbis, BigDecimal tasaItbis, BigDecimal importe, BigDecimal itbis,
-                                BigDecimal cantidadDevuelta) {}
+                                BigDecimal cantidadDevuelta, BigDecimal factor) {}
 
     public record FacturaResponse(Long id, long numero, LocalDate fecha, Factura.Condicion condicion, int diasCredito,
                                   LocalDate fechaVencimiento, Long clienteId, String clienteNombre, String clienteRnc,
@@ -54,7 +54,7 @@ public final class FacturaDtos {
                     f.getLineas().stream().map(l -> new LineaResponse(l.getId(), l.getLinea(), l.getArticuloId(),
                             l.getDescripcion(), l.getUnidad(), l.getCantidad(), l.getPrecioUnitario(), l.getDescuento(),
                             l.getIndicadorItbis(), l.getTasaItbis(), l.getImporte(), l.getItbis(),
-                            l.getCantidadDevuelta())).toList());
+                            l.getCantidadDevuelta(), l.getFactor())).toList());
         }
     }
 

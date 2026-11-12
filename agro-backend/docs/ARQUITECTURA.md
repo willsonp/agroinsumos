@@ -466,6 +466,22 @@ en `<html>`: **Claro**, **Oscuro** o **Según el sistema** (botón en la barra s
 guarda en el navegador y `index.html` la aplica antes de pintar. Los colores propios (módulos, chips, avisos) tienen su
 versión oscura; la impresión, el ticket y la vista previa de etiquetas son siempre claros (papel).
 
+## 5.14 Presentaciones (saco, caja)
+Migración `V21__presentaciones.sql`. Un artículo se lleva en su **unidad base** (Libra, Unidad) y puede tener una
+**presentación** opcional para comprar y vender: Saco de 100 lb, Caja de 12, etc.
+
+- Ficha del artículo: presentación (unidad), unidades por presentación (factor > 1), precios propios de la presentación
+  por lista (vacío = precio base × factor; crédito/mayor sin precio usan el de contado de la presentación) y código de barras
+  de la presentación (escanearlo agrega la línea como presentación).
+- Cada línea de compra, factura, cotización, conduce, apartado y nota de suplidor guarda la cantidad en la unidad usada y
+  su `factor`. El inventario (existencia, kárdex, lotes) se mueve siempre en unidades base: cantidad × factor; el costo de la
+  línea de venta es el de la presentación (costo promedio × factor), así la utilidad y los asientos cuadran.
+- La factura, el ticket y el e-CF muestran lo vendido ("1 Saco x RD$2,750"; en el e-CF el nombre lleva "(Saco x 100)").
+  Las conversiones cotización/conduce/apartado → factura y las devoluciones conservan la presentación de la línea original.
+- Compras: al cambiar la línea de Libra a Saco el costo se convierte con el factor; entra al inventario por libra.
+- Reportes por artículo (utilidad, compras por suplidor) suman en unidades base.
+- Punto de venta: la cantidad admite decimales (p.ej. 15.5 lb); mismo artículo en distinta unidad va en líneas separadas.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

@@ -52,7 +52,8 @@ export const ARTICULOS: CatalogoConfig = {
   nuevo: { tipo: 'B', indicadorItbis: 1, costo: 0, precioContado: 0, preciosIncluyenItbis: true, descuentoMaximo: 0, stockMinimo: 0, manejaVencimiento: false },
   // El backend guarda precios SIN ITBIS: al editar se muestran con ITBIS para que la casilla sea coherente
   alEditar: (r) => ({ ...r, precioContado: r['precioContadoConItbis'], precioCredito: r['precioCreditoConItbis'],
-    precioMayor: r['precioMayorConItbis'], preciosIncluyenItbis: true }),
+    precioMayor: r['precioMayorConItbis'], precioEmpaqueContado: r['precioEmpaqueContadoConItbis'],
+    precioEmpaqueCredito: r['precioEmpaqueCreditoConItbis'], precioEmpaqueMayor: r['precioEmpaqueMayorConItbis'], preciosIncluyenItbis: true }),
   campos: [
     { nombre: 'nombre', etiqueta: 'Nombre (máx. 80)', requerido: true, anchoCompleto: true },
     { nombre: 'codigoBarra', etiqueta: 'Código de barras' }, { nombre: 'referencia', etiqueta: 'Referencia' },
@@ -71,6 +72,13 @@ export const ARTICULOS: CatalogoConfig = {
     { nombre: 'stockMinimo', etiqueta: 'Stock mínimo', tipo: 'numero', min: 0 },
     { nombre: 'ubicacion', etiqueta: 'Ubicación' },
     { nombre: 'manejaVencimiento', etiqueta: 'Controla fecha de vencimiento (lotes): la compra pedirá la fecha de cada lote', tipo: 'check', anchoCompleto: true },
+    // Presentación: se compra/vende también por Saco o Caja; el inventario se lleva en la unidad de arriba
+    { nombre: 'unidadEmpaqueId', etiqueta: 'Presentación (opcional)', tipo: 'select', opcionesUrl: '/api/v1/catalogos/unidades' },
+    { nombre: 'factorEmpaque', etiqueta: 'Unidades por presentación', tipo: 'numero', min: 0 },
+    { nombre: 'codigoBarraEmpaque', etiqueta: 'Código de la presentación' },
+    { nombre: 'precioEmpaqueContado', etiqueta: 'Precio presentación contado', tipo: 'numero', min: 0 },
+    { nombre: 'precioEmpaqueCredito', etiqueta: 'Precio presentación crédito', tipo: 'numero', min: 0 },
+    { nombre: 'precioEmpaqueMayor', etiqueta: 'Precio presentación mayor', tipo: 'numero', min: 0 },
   ],
 };
 

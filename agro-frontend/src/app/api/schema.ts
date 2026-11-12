@@ -2835,6 +2835,13 @@ export interface components {
             imagenUrl?: string;
             preciosIncluyenItbis?: boolean;
             manejaVencimiento?: boolean;
+            /** Format: int64 */
+            unidadEmpaqueId?: number;
+            factorEmpaque?: number;
+            precioEmpaqueContado?: number;
+            precioEmpaqueCredito?: number;
+            precioEmpaqueMayor?: number;
+            codigoBarraEmpaque?: string;
         };
         ArticuloResponse: {
             /** Format: int64 */
@@ -2868,6 +2875,15 @@ export interface components {
             imagenUrl?: string;
             estado?: string;
             manejaVencimiento?: boolean;
+            unidad?: string;
+            /** Format: int64 */
+            unidadEmpaqueId?: number;
+            unidadEmpaque?: string;
+            factorEmpaque?: number;
+            precioEmpaqueContadoConItbis?: number;
+            precioEmpaqueCreditoConItbis?: number;
+            precioEmpaqueMayorConItbis?: number;
+            codigoBarraEmpaque?: string;
         };
         CuentaContableRequest: {
             codigo: string;
@@ -3257,6 +3273,7 @@ export interface components {
             cantidad: number;
             precioUnitario?: number;
             descuentoPorcentaje?: number;
+            empaque?: boolean;
         };
         FacturaLineaResponse: {
             /** Format: int64 */
@@ -3276,6 +3293,7 @@ export interface components {
             importe?: number;
             itbis?: number;
             cantidadDevuelta?: number;
+            factor?: number;
         };
         FacturaResponse: {
             /** Format: int64 */
@@ -3386,6 +3404,7 @@ export interface components {
             descuento?: number;
             importe?: number;
             itbis?: number;
+            factor?: number;
         };
         CotizacionResponse: {
             /** Format: int64 */
@@ -3445,6 +3464,7 @@ export interface components {
             cantidad?: number;
             precioUnitario?: number;
             descuentoPorcentaje?: number;
+            factor?: number;
         };
         ConduceResponse: {
             /** Format: int64 */
@@ -3524,6 +3544,7 @@ export interface components {
             cantidad?: number;
             precioUnitario?: number;
             descuentoPorcentaje?: number;
+            factor?: number;
         };
         ApartadoResponse: {
             /** Format: int64 */
@@ -4160,6 +4181,7 @@ export interface components {
             lote?: string;
             /** Format: date */
             fechaVencimiento?: string;
+            empaque?: boolean;
         };
         CompraRequest: {
             /** Format: int64 */
@@ -4202,6 +4224,7 @@ export interface components {
             lote?: string;
             /** Format: date */
             fechaVencimiento?: string;
+            factor?: number;
         };
         CompraResponse: {
             /** Format: int64 */

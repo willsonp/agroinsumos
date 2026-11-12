@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcular } from './calculo';
+import { calcular, precioLista } from './calculo';
 
 const art = (precioContado: number, indicadorItbis = 1, extra = {}) =>
   ({ id: 1, nombre: 'X', precioContado, precioCredito: 0, precioMayor: 0, indicadorItbis, ...extra }) as never;
@@ -26,5 +26,29 @@ describe('calcular (debe coincidir con EcfCalculadora del backend)', () => {
 
   it('cliente exento no paga ITBIS', () => {
     expect(calcular([{ articulo: art(100), cantidad: 2, descuentoPorcentaje: 0 }], 'CONTADO', true).total).toBe(200);
+  });
+});
+
+describe('presentaciones (saco/caja)', () => {
+  const urea = (extra = {}) => art(30, 1, { unidad: 'Libra', unidadEmpaqueId: 2, unidadEmpaque: 'Saco', factorEmpaque: 100, ...extra });
+
+  it('un saco usa su precio propio (con ITBIS) y las libras el precio por libra', () => {
+    const t = calcular([
+      { articulo: urea({ precioEmpaqueContadoConItbis: 3245 }), cantidad: 1, descuentoPorcentaje: 0, empaque: true },
+      { articulo: urea({ precioEmpaqueContadoConItbis: 3245 }), cantidad: 15.5, descuentoPorcentaje: 0 },
+    ], 'CONTADO', false);
+    expect(t.subtotal).toBe(2750 + 465);
+    expect(t.total).toBe(3793.7);   // igual que la factura del backend
+  });
+
+  it('sin precio propio, el saco vale precio por libra × factor', () => {
+    expect(precioLista(urea(), 'CONTADO', true)).toBe(3000);
+    expect(precioLista(urea(), 'CONTADO', false)).toBe(30);
+    // Lista crédito sin precio propio de saco: usa el de contado del saco si existe
+    expect(precioLista(urea({ precioEmpaqueContadoConItbis: 3245 }), 'CREDITO', true)).toBeCloseTo(2750, 6);
+  });
+
+  it('un artículo sin presentación ignora el indicador de empaque', () => {
+    expect(precioLista(art(30), 'CONTADO', true)).toBe(30);
   });
 });

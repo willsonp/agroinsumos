@@ -50,7 +50,9 @@ public class CompraService {
                                /** 0, 16 o 18. Por defecto, la tasa del artículo. */
                                BigDecimal tasaItbis,
                                /** Solo artículos que controlan vencimiento: número de lote (opcional) y fecha de vencimiento. */
-                               @Size(max = 40) String lote, LocalDate fechaVencimiento) {}
+                               @Size(max = 40) String lote, LocalDate fechaVencimiento,
+                               /** true: cantidad y costo son de la presentación del artículo (Saco, Caja); por defecto, unidad base. */
+                               Boolean empaque) {}
 
     public record Request(@NotNull Long proveedorId, LocalDate fecha,
                           @Pattern(regexp = "[A-Z]\\d{10}|E\\d{12}", message = "NCF (B0100000001) o e-NCF (E310000000001) inválido")
@@ -73,7 +75,7 @@ public class CompraService {
 
     public record LineaResponse(Long id, int linea, Long articuloId, BigDecimal cantidad, BigDecimal costoUnitario,
                                 BigDecimal descuento, BigDecimal tasaItbis, BigDecimal importe, BigDecimal itbis,
-                                BigDecimal costoFinal, String lote, LocalDate fechaVencimiento) {}
+                                BigDecimal costoFinal, String lote, LocalDate fechaVencimiento, BigDecimal factor) {}
 
     public record Response(Long id, long numero, Long proveedorId, LocalDate fecha, String ncfProveedor,
                            Compra.Condicion condicion, int diasCredito, LocalDate fechaVencimiento, Long almacenId,
@@ -91,7 +93,7 @@ public class CompraService {
                     c.getTipoBienServicio(), c.getTipoRetencionIsr(), c.getEncfCompra(), c.getEcfDocumentoId(),
                     c.getLineas().stream().map(l -> new LineaResponse(l.getId(), l.getLinea(), l.getArticuloId(), l.getCantidad(),
                             l.getCostoUnitario(), l.getDescuento(), l.getTasaItbis(), l.getImporte(), l.getItbis(),
-                            l.getCostoFinal(), l.getLote(), l.getFechaVencimiento())).toList(), c.getMoneda(), c.getTasaCambio(), c.getTotalMoneda(), c.getBalanceMoneda());
+                            l.getCostoFinal(), l.getLote(), l.getFechaVencimiento(), l.getFactor())).toList(), c.getMoneda(), c.getTasaCambio(), c.getTotalMoneda(), c.getBalanceMoneda());
         }
     }
 
@@ -161,7 +163,12 @@ public class CompraService {
             BigDecimal desc = pesos(lr.descuento(), tc);
             BigDecimal importe = lr.cantidad().multiply(costo).subtract(desc).setScale(2, RoundingMode.HALF_UP);
             if (importe.signum() < 0) throw new BusinessException("DESCUENTO_INVALIDO", "El descuento supera el importe de '" + a.getNombre() + "'");
+            boolean empaque = Boolean.TRUE.equals(lr.empaque());
+            if (empaque && !a.tieneEmpaque()) {
+                throw new BusinessException("EMPAQUE_NO_DEFINIDO", "'" + a.getNombre() + "' no tiene presentación definida");
+            }
             var l = new CompraLinea();
+            l.setFactor(empaque ? a.getFactorEmpaque() : BigDecimal.ONE);
             l.setCompra(c);
             l.setLinea(n++);
             l.setArticuloId(a.getId());
@@ -223,8 +230,9 @@ public class CompraService {
 
         for (var l : c.getLineas()) {
             Articulo a = articulos.cargar(cia, l.getArticuloId());
-            inventario.mover(new InventarioService.Movimiento(a, almacen.getId(), TipoMovimiento.COMPRA, l.getCantidad(),
-                    l.getCostoFinal(), DOC_TIPO, c.getId(),
+            // El inventario se lleva en la unidad base: 5 sacos de 100 lb = 500 lb al costo de la libra
+            inventario.mover(new InventarioService.Movimiento(a, almacen.getId(), TipoMovimiento.COMPRA, l.getCantidad().multiply(l.getFactor()),
+                    l.getCostoFinal().divide(l.getFactor(), 4, RoundingMode.HALF_UP), DOC_TIPO, c.getId(),
                     l.getFechaVencimiento() == null ? null : new LoteService.LoteEntrada(l.getLote(), l.getFechaVencimiento()), null));
         }
         if (emite41) {
@@ -253,7 +261,8 @@ public class CompraService {
         }
         for (var l : c.getLineas()) {
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
-                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad(), l.getCostoFinal(), DOC_TIPO, c.getId()));
+                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad().multiply(l.getFactor()),
+                    l.getCostoFinal().divide(l.getFactor(), 4, RoundingMode.HALF_UP), DOC_TIPO, c.getId()));
         }
         c.setBalance(BigDecimal.ZERO);
         if (c.extranjera()) c.setBalanceMoneda(BigDecimal.ZERO);

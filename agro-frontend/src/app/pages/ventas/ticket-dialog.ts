@@ -22,6 +22,8 @@ const NOMBRES_ECF: Record<number, string> = {
   styleUrl: './ticket-dialog.scss',
 })
 export class TicketDialog {
+  /** "2 Saco x RD$…": la unidad se muestra salvo la genérica (Unidad/UND). */
+  protected mostrarUnidad(u?: string | null): boolean { return !!u && !/^(unidad|und|u)$/i.test(u.trim()); }
   protected readonly datos = inject<TicketDatos>(MAT_DIALOG_DATA);
   protected readonly cia = inject(AuthService).perfil()?.compania;
   protected readonly timbre = signal<S['EcfTimbreResponse'] | null>(null);

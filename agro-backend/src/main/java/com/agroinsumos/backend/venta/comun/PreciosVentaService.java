@@ -29,8 +29,17 @@ public class PreciosVentaService {
 
     private final ArticuloService articulos;
 
+    /**
+     * @param cantidad en la unidad vendida (base o presentación); {@code factor} = unidades base por cada una
+     * @param unidad   nombre de la unidad vendida (Libra, Saco, Caja...)
+     */
     public record LineaPreparada(Articulo articulo, BigDecimal cantidad, BigDecimal precioUnitario,
-                                 BigDecimal descuento, int indicadorItbis) {
+                                 BigDecimal descuento, int indicadorItbis, BigDecimal factor, String unidad) {
+        /** Cantidad que mueve el inventario (unidades base). */
+        public BigDecimal cantidadBase() { return cantidad.multiply(factor); }
+
+        public boolean empaque() { return factor.compareTo(BigDecimal.ONE) != 0; }
+
         public BigDecimal tasaItbis() {
             return switch (indicadorItbis) {
                 case 1 -> EcfCalculadora.TASA_ITBIS1;
@@ -40,8 +49,11 @@ public class PreciosVentaService {
         }
 
         public EcfDtos.Item aItemEcf() {
-            return new EcfDtos.Item(articulo.getNombre(), articulo.inventariable() ? 1 : 2, cantidad, precioUnitario,
-                    descuento, indicadorItbis);
+            // En el comprobante se ve la presentación vendida: "Urea 46% (Saco x 100)"
+            String nombre = empaque() && unidad != null
+                    ? articulo.getNombre() + " (" + unidad + " x " + factor.stripTrailingZeros().toPlainString() + ")" : articulo.getNombre();
+            return new EcfDtos.Item(nombre.length() > 80 ? nombre.substring(0, 80) : nombre, articulo.inventariable() ? 1 : 2,
+                    cantidad, precioUnitario, descuento, indicadorItbis);
         }
     }
 
@@ -53,7 +65,13 @@ public class PreciosVentaService {
         boolean supervisor = usuario.nivel() == Nivel.ADMIN || usuario.nivel() == Nivel.SUPERVISOR || preciosAutorizados;
         return lineas.stream().map(l -> {
             Articulo a = articulos.cargarActiva(companiaId, l.articuloId());
-            BigDecimal precioLista = a.precio(lista);
+            boolean empaque = Boolean.TRUE.equals(l.empaque());
+            if (empaque && !a.tieneEmpaque()) {
+                throw new BusinessException("EMPAQUE_NO_DEFINIDO", "'" + a.getNombre() + "' no tiene presentación definida");
+            }
+            BigDecimal factor = empaque ? a.getFactorEmpaque() : BigDecimal.ONE;
+            String unidad = articulos.nombreUnidad(empaque ? a.getUnidadEmpaqueId() : a.getUnidadId());
+            BigDecimal precioLista = empaque ? a.precioEmpaque(lista) : a.precio(lista);
             BigDecimal precio = l.precioUnitario() != null ? l.precioUnitario() : precioLista;
             if (precio.compareTo(precioLista) != 0 && !supervisor) {
                 throw new BusinessException(HttpStatus.FORBIDDEN, "PRECIO_NO_AUTORIZADO",
@@ -69,7 +87,7 @@ public class PreciosVentaService {
             }
             BigDecimal descuento = l.cantidad().multiply(precio).multiply(pct).divide(CIEN, 2, RoundingMode.HALF_UP);
             int indicador = cliente.isExentoItbis() ? 4 : a.getIndicadorItbis();
-            return new LineaPreparada(a, l.cantidad(), precio, descuento, indicador);
+            return new LineaPreparada(a, l.cantidad(), precio, descuento, indicador, factor, unidad);
         }).toList();
     }
 

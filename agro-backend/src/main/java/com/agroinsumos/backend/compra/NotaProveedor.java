@@ -79,6 +79,9 @@ public class NotaProveedor extends Auditable {
         private Long articuloId;
         @Column(nullable = false, precision = 14, scale = 3)
         private BigDecimal cantidad;
+        /** Unidades base por unidad de la línea (presentación). */
+        @Column(nullable = false, precision = 14, scale = 3)
+        private BigDecimal factor = BigDecimal.ONE;
         @Column(nullable = false, precision = 18, scale = 2)
         private BigDecimal importe;
         @Column(nullable = false, precision = 18, scale = 2)

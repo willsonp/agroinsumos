@@ -28,4 +28,8 @@ public interface ArticuloRepository extends JpaRepository<Articulo, Long> {
     Optional<Articulo> findByCompaniaIdAndCodigoBarra(Long companiaId, String codigoBarra);
 
     boolean existsByCompaniaIdAndCodigoBarra(Long companiaId, String codigoBarra);
+
+    boolean existsByCompaniaIdAndCodigoBarraEmpaque(Long companiaId, String codigoBarraEmpaque);
+
+    Optional<Articulo> findByCompaniaIdAndCodigoBarraEmpaque(Long companiaId, String codigoBarraEmpaque);
 }

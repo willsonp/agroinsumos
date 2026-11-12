@@ -12,13 +12,14 @@
       <app-articulo-buscador (elegido)="agregar($event)" />
       <div class="tabla-contenedor">
         <table class="lineas">
-          <thead><tr><th>Artículo</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Desc. %</th><th class="num">Importe</th><th></th></tr></thead>
+          <thead><tr><th>Artículo</th><th class="num">Cant.</th><th>Unidad</th><th class="num">Precio</th><th class="num">Desc. %</th><th class="num">Importe</th><th></th></tr></thead>
           <tbody>
-            @for (l of lineas(); track l.articulo.id; let i = $index) {
+            @for (l of lineas(); track $index; let i = $index) {
               <tr>
                 <td>{{ l.articulo.nombre }}<div class="muted pequeno">{{ l.articulo.codigoBarra }}</div></td>
-                <td class="num"><input class="celda" type="number" min="0" step="1" [ngModel]="l.cantidad"
+                <td class="num"><input class="celda" type="number" min="0" step="any" [ngModel]="l.cantidad"
                                        (ngModelChange)="cambiar(i, 'cantidad', +$event)" aria-label="Cantidad" /></td>
+                <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="cambiarUnidad(i, $event)" /></td>
                 <td class="num">{{ precio(l) | currency }}</td>
                 <td class="num"><input class="celda" type="number" min="0" max="100" [ngModel]="l.descuentoPorcentaje"
                                        (ngModelChange)="cambiar(i, 'descuentoPorcentaje', +$event)" aria-label="Descuento" /></td>
@@ -27,7 +28,7 @@
                   <span class="material-symbols-outlined">delete</span></button></td>
               </tr>
             } @empty {
-              <tr><td colspan="6" class="vacio muted">Escanee o busque un artículo para comenzar</td></tr>
+              <tr><td colspan="7" class="vacio muted">Escanee o busque un artículo para comenzar</td></tr>
             }
           </tbody>
         </table>

@@ -55,7 +55,7 @@ public class ConduceService {
     public record AnularRequest(@NotBlank @Size(max = 200) String motivo) {}
 
     public record LineaResponse(int linea, Long articuloId, String descripcion, String unidad, BigDecimal cantidad,
-                                BigDecimal precioUnitario, BigDecimal descuentoPorcentaje) {}
+                                BigDecimal precioUnitario, BigDecimal descuentoPorcentaje, BigDecimal factor) {}
 
     public record Response(Long id, long numero, LocalDate fecha, Long clienteId, String cliente, Long almacenId,
                            TipoPrecio tipoPrecio, String comentario, String lugarEntrega, BigDecimal totalEstimado,
@@ -103,6 +103,7 @@ public class ConduceService {
             l.setLinea(i + 1);
             l.setArticuloId(lp.articulo().getId());
             l.setCantidad(lp.cantidad());
+            l.setFactor(lp.factor());
             l.setPrecioUnitario(lp.precioUnitario());
             var pct = r.lineas().get(i).descuentoPorcentaje();
             l.setDescuentoPorcentaje(pct == null ? BigDecimal.ZERO : pct);
@@ -112,7 +113,7 @@ public class ConduceService {
         repo.save(c);
         for (var lp : lineas) {
             inventario.mover(new InventarioService.Movimiento(lp.articulo(), almacen.getId(), TipoMovimiento.VENTA,
-                    lp.cantidad(), lp.articulo().getCostoPromedio(), DOC_TIPO, c.getId()));
+                    lp.cantidadBase(), lp.articulo().getCostoPromedio(), DOC_TIPO, c.getId()));
         }
         return respuesta(cia, c);
     }
@@ -135,7 +136,7 @@ public class ConduceService {
                 throw new BusinessException("CONDUCES_DISTINTOS", "Solo se facturan juntos conduces del mismo cliente y almacén");
             }
             c.getLineas().forEach(l -> lineas.add(new LineaVentaRequest(l.getArticuloId(), l.getCantidad(), l.getPrecioUnitario(),
-                    l.getDescuentoPorcentaje())));
+                    l.getDescuentoPorcentaje(), l.getFactor().compareTo(BigDecimal.ONE) != 0)));
         }
         String nums = conduces.stream().map(c -> String.valueOf(c.getNumero())).reduce((a, b) -> a + ", " + b).orElse("");
         String comentario = (r.comentario() == null || r.comentario().isBlank() ? "" : r.comentario().trim() + " · ") + "Conduce(s) " + nums;
@@ -160,7 +161,7 @@ public class ConduceService {
         }
         for (var l : c.getLineas()) {
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
-                    TipoMovimiento.DEVOLUCION_VENTA, l.getCantidad(), l.getCostoUnitario(), DOC_TIPO, c.getId()));
+                    TipoMovimiento.DEVOLUCION_VENTA, l.getCantidad().multiply(l.getFactor()), l.getCostoUnitario(), DOC_TIPO, c.getId()));
         }
         c.setEstado(Conduce.Estado.ANULADO);
         c.setMotivoAnulacion(motivo);
@@ -184,8 +185,10 @@ public class ConduceService {
                 c.getMotivoAnulacion(),
                 c.getLineas().stream().map(l -> {
                     var a = articulos.cargar(cia, l.getArticuloId());
-                    return new LineaResponse(l.getLinea(), l.getArticuloId(), a.getNombre(), unidades.cargar(cia, a.getUnidadId()).getNombre(),
-                            l.getCantidad(), l.getPrecioUnitario(), l.getDescuentoPorcentaje().setScale(2, RoundingMode.HALF_UP));
+                    boolean empaque = l.getFactor().compareTo(BigDecimal.ONE) != 0 && a.getUnidadEmpaqueId() != null;
+                    return new LineaResponse(l.getLinea(), l.getArticuloId(), a.getNombre(),
+                            unidades.cargar(cia, empaque ? a.getUnidadEmpaqueId() : a.getUnidadId()).getNombre(),
+                            l.getCantidad(), l.getPrecioUnitario(), l.getDescuentoPorcentaje().setScale(2, RoundingMode.HALF_UP), l.getFactor());
                 }).toList());
     }
 }

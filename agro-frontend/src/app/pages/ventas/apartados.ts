@@ -14,7 +14,8 @@ import { Notificacion } from '../../core/notificacion.service';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ClienteSelector } from '../../shared/cliente-selector';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params, redondear } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
 
@@ -24,7 +25,7 @@ type Forma = 'EFECTIVO' | 'TARJETA' | 'CHEQUE' | 'TRANSFERENCIA';
 /** Apartados: el cliente separa mercancía y la abona; al completar se factura con el anticipo (legacy apartado). */
 @Component({
   selector: 'app-apartados',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+  imports: [PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatPaginatorModule, ArticuloBuscador, ClienteSelector],
   template: `
     <div class="pagina">
@@ -47,13 +48,14 @@ type Forma = 'EFECTIVO' | 'TARJETA' | 'CHEQUE' | 'TRANSFERENCIA';
           </div>
           <app-articulo-buscador (elegido)="agregar($event)" />
           <table class="tabla">
-            <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Desc. %</th><th></th></tr>
+            <tr><th>Artículo</th><th class="num">Cantidad</th><th>Unidad</th><th class="num">Desc. %</th><th></th></tr>
             @for (l of lineas(); track $index; let i = $index) {
               <tr><td>{{ l.articulo.nombre }}</td>
                 <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" /></td>
+                <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="cambiarUnidad(i, $event)" /></td>
                 <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.descuentoPorcentaje" (ngModelChange)="fijar(i, 'descuentoPorcentaje', +$event)" /></td>
                 <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
-            } @empty { <tr><td colspan="4" class="muted">Agregue la mercancía que el cliente separa</td></tr> }
+            } @empty { <tr><td colspan="5" class="muted">Agregue la mercancía que el cliente separa</td></tr> }
           </table>
           <div class="fila" style="margin-top:12px">
             <mat-form-field><mat-label>Primer abono</mat-label><input matInput type="number" min="0" [(ngModel)]="abono.monto" /></mat-form-field>
@@ -143,7 +145,10 @@ export class Apartados {
     this.lineas.set([]); this.cliente.set(null); this.concepto = ''; this.fechaLimite = ''; this.abono = { monto: 0, forma: 'EFECTIVO' };
     this.nuevo.set(true);
   }
-  protected agregar(a: S['ArticuloResponse']): void { this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0 }]); }
+  protected agregar(a: S['ArticuloResponse']): void {
+    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0, empaque: ESCANEADOS_EMPAQUE.has(a) }]);
+  }
+  protected cambiarUnidad(i: number, empaque: boolean): void { this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, empaque } : l))); }
   protected fijar(i: number, campo: 'cantidad' | 'descuentoPorcentaje', v: number): void {
     this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, [campo]: Math.max(0, v || 0) } : l)));
   }
@@ -151,7 +156,8 @@ export class Apartados {
 
   protected crear(): void {
     const req: S['ApartadoRequest'] = { clienteId: this.cliente()!.id!, concepto: this.concepto.trim(), fechaLimite: this.fechaLimite || undefined,
-      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, descuentoPorcentaje: l.descuentoPorcentaje || undefined })),
+      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, descuentoPorcentaje: l.descuentoPorcentaje || undefined,
+        empaque: l.empaque || undefined })),
       abonoInicial: this.abono.monto > 0 ? { forma: this.abono.forma, monto: redondear(this.abono.monto) } : undefined };
     this.http.post<Apartado>('/api/v1/ventas/apartados', req).subscribe({
       next: (a) => { this.notif.ok(`Apartado ${a.numero} registrado · pendiente RD$${a.pendiente}`); this.nuevo.set(false); this.cargar(); },

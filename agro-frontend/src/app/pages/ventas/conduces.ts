@@ -15,7 +15,8 @@ import { Notificacion } from '../../core/notificacion.service';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ClienteSelector } from '../../shared/cliente-selector';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
 
@@ -24,7 +25,7 @@ type Conduce = S['ConduceResponse'];
 /** Conduces: la mercancía sale al entregarse y se factura después, uno o varios juntos (legacy facturapro). */
 @Component({
   selector: 'app-conduces',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
+  imports: [PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatPaginatorModule, ArticuloBuscador, ClienteSelector],
   template: `
     <div class="pagina">
@@ -45,13 +46,14 @@ type Conduce = S['ConduceResponse'];
           </div>
           <app-articulo-buscador (elegido)="agregar($event)" />
           <table class="tabla">
-            <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Desc. %</th><th></th></tr>
+            <tr><th>Artículo</th><th class="num">Cantidad</th><th>Unidad</th><th class="num">Desc. %</th><th></th></tr>
             @for (l of lineas(); track $index; let i = $index) {
               <tr><td>{{ l.articulo.nombre }} <span class="muted">· disp. {{ l.articulo.existencia | number: '1.0-3' }}</span></td>
                 <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" [attr.aria-label]="'Cantidad ' + l.articulo.nombre" /></td>
+                <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="cambiarUnidad(i, $event)" /></td>
                 <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.descuentoPorcentaje" (ngModelChange)="fijar(i, 'descuentoPorcentaje', +$event)" /></td>
                 <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
-            } @empty { <tr><td colspan="4" class="muted">Agregue la mercancía que se entrega</td></tr> }
+            } @empty { <tr><td colspan="5" class="muted">Agregue la mercancía que se entrega</td></tr> }
           </table>
           <mat-form-field style="width:100%;margin-top:12px"><mat-label>Comentario</mat-label><input matInput [(ngModel)]="comentario" maxlength="300" /></mat-form-field>
           <div class="fila">
@@ -142,7 +144,10 @@ export class Conduces {
   }
 
   protected abrir(): void { this.lineas.set([]); this.cliente.set(null); this.lugarEntrega = ''; this.comentario = ''; this.nuevo.set(true); }
-  protected agregar(a: S['ArticuloResponse']): void { this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0 }]); }
+  protected agregar(a: S['ArticuloResponse']): void {
+    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0, empaque: ESCANEADOS_EMPAQUE.has(a) }]);
+  }
+  protected cambiarUnidad(i: number, empaque: boolean): void { this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, empaque } : l))); }
   protected fijar(i: number, campo: 'cantidad' | 'descuentoPorcentaje', v: number): void {
     this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, [campo]: Math.max(0, v || 0) } : l)));
   }
@@ -150,7 +155,8 @@ export class Conduces {
 
   protected crear(): void {
     const req: S['ConduceRequest'] = { clienteId: this.cliente()!.id!, lugarEntrega: this.lugarEntrega || undefined, comentario: this.comentario || undefined,
-      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, descuentoPorcentaje: l.descuentoPorcentaje || undefined })) };
+      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, descuentoPorcentaje: l.descuentoPorcentaje || undefined,
+        empaque: l.empaque || undefined })) };
     this.http.post<Conduce>('/api/v1/ventas/conduces', req).subscribe({
       next: (c) => { this.notif.ok(`Conduce ${c.numero} registrado`); this.nuevo.set(false); this.cargar(); this.visto.set(c); },
       error: (e) => this.notif.error(e) });

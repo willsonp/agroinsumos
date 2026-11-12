@@ -18,10 +18,10 @@ class ReportesVentas extends CatalogoBase {
 
     ReportesVentas(NamedParameterJdbcTemplate jdbc) { super(jdbc); }
 
-    /** Cantidad, venta y costo netos de devoluciones por línea de factura. */
+    /** Cantidad (en unidad base: sacos × 100 lb), venta y costo netos de devoluciones por línea de factura. */
     private static final String LINEAS_NETAS = """
             select fl.articulo_id, f.cliente_id, f.vendedor_id,
-                   fl.cantidad - fl.cantidad_devuelta cantidad,
+                   (fl.cantidad - fl.cantidad_devuelta) * fl.factor cantidad,
                    round(fl.importe * (fl.cantidad - fl.cantidad_devuelta) / fl.cantidad, 2) venta,
                    round((fl.cantidad - fl.cantidad_devuelta) * fl.costo_unitario, 2) costo
               from factura_linea fl join factura f on f.id = fl.factura_id

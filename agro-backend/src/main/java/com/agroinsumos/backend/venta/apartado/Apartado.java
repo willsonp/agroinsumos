@@ -75,6 +75,9 @@ public class Apartado extends Auditable {
         private Long articuloId;
         @Column(nullable = false, precision = 14, scale = 3)
         private BigDecimal cantidad;
+        /** Unidades base por unidad de la línea (presentación). */
+        @Column(nullable = false, precision = 14, scale = 3)
+        private BigDecimal factor = BigDecimal.ONE;
         @Column(name = "precio_unitario", nullable = false, precision = 18, scale = 4)
         private BigDecimal precioUnitario;
         @Column(name = "descuento_porcentaje", nullable = false, precision = 5, scale = 2)

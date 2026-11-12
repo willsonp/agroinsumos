@@ -105,7 +105,10 @@ public class DevolucionService {
             // Descuento proporcional a la cantidad devuelta
             BigDecimal desc = fl.getDescuento().multiply(lr.cantidad()).divide(fl.getCantidad(), 2, RoundingMode.HALF_UP);
             var articulo = articulos.cargar(companiaId, fl.getArticuloId());
-            items.add(new EcfDtos.Item(fl.getDescripcion(), articulo.inventariable() ? 1 : 2, lr.cantidad(),
+            boolean empaque = fl.getFactor().compareTo(BigDecimal.ONE) != 0;
+            String nombre = empaque ? fl.getDescripcion() + " (" + fl.getUnidad() + " x " + fl.getFactor().stripTrailingZeros().toPlainString() + ")"
+                    : fl.getDescripcion();
+            items.add(new EcfDtos.Item(nombre.length() > 80 ? nombre.substring(0, 80) : nombre, articulo.inventariable() ? 1 : 2, lr.cantidad(),
                     fl.getPrecioUnitario(), desc, (int) fl.getIndicadorItbis()));
 
             var dl = new DevolucionLinea();
@@ -147,7 +150,8 @@ public class DevolucionService {
             if (!dl.isReingresaInventario()) continue;
             var fl = porId.get(dl.getFacturaLineaId());
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(companiaId, fl.getArticuloId()),
-                    f.getAlmacenId(), TipoMovimiento.DEVOLUCION_VENTA, dl.getCantidad(), fl.getCostoUnitario(),
+                    f.getAlmacenId(), TipoMovimiento.DEVOLUCION_VENTA, dl.getCantidad().multiply(fl.getFactor()),
+                    fl.getCostoUnitario().divide(fl.getFactor(), 4, RoundingMode.HALF_UP),
                     DOC_TIPO, d.getId(), null,
                     new com.agroinsumos.backend.inventario.kardex.LoteService.Referencia(FacturaService.DOC_TIPO, f.getId())));
         }

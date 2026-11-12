@@ -12,7 +12,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import type { Pagina, S } from '../../api/tipos';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ClienteSelector } from '../../shared/cliente-selector';
-import { LineaCarrito, TipoPrecio, calcular, importeConItbis, precioLista, TASAS } from '../../shared/calculo';
+import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular, importeConItbis, precioLista, TASAS } from '../../shared/calculo';
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { PagoDialog } from './pago-dialog';
@@ -27,7 +28,7 @@ type Articulo = S['ArticuloResponse'];
  */
 @Component({
   selector: 'app-pos',
-  imports: [RouterLink, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule,
+  imports: [RouterLink, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, PresentacionSelector,
     MatProgressBarModule, MatTooltipModule, ArticuloBuscador, ClienteSelector],
   templateUrl: './pos.html',
   styleUrl: './pos.scss',
@@ -51,7 +52,7 @@ export class Pos {
     : this.cliente()?.tipoEcfPreferido === 45 ? 'Gubernamental (e-CF 45)' : 'Consumo (e-CF 32)');
   protected readonly puedeCredito = computed(() => (this.cliente()?.diasCredito ?? 0) > 0);
 
-  protected readonly precio = (l: LineaCarrito) => precioLista(l.articulo, this.lista()) * (1 + (this.exento() ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]) / 100);
+  protected readonly precio = (l: LineaCarrito) => precioLista(l.articulo, this.lista(), l.empaque) * (1 + (this.exento() ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]) / 100);
   protected readonly importe = (l: LineaCarrito) => importeConItbis(l, this.lista(), this.exento());
 
   constructor() {
@@ -61,11 +62,13 @@ export class Pos {
 
   protected agregar(a: Articulo): void {
     const actual = this.lineas();
-    const i = actual.findIndex((l) => l.articulo.id === a.id);
+    const empaque = ESCANEADOS_EMPAQUE.has(a);
+    // Mismo artículo en la misma unidad: suma 1; en otra unidad (saco vs. libra) va en su propia línea
+    const i = actual.findIndex((l) => l.articulo.id === a.id && !!l.empaque === empaque);
     if (i >= 0) {
       this.lineas.set(actual.map((l, j) => (j === i ? { ...l, cantidad: l.cantidad + 1 } : l)));
     } else {
-      this.lineas.set([...actual, { articulo: a, cantidad: 1, descuentoPorcentaje: 0 }]);
+      this.lineas.set([...actual, { articulo: a, cantidad: 1, descuentoPorcentaje: 0, empaque }]);
     }
     if (a.tipo === 'B' && (a.existencia ?? 0) <= 0) this.notif.error(null, `Atención: '${a.nombre}' no tiene existencia`);
   }
@@ -76,6 +79,10 @@ export class Pos {
 
   protected quitar(i: number): void {
     this.lineas.set(this.lineas().filter((_, j) => j !== i));
+  }
+
+  protected cambiarUnidad(i: number, empaque: boolean): void {
+    this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, empaque } : l)));
   }
 
   protected cobrar(): void {
@@ -113,7 +120,7 @@ export class Pos {
       condicion,
       lineas: this.lineas().filter((l) => l.cantidad > 0).map((l) => ({
         articuloId: l.articulo.id!, cantidad: l.cantidad,
-        descuentoPorcentaje: l.descuentoPorcentaje || undefined,
+        descuentoPorcentaje: l.descuentoPorcentaje || undefined, empaque: l.empaque || undefined,
       })),
     };
   }

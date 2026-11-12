@@ -101,6 +101,7 @@ public class NotaProveedorService {
                 l.setCompraLineaId(cl.getId());
                 l.setArticuloId(cl.getArticuloId());
                 l.setCantidad(lr.cantidad());
+                l.setFactor(cl.getFactor());   // misma presentación de la línea de compra (sacos devueltos)
                 l.setImporte(prorratear(cl.getImporte(), lr.cantidad(), cl.getCantidad()));
                 l.setItbis(prorratear(cl.getItbis(), lr.cantidad(), cl.getCantidad()));
                 l.setCostoUnitario(cl.getCostoFinal());
@@ -139,7 +140,8 @@ public class NotaProveedorService {
         }
         for (var l : n.getLineas()) {
             inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
-                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad(), l.getCostoUnitario(), DOC_TIPO, n.getId(), null,
+                    TipoMovimiento.DEVOLUCION_COMPRA, l.getCantidad().multiply(l.getFactor()),
+                    l.getCostoUnitario().divide(l.getFactor(), 4, java.math.RoundingMode.HALF_UP), DOC_TIPO, n.getId(), null,
                     new com.agroinsumos.backend.inventario.kardex.LoteService.Referencia(CompraService.DOC_TIPO, c.getId())));
         }
         return respuesta(n, c);
@@ -156,7 +158,8 @@ public class NotaProveedorService {
             if (c.getEstado() != Compra.Estado.ANULADA) c.setEstado(Compra.Estado.REGISTRADA);
             for (var l : n.getLineas()) {
                 inventario.mover(new InventarioService.Movimiento(articulos.cargar(cia, l.getArticuloId()), c.getAlmacenId(),
-                        TipoMovimiento.COMPRA, l.getCantidad(), l.getCostoUnitario(), DOC_TIPO, n.getId()));
+                        TipoMovimiento.COMPRA, l.getCantidad().multiply(l.getFactor()),
+                        l.getCostoUnitario().divide(l.getFactor(), 4, java.math.RoundingMode.HALF_UP), DOC_TIPO, n.getId()));
             }
         } else {
             if (c.getBalance().compareTo(n.getTotal()) < 0) {

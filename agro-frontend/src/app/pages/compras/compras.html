@@ -41,10 +41,11 @@
       <app-articulo-buscador (elegido)="agregar($event)" />
       <div class="tabla-contenedor">
         <table class="tabla">
-          <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Descuento</th><th class="num">ITBIS %</th><th class="num">Importe</th><th></th></tr>
+          <tr><th>Artículo</th><th class="num">Cantidad</th><th>Unidad</th><th class="num">Costo unit.</th><th class="num">Descuento</th><th class="num">ITBIS %</th><th class="num">Importe</th><th></th></tr>
           @for (l of lineas(); track $index; let i = $index) {
             <tr><td>{{ l.articulo.nombre }}</td>
               <td class="num"><input class="celda" type="number" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" /></td>
+              <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="cambiarUnidad(i, $event)" /></td>
               <td class="num"><input class="celda" type="number" [ngModel]="l.costo" (ngModelChange)="fijar(i, 'costo', +$event)" /></td>
               <td class="num"><input class="celda" type="number" [ngModel]="l.descuento" (ngModelChange)="fijar(i, 'descuento', +$event)" /></td>
               <td class="num"><select class="celda" [ngModel]="l.tasa" (ngModelChange)="fijar(i, 'tasa', +$event)">
@@ -52,14 +53,14 @@
               <td class="num">{{ l.cantidad * l.costo - l.descuento | currency }}</td>
               <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
             @if (l.articulo.manejaVencimiento) {
-              <tr class="lote" [class.falta]="!l.vence"><td colspan="7">
+              <tr class="lote" [class.falta]="!l.vence"><td colspan="8">
                 <span class="material-symbols-outlined">event</span> Lote del suplidor
                 <input class="celda texto" maxlength="40" placeholder="No. lote (opcional)" [ngModel]="l.lote" (ngModelChange)="fijarLote(i, 'lote', $event)" aria-label="Número de lote" />
                 Vence <input class="celda fecha" type="date" required [min]="hoy" [ngModel]="l.vence" (ngModelChange)="fijarLote(i, 'vence', $event)" aria-label="Fecha de vencimiento" />
                 @if (!l.vence) { <span class="error-texto">Indique la fecha de vencimiento</span> }
               </td></tr>
             }
-          } @empty { <tr><td colspan="7" class="muted">Agregue los artículos de la factura del suplidor</td></tr> }
+          } @empty { <tr><td colspan="8" class="muted">Agregue los artículos de la factura del suplidor</td></tr> }
         </table>
       </div>
       <div class="fila" style="margin-top:12px">

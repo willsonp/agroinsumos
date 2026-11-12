@@ -15,7 +15,8 @@ import { Notificacion } from '../../core/notificacion.service';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ClienteSelector } from '../../shared/cliente-selector';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
 
@@ -24,7 +25,7 @@ type Cotizacion = S['CotizacionResponse'];
 /** Cotizaciones (legacy agrega_cotizacion): no mueven inventario ni emiten e-CF hasta facturarse. */
 @Component({
   selector: 'app-cotizaciones',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  imports: [PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatTableModule, MatPaginatorModule, ArticuloBuscador, ClienteSelector],
   templateUrl: './cotizaciones.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
@@ -62,8 +63,10 @@ export class Cotizaciones {
 
   protected agregar(a: S['ArticuloResponse']): void {
     this.nombres.set({ ...this.nombres(), [a.id!]: a.nombre! });
-    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0, precioManual: null }]);
+    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, descuentoPorcentaje: 0, precioManual: null, empaque: ESCANEADOS_EMPAQUE.has(a) }]);
   }
+
+  protected cambiarUnidad(i: number, empaque: boolean): void { this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, empaque } : l))); }
 
   protected fijar(i: number, campo: 'cantidad' | 'descuentoPorcentaje' | 'precioManual', v: number | null): void {
     this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, [campo]: campo === 'precioManual' ? (v || null) : Math.max(0, v || 0) } : l)));
@@ -75,7 +78,7 @@ export class Cotizaciones {
     const req: S['CotizacionRequest'] = {
       clienteId: this.cliente()!.id!, diasValidez: this.diasValidez, comentario: this.comentario || undefined,
       lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad,
-        precioUnitario: l.precioManual ?? undefined, descuentoPorcentaje: l.descuentoPorcentaje || undefined })),
+        precioUnitario: l.precioManual ?? undefined, descuentoPorcentaje: l.descuentoPorcentaje || undefined, empaque: l.empaque || undefined })),
     };
     this.http.post<Cotizacion>('/api/v1/ventas/cotizaciones', req).subscribe({
       next: (c) => {

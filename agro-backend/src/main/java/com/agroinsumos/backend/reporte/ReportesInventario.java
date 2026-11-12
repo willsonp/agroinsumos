@@ -140,9 +140,9 @@ class ReportesInventario extends CatalogoBase {
                                 Columna.monedaSinTotal("costo_promedio", "Costo prom."), Columna.monedaSinTotal("ultimo_costo", "Último costo"),
                                 Columna.fecha("ultima", "Última compra")),
                         """
-                        select p.nombre suplidor, a.nombre articulo, count(distinct c.id) compras, sum(cl.cantidad) cantidad, sum(cl.importe) importe,
-                               round(sum(cl.importe) / nullif(sum(cl.cantidad), 0), 2) costo_promedio,
-                               round((array_agg(cl.costo_unitario order by c.fecha desc, c.id desc))[1], 2) ultimo_costo, max(c.fecha) ultima
+                        select p.nombre suplidor, a.nombre articulo, count(distinct c.id) compras, sum(cl.cantidad * cl.factor) cantidad, sum(cl.importe) importe,
+                               round(sum(cl.importe) / nullif(sum(cl.cantidad * cl.factor), 0), 2) costo_promedio,
+                               round((array_agg(cl.costo_unitario / cl.factor order by c.fecha desc, c.id desc))[1], 2) ultimo_costo, max(c.fecha) ultima
                           from compra_linea cl join compra c on c.id = cl.compra_id join proveedor p on p.id = c.proveedor_id
                           join articulo a on a.id = cl.articulo_id
                          where c.compania_id = :cia and c.estado <> 'ANULADA' and c.fecha between :desde and :hasta

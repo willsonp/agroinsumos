@@ -13,13 +13,14 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { CuentasBancarias } from '../../shared/cuentas-bancarias';
 import { MONEDAS, Monedas } from '../../shared/monedas';
 import type { Pagina, S } from '../../api/tipos';
+import { ESCANEADOS_EMPAQUE, TASAS } from '../../shared/calculo';
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { params, redondear } from '../../shared/http';
-import { TASAS } from '../../shared/calculo';
 import { Notificacion } from '../../core/notificacion.service';
 
-interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; lote?: string; vence?: string; }
+interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; lote?: string; vence?: string; empaque?: boolean; }
 
 const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y servicios'], ['03', 'Arrendamientos'], ['04', 'Activos fijos'],
   ['05', 'Representación'], ['06', 'Otras deducciones admitidas'], ['07', 'Gastos financieros'], ['08', 'Gastos extraordinarios'],
@@ -27,7 +28,7 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
 
 @Component({
   selector: 'app-compras',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  imports: [PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatTableModule, MatPaginatorModule, ArticuloBuscador],
   templateUrl: './compras.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
@@ -83,7 +84,9 @@ export class Compras {
   }
 
   protected agregar(a: S['ArticuloResponse']): void {
-    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, costo: a.costo ?? 0, descuento: 0, tasa: TASAS[a.indicadorItbis ?? 4] }]);
+    const empaque = ESCANEADOS_EMPAQUE.has(a);
+    const costo = (a.costo ?? 0) * (empaque ? (a.factorEmpaque ?? 1) : 1);
+    this.lineas.set([...this.lineas(), { articulo: a, cantidad: 1, costo: Math.round(costo * 100) / 100, descuento: 0, tasa: TASAS[a.indicadorItbis ?? 4], empaque }]);
   }
 
   protected fijar(i: number, campo: 'cantidad' | 'costo' | 'descuento' | 'tasa', v: number): void {
@@ -91,6 +94,15 @@ export class Compras {
   }
 
   protected quitar(i: number): void { this.lineas.set(this.lineas().filter((_, j) => j !== i)); }
+
+  /** Libra ↔ Saco: el costo se convierte con el factor (un saco cuesta 100 veces la libra). */
+  protected cambiarUnidad(i: number, empaque: boolean): void {
+    this.lineas.set(this.lineas().map((l, j) => {
+      if (j !== i || !!l.empaque === empaque) return l;
+      const f = l.articulo.factorEmpaque ?? 1;
+      return { ...l, empaque, costo: Math.round((empaque ? l.costo * f : l.costo / f) * 10000) / 10000 };
+    }));
+  }
 
   /** Solo artículos que controlan vencimiento: número de lote (opcional) y fecha (obligatoria). */
   protected fijarLote(i: number, campo: 'lote' | 'vence', v: string): void {
@@ -111,7 +123,7 @@ export class Compras {
       lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, costoUnitario: l.costo,
         descuento: l.descuento || undefined, tasaItbis: l.tasa,
         lote: l.articulo.manejaVencimiento ? l.lote?.trim() || undefined : undefined,
-        fechaVencimiento: l.articulo.manejaVencimiento ? l.vence : undefined })),
+        fechaVencimiento: l.articulo.manejaVencimiento ? l.vence : undefined, empaque: l.empaque || undefined })),
     };
     this.http.post<S['CompraResponse']>('/api/v1/compras', req).subscribe({
       next: (c) => {

@@ -15,14 +15,15 @@
       </div>
       <app-articulo-buscador (elegido)="agregar($event)" />
       <div class="tabla-contenedor"><table class="tabla">
-        <tr><th>Artículo</th><th class="num">Cantidad</th><th class="num">Precio especial (sin ITBIS)</th><th class="num">Desc. %</th><th></th></tr>
+        <tr><th>Artículo</th><th class="num">Cantidad</th><th>Unidad</th><th class="num">Precio especial (sin ITBIS)</th><th class="num">Desc. %</th><th></th></tr>
         @for (l of lineas(); track $index; let i = $index) {
           <tr><td>{{ l.articulo.nombre }}</td>
             <td class="num"><input class="celda" type="number" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, 'cantidad', +$event)" /></td>
+                <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="cambiarUnidad(i, $event)" /></td>
             <td class="num"><input class="celda" type="number" placeholder="de lista" [ngModel]="l.precioManual" (ngModelChange)="fijar(i, 'precioManual', $event === '' ? null : +$event)" /></td>
             <td class="num"><input class="celda" type="number" [ngModel]="l.descuentoPorcentaje" (ngModelChange)="fijar(i, 'descuentoPorcentaje', +$event)" /></td>
             <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
-        } @empty { <tr><td colspan="5" class="muted">Agregue artículos</td></tr> }
+        } @empty { <tr><td colspan="6" class="muted">Agregue artículos</td></tr> }
       </table></div>
       <mat-form-field style="width:100%;margin-top:12px"><mat-label>Comentario</mat-label><input matInput [(ngModel)]="comentario" maxlength="600" /></mat-form-field>
       @if (!auth.esSupervisor()) { <p class="muted">Cambiar precios o exceder el descuento máximo requiere un supervisor.</p> }

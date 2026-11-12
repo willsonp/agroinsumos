@@ -1,3 +1,4 @@
+import { ESCANEADOS_EMPAQUE } from './calculo';
 import { Component, ElementRef, inject, output, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -60,7 +61,11 @@ export class ArticuloBuscador {
     if (typeof v !== 'string' || !/^\w{3,}$/.test(v.trim()) || this.opciones().length) return;
     ev.preventDefault();
     this.http.get<Articulo>(`/api/v1/inventario/articulos/codigo/${encodeURIComponent(v.trim())}`).subscribe({
-      next: (a) => this.elegir(a),
+      next: (a) => {
+        // Código de la caja/saco: la línea entra como presentación
+        if (a.codigoBarraEmpaque && a.codigoBarraEmpaque === v.trim()) ESCANEADOS_EMPAQUE.add(a);
+        this.elegir(a);
+      },
       error: () => this.notif.error(null, `No existe un artículo con el código ${v}`),
     });
   }

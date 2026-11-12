@@ -57,7 +57,7 @@ public class ApartadoService {
                                   @NotNull Boolean devolverDinero) {}
 
     public record LineaResponse(int linea, Long articuloId, String descripcion, BigDecimal cantidad, BigDecimal precioUnitario,
-                                BigDecimal descuentoPorcentaje) {}
+                                BigDecimal descuentoPorcentaje, BigDecimal factor) {}
 
     public record AbonoResponse(Long id, LocalDate fecha, ApartadoAbono.Tipo tipo, FormaPago forma, BigDecimal monto, String referencia) {}
 
@@ -100,6 +100,7 @@ public class ApartadoService {
             l.setLinea(i + 1);
             l.setArticuloId(lp.articulo().getId());
             l.setCantidad(lp.cantidad());
+            l.setFactor(lp.factor());
             l.setPrecioUnitario(lp.precioUnitario());
             var pct = r.lineas().get(i).descuentoPorcentaje();
             l.setDescuentoPorcentaje(pct == null ? BigDecimal.ZERO : pct);
@@ -160,7 +161,7 @@ public class ApartadoService {
             throw new BusinessException("APARTADO_PENDIENTE", "Faltan RD$" + a.pendiente() + " por abonar");
         }
         var lineas = a.getLineas().stream().map(l -> new LineaVentaRequest(l.getArticuloId(), l.getCantidad(), l.getPrecioUnitario(),
-                l.getDescuentoPorcentaje())).toList();
+                l.getDescuentoPorcentaje(), l.getFactor().compareTo(BigDecimal.ONE) != 0)).toList();
         var cliente = clientes.cargar(cia, a.getClienteId());
         var req = new FacturaDtos.CrearFacturaRequest(a.getClienteId(), Factura.Condicion.CONTADO, null, null,
                 r == null ? null : r.tipoEcf(), null, null, "Apartado " + a.getNumero() + ": " + a.getConcepto(), null, lineas);
@@ -222,7 +223,7 @@ public class ApartadoService {
                 a.getConcepto(), a.getTotal(), a.getAbonado(), a.pendiente(), a.getFechaLimite(), a.getEstado(), a.getFacturaId(),
                 a.getMotivoCancelacion(),
                 a.getLineas().stream().map(l -> new LineaResponse(l.getLinea(), l.getArticuloId(), articulos.cargar(cia, l.getArticuloId()).getNombre(),
-                        l.getCantidad(), l.getPrecioUnitario(), l.getDescuentoPorcentaje())).toList(),
+                        l.getCantidad(), l.getPrecioUnitario(), l.getDescuentoPorcentaje(), l.getFactor())).toList(),
                 a.getId() == null ? List.of() : abonos.findByApartadoIdOrderById(a.getId()).stream().map(b -> new AbonoResponse(b.getId(), b.getFecha(),
                         b.getTipo(), b.getFormaPago(), b.getMonto(), b.getReferencia())).toList());
     }
