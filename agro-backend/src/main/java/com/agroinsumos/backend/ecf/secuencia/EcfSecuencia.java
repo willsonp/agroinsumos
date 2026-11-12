@@ -22,6 +22,10 @@ public class EcfSecuencia extends Auditable {
 
     @Column(name = "tipo_ecf", nullable = false)
     private short tipoEcf;
+    /** 'E' = e-NCF (E310000000001), 'B' = NCF tradicional (B0100000001). */
+    @Column(nullable = false, length = 1)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.CHAR)
+    private String serie = "E";
 
     @Column(name = "secuencia_desde", nullable = false)
     private long secuenciaDesde;

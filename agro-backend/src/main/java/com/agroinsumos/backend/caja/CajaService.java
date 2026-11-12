@@ -7,7 +7,7 @@ import com.agroinsumos.backend.common.exception.NotFoundException;
 import com.agroinsumos.backend.common.pago.FormaPago;
 import com.agroinsumos.backend.ecf.TipoEcf;
 import com.agroinsumos.backend.ecf.dto.EcfDtos;
-import com.agroinsumos.backend.ecf.emision.EcfEmisionService;
+import com.agroinsumos.backend.ecf.emision.ComprobanteFiscalService;
 import com.agroinsumos.backend.security.AuthUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -77,7 +77,7 @@ public class CajaService {
     private final CajaConteoRepository conteos;
     private final CajaEgresoRepository egresos;
     private final NumeradorService numerador;
-    private final EcfEmisionService ecf;
+    private final ComprobanteFiscalService ecf;   // e-CF, NCF serie B o sin comprobante, según la empresa
     private final Clock clock;
 
     @Transactional
@@ -166,8 +166,8 @@ public class CajaService {
             var emitido = ecf.emitir(user.companiaId(), new EcfDtos.EmitirEcfRequest(TipoEcf.GASTOS_MENORES.codigo(),
                     e.getFecha(), null, 1, null, null,
                     List.of(new EcfDtos.Item(concepto, 2, BigDecimal.ONE, e.getMonto(), null, 4)), null, "EGRESO_CAJA", e.getId()));
-            e.setNcf(emitido.encf());
-            e.setEcfDocumentoId(emitido.id());
+            e.setNcf(emitido.numero());
+            e.setEcfDocumentoId(emitido.ecfDocumentoId());
         }
         registrar(s, CajaMovimiento.Tipo.EGRESO, FormaPago.EFECTIVO, r.monto(), "EGRESO_CAJA", e.getId(),
                 e.getBeneficiario() + ": " + e.getConcepto());

@@ -7,6 +7,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import type { S } from '../../api/tipos';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 type Linea = S['FacturaLineaResponse'];
 
@@ -15,7 +16,7 @@ type Linea = S['FacturaLineaResponse'];
   selector: 'app-devolucion-dialog',
   imports: [MatDialogModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, FormsModule, CurrencyPipe, DecimalPipe],
   template: `
-    <h2 mat-dialog-title>Devolución · Nota de crédito (e-CF 34)</h2>
+    <h2 mat-dialog-title>Devolución · Nota de crédito{{ comp.entreParentesis(34) }}</h2>
     <mat-dialog-content>
       <table class="tabla">
         <tr><th>Artículo</th><th class="num">Pendiente</th><th class="num">Devolver</th><th>Reingresa</th></tr>
@@ -41,6 +42,7 @@ type Linea = S['FacturaLineaResponse'];
     .celda { width: 80px; padding: 6px; text-align: right; }`,
 })
 export class DevolucionDialog {
+  protected readonly comp = inject(ComprobanteService);
   private readonly factura = inject<S['FacturaResponse']>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<DevolucionDialog>);
   protected readonly lineas: Linea[] = (this.factura.lineas ?? []).filter((l) => this.pendiente(l) > 0);

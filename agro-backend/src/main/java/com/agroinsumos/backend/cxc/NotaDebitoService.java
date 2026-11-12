@@ -5,7 +5,7 @@ import com.agroinsumos.backend.common.exception.BusinessException;
 import com.agroinsumos.backend.common.exception.NotFoundException;
 import com.agroinsumos.backend.ecf.TipoEcf;
 import com.agroinsumos.backend.ecf.dto.EcfDtos;
-import com.agroinsumos.backend.ecf.emision.EcfEmisionService;
+import com.agroinsumos.backend.ecf.emision.ComprobanteFiscalService;
 import com.agroinsumos.backend.security.AuthUser;
 import com.agroinsumos.backend.venta.factura.Factura;
 import com.agroinsumos.backend.venta.factura.FacturaService;
@@ -42,7 +42,7 @@ public class NotaDebitoService {
 
     private final NotaDebitoRepository repo;
     private final FacturaService facturas;
-    private final EcfEmisionService ecf;
+    private final ComprobanteFiscalService ecf;   // e-CF, NCF serie B o sin comprobante, según la empresa
     private final NumeradorService numerador;
     private final Clock clock;
 
@@ -77,8 +77,8 @@ public class NotaDebitoService {
         n.setTotalItbis(emitido.totalItbis());
         n.setTotal(emitido.montoTotal());
         n.setBalance(emitido.montoTotal());
-        n.setEncf(emitido.encf());
-        n.setEcfDocumentoId(emitido.id());
+        n.setEncf(emitido.numero());
+        n.setEcfDocumentoId(emitido.ecfDocumentoId());
         return Response.de(n);
     }
 

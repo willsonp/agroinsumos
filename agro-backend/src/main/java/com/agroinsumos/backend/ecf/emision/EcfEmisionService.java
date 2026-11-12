@@ -107,6 +107,15 @@ public class EcfEmisionService {
         return tipo;
     }
 
+    /** Reglas fiscales del comprobante (RNC del comprador, referencia de notas, tipo de ingresos) y sus totales,
+     *  sin firmar ni consumir secuencia: las usa también el NCF tradicional serie B. */
+    public EcfCalculadora.Totales validar(EmitirEcfRequest req) {
+        TipoEcf tipo = tipoValido(req.tipoEcf());
+        var totales = calcular(req);
+        validarReglas(tipo, req, totales);
+        return totales;
+    }
+
     private static EcfCalculadora.Totales calcular(EmitirEcfRequest req) {
         try {
             return EcfCalculadora.calcular(req.items());

@@ -43,6 +43,9 @@ public class Compania extends Auditable {
 
     @Column(name = "acepta_contabilidad", nullable = false)
     private boolean aceptaContabilidad;
+    /** ECF = facturación electrónica; NCF = comprobantes serie B; NINGUNO = sin comprobante fiscal. */
+    @Column(name = "modo_comprobante", nullable = false, length = 7)
+    private String modoComprobante = "ECF";
 
     @Column(nullable = false, length = 1)
     private String estado = "A";

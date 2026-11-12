@@ -83,7 +83,7 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/catalogos/generales').then((m) => m.Generales) },
       { path: 'fiscal/ecf', title: 'Comprobantes electrónicos', ...p('ECF_DOCUMENTOS'),
         loadComponent: () => import('./pages/fiscal/ecf-documentos').then((m) => m.EcfDocumentos) },
-      { path: 'fiscal/secuencias', title: 'Secuencias e-NCF', ...p('ECF_SECUENCIAS'),
+      { path: 'fiscal/secuencias', title: 'Secuencias de comprobantes', ...p('ECF_SECUENCIAS'),
         loadComponent: () => import('./pages/fiscal/secuencias').then((m) => m.Secuencias) },
       { path: 'fiscal/formatos', title: 'Formatos 606 / 607 / 608', ...p('FISCAL_FORMATOS'),
         loadComponent: () => import('./pages/fiscal/formatos').then((m) => m.Formatos) },

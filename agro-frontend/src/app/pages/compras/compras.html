@@ -22,7 +22,7 @@
         @if (f.condicion === 'CREDITO') { <mat-form-field><mat-label>Días de crédito</mat-label><input matInput type="number" [(ngModel)]="f.diasCredito" /></mat-form-field> }
         <mat-form-field><mat-label>Tipo de gasto (606)</mat-label><mat-select [(ngModel)]="f.tipoBienServicio">
           @for (t of tipos606; track t[0]) { <mat-option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</mat-option> }</mat-select></mat-form-field>
-        <mat-checkbox class="ancho-completo" [(ngModel)]="f.emitir41">Suplidor informal sin comprobante: emitir e-CF 41 (Comprobante de Compras)</mat-checkbox>
+        @if (comp.conComprobante()) { <mat-checkbox class="ancho-completo" [(ngModel)]="f.emitir41">Suplidor informal sin comprobante: emitir {{ comp.tipo(41) }} (Comprobante de Compras)</mat-checkbox> }
         @if (f.moneda !== 'DOP') { <p class="ancho-completo muted">Costos, flete y retenciones en {{ f.moneda }}; el inventario y los reportes fiscales quedan en pesos a la tasa indicada.</p> }
         @if (!f.emitir41) { <mat-form-field><mat-label>NCF del suplidor</mat-label><input matInput [(ngModel)]="f.ncf" placeholder="B0100000001 o E310000000001" /></mat-form-field> }
         <mat-form-field><mat-label>ITBIS retenido</mat-label><input matInput type="number" min="0" [(ngModel)]="f.itbisRetenido" /></mat-form-field>

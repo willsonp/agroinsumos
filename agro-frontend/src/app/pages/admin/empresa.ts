@@ -4,13 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { AuthService } from '../../core/auth.service';
 import type { S } from '../../api/tipos';
 import { Notificacion } from '../../core/notificacion.service';
 
 /** Datos de la empresa para etiquetas, impresos y reportes. */
 @Component({
   selector: 'app-empresa',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Datos de la empresa</h1></div>
@@ -26,6 +28,20 @@ import { Notificacion } from '../../core/notificacion.service';
             <mat-form-field><mat-label>Correo</mat-label><input matInput type="email" [(ngModel)]="d.correo" maxlength="100" /></mat-form-field>
             <mat-form-field><mat-label>Sitio web</mat-label><input matInput [(ngModel)]="d.sitioWeb" maxlength="100" /></mat-form-field>
           </div>
+          <h3>Comprobante fiscal de las ventas</h3>
+          <div class="grid-form">
+            <mat-form-field><mat-label>Modo de comprobante</mat-label>
+              <mat-select [(ngModel)]="d.modoComprobante">
+                <mat-option value="ECF">Facturación electrónica (e-CF)</mat-option>
+                <mat-option value="NCF">NCF tradicional (serie B)</mat-option>
+                <mat-option value="NINGUNO">Sin comprobante fiscal</mat-option>
+              </mat-select></mat-form-field>
+            <p class="muted">@switch (d.modoComprobante) {
+              @case ('NCF') { Las facturas toman el siguiente NCF del rango autorizado (B01 crédito fiscal, B02 consumo, B04 notas de crédito...). Registre los rangos en Fiscal → Secuencias con serie B. Se reportan en el 607. }
+              @case ('NINGUNO') { Para empresas no acogidas a la DGII: las facturas solo llevan su número interno, sin NCF, y no entran en el 607. }
+              @default { Las facturas se emiten como e-CF firmados y se envían a la DGII (requiere certificado y secuencias E). }
+            }</p>
+          </div>
           <div class="fila"><span class="espaciador"></span><button mat-flat-button [disabled]="!d.nombre" (click)="guardar(d)">Guardar</button></div>
         </div>
       }
@@ -34,14 +50,15 @@ import { Notificacion } from '../../core/notificacion.service';
 export class Empresa {
   private readonly http = inject(HttpClient);
   private readonly notif = inject(Notificacion);
+  private readonly auth = inject(AuthService);
   protected readonly datos = signal<S['CompaniaResponse'] | null>(null);
 
   constructor() { this.http.get<S['CompaniaResponse']>('/api/v1/admin/empresa').subscribe((d) => this.datos.set({ ...d })); }
 
   protected guardar(d: S['CompaniaResponse']): void {
     const req: S['CompaniaRequest'] = { nombre: d.nombre!, nombreComercial: d.nombreComercial || undefined, direccion: d.direccion || undefined,
-      telefono: d.telefono || undefined, correo: d.correo || undefined, sitioWeb: d.sitioWeb || undefined };
+      telefono: d.telefono || undefined, correo: d.correo || undefined, sitioWeb: d.sitioWeb || undefined, modoComprobante: d.modoComprobante };
     this.http.put<S['CompaniaResponse']>('/api/v1/admin/empresa', req).subscribe({
-      next: (r) => { this.datos.set({ ...r }); this.notif.ok('Datos de la empresa guardados'); }, error: (e) => this.notif.error(e) });
+      next: (r) => { this.datos.set({ ...r }); this.notif.ok('Datos de la empresa guardados'); this.auth.cargarPerfil().subscribe(); }, error: (e) => this.notif.error(e) });
   }
 }

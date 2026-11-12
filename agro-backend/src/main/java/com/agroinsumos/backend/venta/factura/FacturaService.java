@@ -10,7 +10,7 @@ import com.agroinsumos.backend.common.crud.NumeradorService;
 import com.agroinsumos.backend.common.exception.BusinessException;
 import com.agroinsumos.backend.common.exception.NotFoundException;
 import com.agroinsumos.backend.ecf.dto.EcfDtos;
-import com.agroinsumos.backend.ecf.emision.EcfEmisionService;
+import com.agroinsumos.backend.ecf.emision.ComprobanteFiscalService;
 import com.agroinsumos.backend.inventario.kardex.InventarioService;
 import com.agroinsumos.backend.inventario.kardex.TipoMovimiento;
 import com.agroinsumos.backend.security.AuthUser;
@@ -53,7 +53,7 @@ public class FacturaService {
     private final UnidadService unidades;
     private final PreciosVentaService precios;
     private final InventarioService inventario;
-    private final EcfEmisionService ecf;
+    private final ComprobanteFiscalService ecf;   // e-CF, NCF serie B o sin comprobante, según la empresa
     private final NumeradorService numerador;
     private final Clock clock;
 
@@ -156,8 +156,8 @@ public class FacturaService {
                 f.getCondicion() == Factura.Condicion.CREDITO ? 2 : 1, f.getFechaVencimiento(), comprador,
                 lineas.stream().map(LineaPreparada::aItemEcf).toList(), null, DOC_TIPO, f.getId()));
         f.setTipoEcf((short) tipoEcf);
-        f.setEncf(emitido.encf());
-        f.setEcfDocumentoId(emitido.id());
+        f.setEncf(emitido.numero());
+        f.setEcfDocumentoId(emitido.ecfDocumentoId());
         return f;
     }
 

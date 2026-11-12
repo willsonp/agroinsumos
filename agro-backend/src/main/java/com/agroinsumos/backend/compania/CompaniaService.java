@@ -4,6 +4,7 @@ import com.agroinsumos.backend.common.exception.NotFoundException;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +17,15 @@ public class CompaniaService {
 
     public record Request(@NotBlank @Size(max = 150) String nombre, @Size(max = 150) String nombreComercial,
                           @Size(max = 200) String direccion, @Size(max = 30) String telefono,
-                          @Email @Size(max = 100) String correo, @Size(max = 100) String sitioWeb) {}
+                          @Email @Size(max = 100) String correo, @Size(max = 100) String sitioWeb,
+                          /** ECF (facturación electrónica), NCF (serie B) o NINGUNO (sin comprobante fiscal). Vacío = no cambia. */
+                          @Pattern(regexp = "ECF|NCF|NINGUNO") String modoComprobante) {}
 
     public record Response(Long id, String nombre, String nombreComercial, String rnc, String direccion, String telefono,
-                           String correo, String sitioWeb) {
+                           String correo, String sitioWeb, String modoComprobante) {
         static Response de(Compania c) {
             return new Response(c.getId(), c.getNombre(), c.getNombreComercial(), c.getRnc(), c.getDireccion(), c.getTelefono(),
-                    c.getCorreo(), c.getSitioWeb());
+                    c.getCorreo(), c.getSitioWeb(), c.getModoComprobante());
         }
     }
 
@@ -41,6 +44,7 @@ public class CompaniaService {
         c.setTelefono(vacio(r.telefono()));
         c.setCorreo(vacio(r.correo()));
         c.setSitioWeb(vacio(r.sitioWeb()));
+        if (r.modoComprobante() != null) c.setModoComprobante(r.modoComprobante());
         return Response.de(c);
     }
 

@@ -91,7 +91,7 @@ type Pendiente = S['EstadoCuentaDocumentoPendiente'];
           <mat-tab label="Financiar una factura">
             <div class="tarjeta">
               <p class="muted">Registre la factura a crédito y, si hay inicial, cóbrela primero en Cobros. El saldo pendiente se reparte en cuotas;
-                el interés se emite como nota de débito (e-CF 33, exenta de ITBIS).</p>
+                el interés se emite como nota de débito (exenta de ITBIS).</p>
               <div class="fila"><div style="flex:1 1 320px"><app-cliente-selector [cliente]="cliente()" (clienteChange)="elegirCliente($event)" /></div></div>
               @if (cliente()) {
                 <mat-form-field style="width:100%"><mat-label>Factura a financiar</mat-label><mat-select [(ngModel)]="facturaId">
@@ -194,7 +194,7 @@ export class Financiamientos {
 
   protected mora(p: Plan): void {
     this.dialog.open(ConfirmarDialog, { data: { titulo: `Cobrar mora del plan ${p.numero}`, accion: 'Emitir nota de débito',
-      mensaje: `Se emitirá una nota de débito (e-CF 33) por RD$${p.moraPorCobrar} de mora de las cuotas vencidas.` } })
+      mensaje: `Se emitirá una nota de débito por RD$${p.moraPorCobrar} de mora de las cuotas vencidas.` } })
       .afterClosed().subscribe((ok) => ok && this.http.post<Plan>(`/api/v1/cxc/financiamientos/${p.id}/mora`, {}).subscribe({
         next: (r) => { this.notif.ok('Nota de débito por mora emitida'); this.cargar(); this.visto.set(r); }, error: (e) => this.notif.error(e) }));
   }

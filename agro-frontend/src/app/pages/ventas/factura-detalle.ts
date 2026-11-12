@@ -15,6 +15,7 @@ import { descargar } from '../../shared/http';
 import { DevolucionDialog } from './devolucion-dialog';
 import { NotaDebitoDialog } from './nota-debito-dialog';
 import { TicketDialog } from './ticket-dialog';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 @Component({
   selector: 'app-factura-detalle',
@@ -27,6 +28,7 @@ import { TicketDialog } from './ticket-dialog';
     section { margin-top: 16px; }`,
 })
 export class FacturaDetalle {
+  protected readonly comp = inject(ComprobanteService);
   readonly id = input.required<string>();
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
@@ -69,11 +71,11 @@ export class FacturaDetalle {
   protected anular(): void {
     this.dialog.open(ConfirmarDialog, { data: { titulo: 'Anular factura', peligro: true, accion: 'Anular',
       pedirMotivo: 'Motivo de la anulación',
-      mensaje: 'Se emitirá una nota de crédito electrónica (e-CF 34) por todo lo pendiente y la mercancía reingresará al inventario.' } })
+      mensaje: 'Se emitirá una nota de crédito' + this.comp.entreParentesis(34) + ' por todo lo pendiente y la mercancía reingresará al inventario.' } })
       .afterClosed().subscribe((motivo?: string) => {
         if (!motivo) return;
         this.http.post<S['DevolucionResponse']>(`/api/v1/ventas/facturas/${this.id()}/anular`, { motivo }).subscribe({
-          next: (d) => { this.notif.ok(`Factura anulada · Nota de crédito ${d.encf}`); this.cargar(this.id()); },
+          next: (d) => { this.notif.ok(`Factura anulada · Nota de crédito${d.encf ? ' ' + d.encf : ' ' + d.numero}`); this.cargar(this.id()); },
           error: (e) => this.notif.error(e),
         });
       });
@@ -83,7 +85,7 @@ export class FacturaDetalle {
     this.dialog.open(NotaDebitoDialog, { data: this.factura() }).afterClosed().subscribe((req?: S['NotaDebitoRequest']) => {
       if (!req) return;
       this.http.post<S['NotaDebitoResponse']>('/api/v1/cxc/notas-debito', req).subscribe({
-        next: (n) => this.notif.ok(`Nota de débito ${n.encf} por ${n.total} (cobrable en Cobros)`),
+        next: (n) => this.notif.ok(`Nota de débito ${n.encf ?? n.numero} por ${n.total} (cobrable en Cobros)`),
         error: (e) => this.notif.error(e),
       });
     });
@@ -94,7 +96,7 @@ export class FacturaDetalle {
       .subscribe((req?: S['DevolucionRequest']) => {
         if (!req) return;
         this.http.post<S['DevolucionResponse']>('/api/v1/ventas/devoluciones', req).subscribe({
-          next: (d) => { this.notif.ok(`Nota de crédito ${d.encf} por ${d.total}`); this.cargar(this.id()); },
+          next: (d) => { this.notif.ok(`Nota de crédito ${d.encf ?? d.numero} por ${d.total}`); this.cargar(this.id()); },
           error: (e) => this.notif.error(e),
         });
       });

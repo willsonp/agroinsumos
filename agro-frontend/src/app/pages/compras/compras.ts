@@ -19,6 +19,7 @@ import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { params, redondear } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; lote?: string; vence?: string; empaque?: boolean; }
 
@@ -40,6 +41,7 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
     .lote.falta td { border-left: 3px solid var(--mat-sys-error); }`,
 })
 export class Compras {
+  protected readonly comp = inject(ComprobanteService);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly notif = inject(Notificacion);
@@ -127,7 +129,7 @@ export class Compras {
     };
     this.http.post<S['CompraResponse']>('/api/v1/compras', req).subscribe({
       next: (c) => {
-        this.notif.ok(`Compra ${c.numero} registrada${c.encfCompra ? ' · e-CF 41 ' + c.encfCompra : ''}`);
+        this.notif.ok(`Compra ${c.numero} registrada${this.comp.sufijo(c.encfCompra)}`);
         this.nueva.set(false); this.lineas.set([]); this.flete.set(0); this.f = this.vacia(); this.cargar();
       },
       error: (e) => this.notif.error(e),

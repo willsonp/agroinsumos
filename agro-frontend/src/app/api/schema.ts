@@ -3236,6 +3236,7 @@ export interface components {
             /** Format: email */
             correo?: string;
             sitioWeb?: string;
+            modoComprobante?: string;
         };
         CompaniaResponse: {
             /** Format: int64 */
@@ -3247,6 +3248,7 @@ export interface components {
             telefono?: string;
             correo?: string;
             sitioWeb?: string;
+            modoComprobante?: string;
         };
         FacturaCrearFacturaRequest: {
             /** Format: int64 */
@@ -3694,6 +3696,7 @@ export interface components {
             secuenciaHasta: number;
             /** Format: date */
             fechaVencimiento: string;
+            serie?: string;
         };
         EcfSecuenciaResponse: {
             /** Format: int64 */
@@ -3711,6 +3714,8 @@ export interface components {
             /** Format: date */
             fechaVencimiento?: string;
             activa?: boolean;
+            serie?: string;
+            prefijo?: string;
         };
         EcfComprador: {
             rnc?: string;
@@ -5566,6 +5571,7 @@ export interface components {
             sitioWeb?: string;
             itbis?: number;
             aceptaContabilidad?: boolean;
+            modoComprobante?: string;
         };
         AuthPerfilResponse: {
             /** Format: int64 */

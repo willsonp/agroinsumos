@@ -7,7 +7,7 @@
     </div>
     <hr />
     <div class="centro"><strong>{{ nombreEcf }}</strong></div>
-    <div>e-NCF: <strong>{{ datos.factura.encf }}</strong></div>
+    @if (numeroFiscal) { <div><strong>{{ numeroFiscal }}</strong></div> }
     <div>Factura No. {{ datos.factura.numero }} · {{ datos.factura.fecha | date: 'dd/MM/yyyy' }}</div>
     <div>Cliente: {{ datos.factura.clienteNombre }}</div>
     @if (datos.factura.clienteRnc) { <div>RNC/Cédula: {{ datos.factura.clienteRnc }}</div> }

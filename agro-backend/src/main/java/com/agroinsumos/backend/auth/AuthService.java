@@ -71,7 +71,7 @@ public class AuthService {
         return new PerfilResponse(u.getId(), u.getUsername(), u.nombreCompleto(), u.getCorreo(), u.getNivel(),
                 u.getTurnoId(),
                 new CompaniaInfo(c.getId(), c.getNombre(), c.getRnc(), c.getDireccion(), c.getCorreo(),
-                        c.getSitioWeb(), c.getItbis(), c.isAceptaContabilidad()),
+                        c.getSitioWeb(), c.getItbis(), c.isAceptaContabilidad(), c.getModoComprobante()),
                 permisos);
     }
 

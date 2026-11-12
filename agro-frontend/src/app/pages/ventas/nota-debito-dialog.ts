@@ -7,13 +7,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import type { S } from '../../api/tipos';
+import { ComprobanteService } from '../../core/comprobante.service';
 
-/** Cargo adicional al cliente (mora, intereses, diferencia de precio): emite e-CF 33. */
+/** Cargo adicional al cliente (mora, intereses, diferencia de precio): emite nota de débito (e-CF 33 / B03 según el modo). */
 @Component({
   selector: 'app-nota-debito-dialog',
   imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, CurrencyPipe],
   template: `
-    <h2 mat-dialog-title>Nota de débito · e-CF 33</h2>
+    <h2 mat-dialog-title>Nota de débito{{ comp.entreParentesis(33) }}</h2>
     <mat-dialog-content [formGroup]="form" class="grid-form" style="min-width:min(480px,90vw)">
       <p class="ancho-completo">Factura {{ f.numero }} ({{ f.encf ?? f.ncfLegacy }}) · {{ f.clienteNombre }} · total {{ f.total | currency }}</p>
       <mat-form-field class="ancho-completo"><mat-label>Concepto</mat-label><input matInput formControlName="concepto" maxlength="90" placeholder="Mora por atraso, intereses..." /></mat-form-field>
@@ -25,6 +26,7 @@ import type { S } from '../../api/tipos';
       <button mat-flat-button [disabled]="form.invalid" (click)="emitir()">Emitir nota de débito</button></mat-dialog-actions>`,
 })
 export class NotaDebitoDialog {
+  protected readonly comp = inject(ComprobanteService);
   protected readonly f = inject<S['FacturaResponse']>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<NotaDebitoDialog>);
   protected readonly form = inject(NonNullableFormBuilder).group({

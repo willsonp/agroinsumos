@@ -39,7 +39,7 @@ import { Notificacion } from '../../core/notificacion.service';
             <ng-container matColumnDef="numero"><th mat-header-cell *matHeaderCellDef>No.</th><td mat-cell *matCellDef="let f">{{ f.numero }}</td></ng-container>
             <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let f">{{ f.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
             <ng-container matColumnDef="cliente"><th mat-header-cell *matHeaderCellDef>Cliente</th><td mat-cell *matCellDef="let f">{{ f.clienteNombre }}</td></ng-container>
-            <ng-container matColumnDef="encf"><th mat-header-cell *matHeaderCellDef>e-NCF</th><td mat-cell *matCellDef="let f">{{ f.encf }}</td></ng-container>
+            <ng-container matColumnDef="encf"><th mat-header-cell *matHeaderCellDef>NCF</th><td mat-cell *matCellDef="let f">{{ f.encf }}</td></ng-container>
             <ng-container matColumnDef="condicion"><th mat-header-cell *matHeaderCellDef>Condición</th><td mat-cell *matCellDef="let f">{{ f.condicion }}</td></ng-container>
             <ng-container matColumnDef="total"><th mat-header-cell *matHeaderCellDef class="num">Total</th><td mat-cell *matCellDef="let f" class="num">{{ f.total | currency }}</td></ng-container>
             <ng-container matColumnDef="balance"><th mat-header-cell *matHeaderCellDef class="num">Balance</th><td mat-cell *matCellDef="let f" class="num">{{ f.balance | currency }}</td></ng-container>

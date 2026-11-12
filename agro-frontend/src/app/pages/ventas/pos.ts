@@ -18,6 +18,7 @@ import { params } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { PagoDialog } from './pago-dialog';
 import { TicketDialog } from './ticket-dialog';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 type Cliente = S['ClienteResponse'];
 type Articulo = S['ArticuloResponse'];
@@ -34,6 +35,7 @@ type Articulo = S['ArticuloResponse'];
   styleUrl: './pos.scss',
 })
 export class Pos {
+  protected readonly comp = inject(ComprobanteService);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly notif = inject(Notificacion);
@@ -47,9 +49,11 @@ export class Pos {
   protected readonly lista = computed<TipoPrecio>(() => (this.cliente()?.tipoPrecio as TipoPrecio) ?? 'CONTADO');
   protected readonly exento = computed(() => !!this.cliente()?.exentoItbis);
   protected readonly totales = computed(() => calcular(this.lineas(), this.lista(), this.exento()));
-  protected readonly comprobante = computed(() => this.cliente()?.tipoEcfPreferido === 31
-    ? 'Crédito fiscal (e-CF 31)' : this.cliente()?.tipoEcfPreferido === 44 ? 'Régimen especial (e-CF 44)'
-    : this.cliente()?.tipoEcfPreferido === 45 ? 'Gubernamental (e-CF 45)' : 'Consumo (e-CF 32)');
+  protected readonly comprobante = computed(() => {
+    if (!this.comp.conComprobante()) return 'Sin comprobante fiscal';
+    const t = [31, 44, 45].includes(this.cliente()?.tipoEcfPreferido ?? 0) ? this.cliente()!.tipoEcfPreferido! : 32;
+    return ({ 31: 'Crédito fiscal', 44: 'Régimen especial', 45: 'Gubernamental' }[t] ?? 'Consumo') + this.comp.entreParentesis(t);
+  });
   protected readonly puedeCredito = computed(() => (this.cliente()?.diasCredito ?? 0) > 0);
 
   protected readonly precio = (l: LineaCarrito) => precioLista(l.articulo, this.lista(), l.empaque) * (1 + (this.exento() ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]) / 100);
@@ -133,7 +137,7 @@ export class Pos {
 
   private terminar(factura: S['FacturaResponse'], recibo?: S['ReciboResponse']): void {
     this.procesando.set(false);
-    this.notif.ok(`Factura ${factura.numero} emitida · e-NCF ${factura.encf}`);
+    this.notif.ok(`Factura ${factura.numero} emitida${this.comp.sufijo(factura.encf)}`);
     this.dialog.open(TicketDialog, { data: { factura, recibo } }).afterClosed().subscribe(() => this.nuevaVenta());
   }
 

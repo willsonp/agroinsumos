@@ -7,7 +7,7 @@ import com.agroinsumos.backend.common.exception.NotFoundException;
 import com.agroinsumos.backend.ecf.TipoEcf;
 import com.agroinsumos.backend.ecf.dto.EcfDtos;
 import com.agroinsumos.backend.ecf.emision.EcfCalculadora;
-import com.agroinsumos.backend.ecf.emision.EcfEmisionService;
+import com.agroinsumos.backend.ecf.emision.ComprobanteFiscalService;
 import com.agroinsumos.backend.inventario.articulo.ArticuloService;
 import com.agroinsumos.backend.inventario.kardex.InventarioService;
 import com.agroinsumos.backend.inventario.kardex.TipoMovimiento;
@@ -68,7 +68,7 @@ public class DevolucionService {
     private final ArticuloService articulos;
     private final ClienteService clientes;
     private final InventarioService inventario;
-    private final EcfEmisionService ecf;
+    private final ComprobanteFiscalService ecf;   // e-CF, NCF serie B o sin comprobante, según la empresa
     private final NumeradorService numerador;
     private final Clock clock;
 
@@ -164,8 +164,8 @@ public class DevolucionService {
                 credito ? 2 : 1, limitePago, comprador, items,
                 new EcfDtos.Referencia(f.comprobante(), f.getFecha(), (int) d.getCodigoModificacion(), d.getMotivo()),
                 DOC_TIPO, d.getId()));
-        d.setEncf(nc.encf());
-        d.setEcfDocumentoId(nc.id());
+        d.setEncf(nc.numero());
+        d.setEcfDocumentoId(nc.ecfDocumentoId());
         return Response.de(d);
     }
 

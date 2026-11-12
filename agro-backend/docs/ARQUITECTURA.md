@@ -482,6 +482,27 @@ Migración `V21__presentaciones.sql`. Un artículo se lleva en su **unidad base*
 - Reportes por artículo (utilidad, compras por suplidor) suman en unidades base.
 - Punto de venta: la cantidad admite decimales (p.ej. 15.5 lb); mismo artículo en distinta unidad va en líneas separadas.
 
+## 5.15 Modo de comprobante (e-CF, NCF serie B o sin comprobante)
+
+No todas las empresas están acogidas a la facturación electrónica de la DGII. `compania.modo_comprobante` (V22),
+en Administración → Empresa, decide qué comprobante lleva cada documento:
+
+| Modo | Facturas, notas, compras (41), gastos menores (43) | 607 / 608 |
+|---|---|---|
+| `ECF` (por defecto) | e-CF firmado y enviado a la DGII (secuencias serie **E**: E310000000001) | Sí |
+| `NCF` | Siguiente NCF tradicional del rango serie **B** (B0100000001); mismas reglas fiscales (RNC del comprador en B01, referencia en notas), sin firma ni envío | Sí |
+| `NINGUNO` | Sin NCF: el documento solo lleva su número interno | No |
+
+- `ComprobanteFiscalService.emitir` centraliza la decisión; facturas, devoluciones/anulaciones, notas de débito,
+  compras y caja lo llaman en lugar de `EcfEmisionService`. Devuelve `numero` (e-NCF o NCF, null sin comprobante),
+  `ecfDocumentoId` (solo en ECF: estado, XML y QR del timbre) y los totales.
+- `ecf_secuencia.serie` ('E' | 'B'); el índice de rango activo es por (compañía, serie, tipo). El NCF B usa el
+  código del tipo − 30 (31→B01, 32→B02, 33→B03, 34→B04, 41→B11, 43→B13, 44→B14, 45→B15) y 8 dígitos.
+- El frontend lee `perfil.compania.modoComprobante` (`ComprobanteService`) para las etiquetas: "Consumo (B02)",
+  "Sin comprobante fiscal", los títulos del ticket ("Factura de Consumo" vs. "...Electrónica") y oculta la opción de
+  emitir 41/43 en modo sin comprobante. El ticket se rotula según el número emitido, no el modo actual.
+- Cambiar de modo no altera documentos ya emitidos. Prueba: `ModoComprobanteIntegrationTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

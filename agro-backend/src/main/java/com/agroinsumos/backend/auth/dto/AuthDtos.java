@@ -20,7 +20,7 @@ public final class AuthDtos {
                                 String refreshToken, long refreshExpiresIn) {}
 
     public record CompaniaInfo(Long id, String nombre, String rnc, String direccion, String correo,
-                               String sitioWeb, BigDecimal itbis, boolean aceptaContabilidad) {}
+                               String sitioWeb, BigDecimal itbis, boolean aceptaContabilidad, String modoComprobante) {}
 
     /** Sustituye a los valores que VentanaLogin guardaba en Ctrl_Parametros tras el login. */
     public record PerfilResponse(Long id, String username, String nombre, String correo, Nivel nivel,

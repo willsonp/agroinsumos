@@ -20,13 +20,16 @@ public final class EcfDtos {
             @NotNull Integer tipoEcf,
             @NotNull @Min(1) Long secuenciaDesde,
             @NotNull @Max(9_999_999_999L) Long secuenciaHasta,
-            @NotNull @Future LocalDate fechaVencimiento) {}
+            @NotNull @Future LocalDate fechaVencimiento,
+            /** 'E' (e-NCF, por defecto) o 'B' (NCF tradicional serie B: hasta 8 dígitos). */
+            @Pattern(regexp = "[EB]") String serie) {}
 
     public record SecuenciaResponse(Long id, int tipoEcf, long secuenciaDesde, long secuenciaHasta, long ultimaUsada,
-                                    long disponibles, LocalDate fechaVencimiento, boolean activa) {
+                                    long disponibles, LocalDate fechaVencimiento, boolean activa, String serie, String prefijo) {
         public static SecuenciaResponse de(EcfSecuencia s) {
             return new SecuenciaResponse(s.getId(), s.getTipoEcf(), s.getSecuenciaDesde(), s.getSecuenciaHasta(),
-                    s.getUltimaUsada(), s.disponibles(), s.getFechaVencimiento(), s.isActiva());
+                    s.getUltimaUsada(), s.disponibles(), s.getFechaVencimiento(), s.isActiva(), s.getSerie(),
+                    "B".equals(s.getSerie()) ? "B%02d".formatted(s.getTipoEcf() - 30) : "E" + s.getTipoEcf());
         }
     }
 

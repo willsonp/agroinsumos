@@ -19,6 +19,7 @@ import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../sh
 import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 type Cotizacion = S['CotizacionResponse'];
 
@@ -33,6 +34,7 @@ type Cotizacion = S['CotizacionResponse'];
     section { margin-top: 16px; } .detalle { background: var(--mat-sys-surface-container-low); }`,
 })
 export class Cotizaciones {
+  protected readonly comp = inject(ComprobanteService);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly notif = inject(Notificacion);
@@ -104,7 +106,7 @@ export class Cotizaciones {
       if (!req) return;
       this.http.post<S['FacturaResponse']>(`/api/v1/ventas/cotizaciones/${c.id}/facturar`, req).subscribe({
         next: (f) => {
-          this.notif.ok(`Factura ${f.numero} emitida · e-NCF ${f.encf}`);
+          this.notif.ok(`Factura ${f.numero} emitida${this.comp.sufijo(f.encf)}`);
           this.cargar(); this.seleccionada.set(null);
           this.dialog.open(TicketDialog, { data: { factura: f } });
         },
@@ -129,7 +131,7 @@ export class Cotizaciones {
   template: `
     <h2 mat-dialog-title>Facturar cotización {{ c.numero }}</h2>
     <mat-dialog-content class="grid-form" style="min-width:min(440px,90vw)">
-      <p class="ancho-completo">Total cotizado: <strong>{{ c.total | currency }}</strong>. Se descargará el inventario y se emitirá el e-CF.</p>
+      <p class="ancho-completo">Total cotizado: <strong>{{ c.total | currency }}</strong>. Se descargará el inventario y se emitirá la factura.</p>
       <mat-form-field><mat-label>Condición</mat-label><mat-select [(ngModel)]="condicion">
         <mat-option value="CREDITO">Crédito</mat-option><mat-option value="CONTADO">Contado (cobrar en caja)</mat-option></mat-select></mat-form-field>
       @if (condicion === 'CREDITO') { <mat-form-field><mat-label>Días de crédito (opcional)</mat-label><input matInput type="number" [(ngModel)]="dias" /></mat-form-field> }

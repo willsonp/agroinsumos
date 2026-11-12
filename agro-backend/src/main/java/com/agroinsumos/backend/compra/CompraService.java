@@ -8,7 +8,7 @@ import com.agroinsumos.backend.common.exception.NotFoundException;
 import com.agroinsumos.backend.ecf.TipoEcf;
 import com.agroinsumos.backend.ecf.dto.EcfDtos;
 import com.agroinsumos.backend.ecf.emision.EcfCalculadora;
-import com.agroinsumos.backend.ecf.emision.EcfEmisionService;
+import com.agroinsumos.backend.ecf.emision.ComprobanteFiscalService;
 import com.agroinsumos.backend.inventario.articulo.Articulo;
 import com.agroinsumos.backend.inventario.articulo.ArticuloService;
 import com.agroinsumos.backend.inventario.kardex.InventarioService;
@@ -104,7 +104,7 @@ public class CompraService {
     private final ArticuloService articulos;
     private final InventarioService inventario;
     private final NumeradorService numerador;
-    private final EcfEmisionService ecf;
+    private final ComprobanteFiscalService ecf;   // e-CF, NCF serie B o sin comprobante, según la empresa
     private final com.agroinsumos.backend.moneda.TasaCambioService tasas;
     private final Clock clock;
 
@@ -241,8 +241,8 @@ public class CompraService {
                     credito ? 2 : 1, credito ? c.getFechaVencimiento() : null,
                     new EcfDtos.Comprador(proveedor.getRncCedula(), proveedor.getNombre(), proveedor.getCorreo(), proveedor.getDireccion()),
                     items41, null, DOC_TIPO, c.getId()));
-            c.setEncfCompra(emitido.encf());
-            c.setEcfDocumentoId(emitido.id());
+            c.setEncfCompra(emitido.numero());
+            c.setEcfDocumentoId(emitido.ecfDocumentoId());
         }
         return Response.de(c);
     }

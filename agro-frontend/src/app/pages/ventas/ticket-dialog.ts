@@ -6,15 +6,11 @@ import { MatButtonModule } from '@angular/material/button';
 import type { S } from '../../api/tipos';
 import { AuthService } from '../../core/auth.service';
 import { Qr } from '../../shared/qr';
+import { etiquetaNumero, tituloComprobante } from '../../core/comprobante.service';
 
 export interface TicketDatos { factura: S['FacturaResponse']; recibo?: S['ReciboResponse']; }
 
-const NOMBRES_ECF: Record<number, string> = {
-  31: 'Factura de Crédito Fiscal Electrónica', 32: 'Factura de Consumo Electrónica',
-  44: 'Comprobante Electrónico para Regímenes Especiales', 45: 'Comprobante Electrónico Gubernamental',
-};
-
-/** Representación impresa de la factura (ticket) con el código QR del timbre e-CF. */
+/** Representación impresa de la factura (ticket) con el NCF y, si es e-CF, el código QR del timbre. */
 @Component({
   selector: 'app-ticket-dialog',
   imports: [MatDialogModule, MatButtonModule, CurrencyPipe, DatePipe, DecimalPipe, Qr],
@@ -27,7 +23,8 @@ export class TicketDialog {
   protected readonly datos = inject<TicketDatos>(MAT_DIALOG_DATA);
   protected readonly cia = inject(AuthService).perfil()?.compania;
   protected readonly timbre = signal<S['EcfTimbreResponse'] | null>(null);
-  protected readonly nombreEcf = NOMBRES_ECF[this.datos.factura.tipoEcf ?? 0] ?? 'Comprobante Fiscal Electrónico';
+  protected readonly nombreEcf = tituloComprobante(this.datos.factura.tipoEcf, this.datos.factura.encf);
+  protected readonly numeroFiscal = etiquetaNumero(this.datos.factura.encf);
 
   constructor() {
     const ecfId = this.datos.factura.ecfDocumentoId;

@@ -19,6 +19,7 @@ import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../sh
 import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { params } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 type Conduce = S['ConduceResponse'];
 
@@ -119,6 +120,7 @@ type Conduce = S['ConduceResponse'];
     @media print { .no-imprimir { display: none !important; } }`,
 })
 export class Conduces {
+  protected readonly comp = inject(ComprobanteService);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly notif = inject(Notificacion);
@@ -176,7 +178,7 @@ export class Conduces {
       .subscribe({
         next: (f) => {
           this.seleccion.set([]); this.cargar();
-          this.notif.ok(`Factura ${f.numero} emitida · e-NCF ${f.encf}`);
+          this.notif.ok(`Factura ${f.numero} emitida${this.comp.sufijo(f.encf)}`);
           this.dialog.open(TicketDialog, { data: { factura: f } });
         },
         error: (e) => this.notif.error(e) });

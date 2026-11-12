@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import type { S } from '../../api/tipos';
 import { redondear } from '../../shared/http';
+import { ComprobanteService } from '../../core/comprobante.service';
 
 /** Egreso de caja chica. "Gasto menor" emite e-CF 43 cuando el proveedor no entrega comprobante. */
 @Component({
@@ -21,9 +22,9 @@ import { redondear } from '../../shared/http';
       }
       <mat-form-field class="ancho-completo"><mat-label>Concepto</mat-label><input matInput formControlName="concepto" /></mat-form-field>
       <mat-form-field><mat-label>Monto</mat-label><input matInput type="number" formControlName="monto" /></mat-form-field>
-      @if (!ingreso) {
+      @if (!ingreso && comp.conComprobante()) {
         <mat-checkbox class="ancho-completo" formControlName="emitirGastoMenor">
-          Sin comprobante del proveedor: emitir e-CF 43 (gasto menor)
+          Sin comprobante del proveedor: emitir {{ comp.tipo(43) }} (gasto menor)
         </mat-checkbox>
         @if (!form.controls.emitirGastoMenor.value) {
           <mat-form-field><mat-label>RNC del proveedor</mat-label><input matInput formControlName="rnc" /></mat-form-field>
@@ -38,6 +39,7 @@ import { redondear } from '../../shared/http';
     </mat-dialog-actions>`,
 })
 export class EgresoDialog {
+  protected readonly comp = inject(ComprobanteService);
   protected readonly ingreso = inject<{ ingreso: boolean }>(MAT_DIALOG_DATA).ingreso;
   private readonly ref = inject(MatDialogRef<EgresoDialog>);
   protected readonly form = inject(NonNullableFormBuilder).group({

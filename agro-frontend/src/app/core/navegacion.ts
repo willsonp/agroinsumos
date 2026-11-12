@@ -59,7 +59,7 @@ export const NAVEGACION: Modulo[] = [
   ]},
   { nombre: 'Fiscal (DGII)', icono: 'gavel', opciones: [
     { codigo: 'ECF_DOCUMENTOS', nombre: 'Comprobantes electrónicos', ruta: '/fiscal/ecf', icono: 'verified' },
-    { codigo: 'ECF_SECUENCIAS', nombre: 'Secuencias e-NCF', ruta: '/fiscal/secuencias', icono: 'pin', rol: 'SUPERVISOR' },
+    { codigo: 'ECF_SECUENCIAS', nombre: 'Secuencias de comprobantes', ruta: '/fiscal/secuencias', icono: 'pin', rol: 'SUPERVISOR' },
     { codigo: 'FISCAL_FORMATOS', nombre: 'Formatos 606 / 607 / 608', ruta: '/fiscal/formatos', icono: 'description', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Administración', icono: 'admin_panel_settings', opciones: [
