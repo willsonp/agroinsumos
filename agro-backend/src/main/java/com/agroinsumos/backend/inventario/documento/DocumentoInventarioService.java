@@ -39,7 +39,7 @@ public class DocumentoInventarioService {
                           @Size(max = 200) String descripcion, @NotEmpty @Size(max = 500) List<@Valid LineaRequest> lineas) {}
 
     public record LineaResponse(Long id, Long articuloId, BigDecimal cantidad, BigDecimal cantidadTeorica,
-                                BigDecimal diferencia, BigDecimal costoUnitario) {}
+                                BigDecimal diferencia, BigDecimal costoUnitario, String articuloCodigo, String articuloNombre) {}
 
     public record Response(Long id, long numero, Tipo tipo, LocalDate fecha, Long almacenId, Long almacenDestinoId,
                            String descripcion, Estado estado, Instant aplicadoEn, String aplicadoPor,
@@ -170,9 +170,11 @@ public class DocumentoInventarioService {
     private Response respuesta(DocumentoInventario d) {
         return new Response(d.getId(), d.getNumero(), d.getTipo(), d.getFecha(), d.getAlmacenId(), d.getAlmacenDestinoId(),
                 d.getDescripcion(), d.getEstado(), d.getAplicadoEn(), d.getAplicadoPor(),
-                d.getLineas().stream().map(l -> new LineaResponse(l.getId(), l.getArticuloId(), l.getCantidad(),
-                        l.getCantidadTeorica(),
-                        l.getCantidadTeorica() == null ? null : l.getCantidad().subtract(l.getCantidadTeorica()),
-                        l.getCostoUnitario())).toList());
+                d.getLineas().stream().map(l -> {
+                    var a = articulos.cargar(d.getCompaniaId(), l.getArticuloId());
+                    return new LineaResponse(l.getId(), l.getArticuloId(), l.getCantidad(), l.getCantidadTeorica(),
+                            l.getCantidadTeorica() == null ? null : l.getCantidad().subtract(l.getCantidadTeorica()),
+                            l.getCostoUnitario(), a.getCodigoBarra() != null ? a.getCodigoBarra() : a.getReferencia(), a.getNombre());
+                }).toList());
     }
 }

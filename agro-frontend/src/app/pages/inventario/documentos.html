@@ -1,10 +1,10 @@
 <div class="pagina">
-  <div class="pagina-titulo"><h1>Ajustes y transferencias</h1>
+  <div class="pagina-titulo no-imprimir"><h1>Ajustes y transferencias</h1>
     @if (!nuevo()) { <button mat-flat-button (click)="nuevo.set(true)"><span class="material-symbols-outlined">add</span> Nuevo documento</button> }
   </div>
 
   @if (nuevo()) {
-    <div class="tarjeta">
+    <div class="tarjeta no-imprimir">
       <mat-button-toggle-group [(ngModel)]="tipo" (change)="lineas.set([])">
         <mat-button-toggle value="AJUSTE">Ajuste por conteo</mat-button-toggle>
         <mat-button-toggle value="ENTRADA">Entrada</mat-button-toggle>
@@ -39,16 +39,19 @@
     </div>
   }
 
-  <section class="tarjeta tabla-contenedor">
+  <section class="tarjeta tabla-contenedor no-imprimir">
     <table mat-table [dataSource]="pagina()?.content ?? []">
       <ng-container matColumnDef="numero"><th mat-header-cell *matHeaderCellDef>No.</th><td mat-cell *matCellDef="let d">{{ d.numero }}</td></ng-container>
       <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let d">{{ d.fecha | date: 'dd/MM/yyyy' }}</td></ng-container>
-      <ng-container matColumnDef="tipo"><th mat-header-cell *matHeaderCellDef>Tipo</th><td mat-cell *matCellDef="let d">{{ d.tipo }}</td></ng-container>
+      <ng-container matColumnDef="tipo"><th mat-header-cell *matHeaderCellDef>Tipo</th><td mat-cell *matCellDef="let d">{{ tipoTexto(d.tipo) }}</td></ng-container>
       <ng-container matColumnDef="almacen"><th mat-header-cell *matHeaderCellDef>Almacén</th>
         <td mat-cell *matCellDef="let d">{{ nombreAlmacen(d.almacenId) }}@if (d.almacenDestinoId) { → {{ nombreAlmacen(d.almacenDestinoId) }} }</td></ng-container>
       <ng-container matColumnDef="descripcion"><th mat-header-cell *matHeaderCellDef>Descripción</th><td mat-cell *matCellDef="let d">{{ d.descripcion }}</td></ng-container>
       <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let d"><span class="chip" [class.ok]="d.estado === 'APLICADO'" [class.warn]="d.estado === 'BORRADOR'" [class.error]="d.estado === 'ANULADO'">{{ d.estado }}</span></td></ng-container>
+      <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let d" (click)="$event.stopPropagation()">
+          <button mat-icon-button (click)="imprimir(d)" aria-label="Imprimir documento" title="Imprimir"><span class="material-symbols-outlined">print</span></button></td></ng-container>
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>
       <tr mat-row *matRowDef="let r; columns: columnas" class="clickable" (click)="ver(r)"></tr>
       <tr *matNoDataRow><td [attr.colspan]="columnas.length" class="muted" style="padding:24px">Sin documentos</td></tr>
@@ -57,28 +60,56 @@
   </section>
 
   @if (seleccionado(); as d) {
-    <section class="tarjeta">
-      <div class="fila"><h2 style="flex:1">{{ d.tipo }} No. {{ d.numero }}</h2>
+    <section class="tarjeta hoja">
+      <div class="fila no-imprimir">
+        <span class="espaciador"></span>
         @if (d.estado === 'BORRADOR') {
           <button mat-button (click)="anular(d)">Anular</button>
           <button mat-flat-button (click)="aplicar(d)">Aplicar al inventario</button>
         }
-        <button mat-button (click)="seleccionado.set(null)">Cerrar</button></div>
-      @if (d.aplicadoEn) { <p class="muted">Aplicado {{ d.aplicadoEn | date: 'short' }} por {{ d.aplicadoPor }}</p> }
+        <button mat-stroked-button (click)="imprimirActual()"><span class="material-symbols-outlined">print</span> Imprimir</button>
+        <button mat-button (click)="seleccionado.set(null)">Cerrar</button>
+      </div>
+      <header class="encabezado">
+        <div><strong>{{ empresa()?.nombre }}</strong>
+          <div class="muted">RNC {{ empresa()?.rnc }}@if (empresa()?.direccion) { · {{ empresa()?.direccion }} }</div></div>
+        <div class="titulo"><h2>{{ tipoTexto(d.tipo) }} No. {{ d.numero }}</h2>
+          <span class="chip" [class.ok]="d.estado === 'APLICADO'" [class.warn]="d.estado === 'BORRADOR'" [class.error]="d.estado === 'ANULADO'">{{ d.estado }}</span></div>
+      </header>
+      <dl class="datos">
+        <div><dt>Fecha</dt><dd>{{ d.fecha | date: 'dd/MM/yyyy' }}</dd></div>
+        <div><dt>{{ d.tipo === 'TRANSFERENCIA' ? 'Almacén origen' : 'Almacén' }}</dt><dd>{{ nombreAlmacen(d.almacenId) }}</dd></div>
+        @if (d.almacenDestinoId) { <div><dt>Almacén destino</dt><dd>{{ nombreAlmacen(d.almacenDestinoId) }}</dd></div> }
+        @if (d.descripcion) { <div class="ancho"><dt>Descripción / motivo</dt><dd>{{ d.descripcion }}</dd></div> }
+        @if (d.aplicadoEn) { <div><dt>Aplicado</dt><dd>{{ d.aplicadoEn | date: 'dd/MM/yyyy hh:mm a' }} por {{ d.aplicadoPor }}</dd></div> }
+      </dl>
       <table class="tabla">
-        <tr><th>Artículo</th>
+        <tr><th>Código</th><th>Artículo</th>
           @if (d.tipo === 'AJUSTE') { <th class="num">Teórico</th><th class="num">Físico</th><th class="num">Diferencia</th> }
-          @else { <th class="num">Cantidad</th> }</tr>
+          @else { <th class="num">Cantidad</th> @if (d.tipo === 'ENTRADA') { <th class="num">Costo</th><th class="num">Total</th> } }</tr>
         @for (l of d.lineas; track l.id) {
-          <tr><td>{{ nombres()[l.articuloId!] ?? l.articuloId }}</td>
+          <tr><td>{{ l.articuloCodigo }}</td><td>{{ l.articuloNombre ?? nombres()[l.articuloId!] ?? l.articuloId }}</td>
             @if (d.tipo === 'AJUSTE') {
               <td class="num">{{ l.cantidadTeorica != null ? (l.cantidadTeorica | number: '1.0-3') : 'al aplicar' }}</td>
               <td class="num">{{ l.cantidad | number: '1.0-3' }}</td>
               <td class="num" [class.negativo]="(l.diferencia ?? 0) < 0" [class.positivo]="(l.diferencia ?? 0) > 0">{{ l.diferencia != null ? (l.diferencia | number: '1.0-3') : '' }}</td>
-            } @else { <td class="num">{{ l.cantidad | number: '1.0-3' }}</td> }
+            } @else {
+              <td class="num">{{ l.cantidad | number: '1.0-3' }}</td>
+              @if (d.tipo === 'ENTRADA') { <td class="num">{{ l.costoUnitario | number: '1.2-2' }}</td><td class="num">{{ (l.cantidad ?? 0) * (l.costoUnitario ?? 0) | number: '1.2-2' }}</td> }
+            }
           </tr>
         }
+        <tr class="totales"><td colspan="2">TOTAL ({{ d.lineas?.length ?? 0 }} artículo(s))</td>
+          @if (d.tipo === 'AJUSTE') {
+            <td></td><td></td><td class="num">{{ totalDiferencia(d) | number: '1.0-3' }}</td>
+          } @else {
+            <td class="num">{{ totalCantidad(d) | number: '1.0-3' }}</td>
+            @if (d.tipo === 'ENTRADA') { <td></td><td class="num">{{ totalCosto(d) | number: '1.2-2' }}</td> }
+          }
+        </tr>
       </table>
+      <div class="firmas"><div>Preparado por</div><div>Autorizado por</div>@if (d.tipo === 'TRANSFERENCIA') { <div>Recibido por</div> }</div>
+      <p class="pie muted">Impreso el {{ ahora | date: 'dd/MM/yyyy hh:mm a' }}</p>
     </section>
   }
 </div>

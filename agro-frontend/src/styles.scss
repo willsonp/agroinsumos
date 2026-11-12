@@ -80,6 +80,16 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
 
 @media (max-width: 600px) { .pagina { padding: 12px; } }
 
+/* ---------- Hoja imprimible (documentos, kárdex): encabezado de la empresa, datos, firmas ---------- */
+.hoja .encabezado { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin: 4px 0 12px;
+  .titulo { flex: 1; text-align: right; h2 { margin: 0 0 4px; font: var(--mat-sys-title-large); } } }
+.hoja .datos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin: 0 0 12px;
+  dt { font: var(--mat-sys-label-small); color: var(--mat-sys-on-surface-variant); text-transform: uppercase; letter-spacing: .04em; }
+  dd { margin: 2px 0 0; } .ancho { grid-column: 1 / -1; } }
+.hoja .firmas { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 32px; margin-top: 56px; text-align: center;
+  div { border-top: 1px solid var(--mat-sys-outline); padding-top: 4px; } }
+.hoja .pie { margin-top: 12px; font-size: .8em; }
+
 /* ---------- Impresión (ticket / factura) ---------- */
 @media print {
   html { color-scheme: light !important; }   /* se imprime siempre en claro */
@@ -91,4 +101,6 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
   .mat-mdc-dialog-surface { box-shadow: none !important; }
   .no-imprimir, mat-toolbar, mat-sidenav { display: none !important; }
   .mat-drawer-content { margin: 0 !important; transition: none !important; }
+  .hoja { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+  .hoja table { font-size: 11px; } .tabla-contenedor { overflow: visible !important; }
 }

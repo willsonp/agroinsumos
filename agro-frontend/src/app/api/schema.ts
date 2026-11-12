@@ -1931,6 +1931,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inventario/articulos/{id}/kardex/reporte": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kardex para consultar e imprimir: saldo anterior, movimientos del período con saldo corrido y totales */
+        get: operations["kardexReporte"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inventario/articulos/{id}/existencias": {
         parameters: {
             query?: never;
@@ -2769,6 +2786,8 @@ export interface components {
             cantidadTeorica?: number;
             diferencia?: number;
             costoUnitario?: number;
+            articuloCodigo?: string;
+            articuloNombre?: string;
         };
         DocumentoInventarioResponse: {
             /** Format: int64 */
@@ -4744,6 +4763,44 @@ export interface components {
             numberOfElements?: number;
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        KardexFila: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date-time */
+            fecha?: string;
+            tipo?: string;
+            documentoTipo?: string;
+            /** Format: int64 */
+            documentoId?: number;
+            /** Format: int64 */
+            almacenId?: number;
+            almacen?: string;
+            cantidad?: number;
+            costoUnitario?: number;
+            saldo?: number;
+            usuario?: string;
+        };
+        KardexReporte: {
+            /** Format: int64 */
+            articuloId?: number;
+            codigo?: string;
+            articulo?: string;
+            unidad?: string;
+            costoPromedio?: number;
+            /** Format: date */
+            desde?: string;
+            /** Format: date */
+            hasta?: string;
+            /** Format: int64 */
+            almacenId?: number;
+            almacen?: string;
+            saldoAnterior?: number;
+            entradas?: number;
+            salidas?: number;
+            saldoFinal?: number;
+            movimientos?: components["schemas"]["KardexFila"][];
+            truncado?: boolean;
         };
         ArticuloExistenciaResponse: {
             /** Format: int64 */
@@ -9902,6 +9959,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageArticuloKardexResponse"];
+                };
+            };
+        };
+    };
+    kardexReporte: {
+        parameters: {
+            query?: {
+                almacenId?: number;
+                desde?: string;
+                hasta?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KardexReporte"];
                 };
             };
         };

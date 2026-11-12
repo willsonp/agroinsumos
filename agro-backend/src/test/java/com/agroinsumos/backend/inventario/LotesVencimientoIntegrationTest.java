@@ -21,7 +21,7 @@ class LotesVencimientoIntegrationTest extends IntegrationTestBase {
 
     String admin;
     long herbicida, pala, principal, tienda, prov, finca;
-    final LocalDate hoy = LocalDate.now();
+    final LocalDate hoy = LocalDate.now(java.time.ZoneId.of("America/Santo_Domingo"));   // la fecha del negocio (hora de RD)
 
     @BeforeEach
     void preparar() throws Exception {
@@ -110,6 +110,20 @@ class LotesVencimientoIntegrationTest extends IntegrationTestBase {
         Double totalLotes = jdbc.queryForObject("select sum(existencia)::float8 from lote where articulo_id = ?", Double.class, herbicida);
         Double existencia = jdbc.queryForObject("select sum(cantidad)::float8 from existencia where articulo_id = ?", Double.class, herbicida);
         assertThat(totalLotes).isEqualTo(existencia).isEqualTo(4.0);
+
+        // Kárdex imprimible: saldo final = existencia; por almacén; desde mañana todo es saldo anterior y no hay movimientos
+        String k = getJson("/api/v1/inventario/articulos/" + herbicida + "/kardex/reporte");
+        assertThat(JsonPath.<Number>read(k, "$.saldoFinal").doubleValue()).isEqualTo(4.0);
+        assertThat(JsonPath.<Number>read(k, "$.entradas").doubleValue()).isEqualTo(16 + 3 + 5);   // compra + devolución + transferencia
+        assertThat(JsonPath.<Number>read(k, "$.salidas").doubleValue()).isEqualTo(12 + 5 + 3);    // venta + transferencia + baja
+        List<Number> saldos = JsonPath.read(k, "$.movimientos[*].saldo");
+        assertThat(saldos.getLast().doubleValue()).isEqualTo(4.0);
+        String kt = getJson("/api/v1/inventario/articulos/" + herbicida + "/kardex/reporte?almacenId=" + tienda);
+        assertThat(JsonPath.<String>read(kt, "$.almacen")).isEqualTo("Tienda");
+        assertThat(JsonPath.<Number>read(kt, "$.saldoFinal").doubleValue()).isEqualTo(2.0);
+        String km = getJson("/api/v1/inventario/articulos/" + herbicida + "/kardex/reporte?desde=" + hoy.plusDays(1));
+        assertThat(JsonPath.<Number>read(km, "$.saldoAnterior").doubleValue()).isEqualTo(4.0);
+        assertThat(JsonPath.<List<Object>>read(km, "$.movimientos")).isEmpty();
     }
 
     @Test

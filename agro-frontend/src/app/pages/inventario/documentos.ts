@@ -12,6 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import type { Pagina, S } from '../../api/tipos';
 import { Notificacion } from '../../core/notificacion.service';
+import { AuthService } from '../../core/auth.service';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { params } from '../../shared/http';
@@ -19,6 +20,9 @@ import { params } from '../../shared/http';
 type Doc = S['DocumentoInventarioResponse'];
 type Tipo = 'AJUSTE' | 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA';
 interface Linea { articulo: S['ArticuloResponse']; cantidad: number; }
+
+const TIPOS_TEXTO: Record<string, string> = { AJUSTE: 'Ajuste por conteo', ENTRADA: 'Entrada de inventario', SALIDA: 'Salida de inventario',
+  TRANSFERENCIA: 'Transferencia' };
 
 const AYUDA: Record<Tipo, string> = {
   AJUSTE: 'Escriba el CONTEO FÍSICO de cada artículo. Al aplicar, el sistema calcula la diferencia contra la existencia y ajusta.',
@@ -35,13 +39,17 @@ const AYUDA: Record<Tipo, string> = {
   templateUrl: './documentos.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
     .celda { width: 110px; padding: 6px; text-align: right; } section { margin-top: 16px; }
-    .negativo { color: var(--mat-sys-error); } .positivo { color: var(--mat-sys-primary); }`,
+    .negativo { color: var(--mat-sys-error); } .positivo { color: var(--mat-sys-primary); }
+    .totales td { font-weight: 600; border-top: 2px solid var(--mat-sys-outline); }`,
 })
 export class Documentos {
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly notif = inject(Notificacion);
-  protected readonly columnas = ['numero', 'fecha', 'tipo', 'almacen', 'descripcion', 'estado'];
+  protected readonly columnas = ['numero', 'fecha', 'tipo', 'almacen', 'descripcion', 'estado', 'acciones'];
+  private readonly auth = inject(AuthService);
+  protected readonly empresa = computed(() => this.auth.perfil()?.compania);
+  protected ahora = new Date();
   protected readonly pagina = signal<Pagina<Doc> | null>(null);
   protected readonly almacenes = signal<S['AlmacenResponse'][]>([]);
   protected readonly nombres = signal<Record<number, string>>({});
@@ -63,6 +71,16 @@ export class Documentos {
     });
     this.cargar();
   }
+
+  protected tipoTexto(t?: string): string { return TIPOS_TEXTO[t ?? ''] ?? t ?? ''; }
+  protected totalCantidad(d: Doc): number { return (d.lineas ?? []).reduce((s, l) => s + (l.cantidad ?? 0), 0); }
+  protected totalDiferencia(d: Doc): number { return (d.lineas ?? []).reduce((s, l) => s + (l.diferencia ?? 0), 0); }
+  protected totalCosto(d: Doc): number { return (d.lineas ?? []).reduce((s, l) => s + (l.cantidad ?? 0) * (l.costoUnitario ?? 0), 0); }
+
+  /** Imprime el documento abierto (hoja limpia: el resto de la pantalla no sale). */
+  protected imprimirActual(): void { this.ahora = new Date(); setTimeout(() => window.print()); }
+  /** Desde la lista: abre el documento e imprime. */
+  protected imprimir(d: Doc): void { this.seleccionado.set(d); this.ahora = new Date(); setTimeout(() => window.print(), 300); }
 
   protected nombreAlmacen(id?: number | null): string { return this.almacenes().find((a) => a.id === id)?.nombre ?? String(id ?? ''); }
 

@@ -28,6 +28,7 @@ public class ArticuloController extends CrudController<ArticuloService.Request, 
     private final ExistenciaRepository existencias;
     private final MovimientoInventarioRepository movimientos;
     private final com.agroinsumos.backend.inventario.kardex.LoteService lotes;
+    private final com.agroinsumos.backend.inventario.kardex.KardexService kardexService;
 
     public record ExistenciaResponse(Long almacenId, BigDecimal cantidad) {}
 
@@ -64,6 +65,20 @@ public class ArticuloController extends CrudController<ArticuloService.Request, 
             @RequestParam(defaultValue = "true") boolean soloConExistencia) {
         service.cargar(user.companiaId(), id);
         return lotes.lotes(id, soloConExistencia);
+    }
+
+    @Operation(summary = "Kardex para consultar e imprimir: saldo anterior, movimientos del período con saldo corrido y totales")
+    @PreAuthorize("@permisos.tiene('INV_ARTICULOS')")
+    @GetMapping("/{id}/kardex/reporte")
+    public com.agroinsumos.backend.inventario.kardex.KardexService.Reporte kardexReporte(AuthUser user, @PathVariable Long id,
+            @RequestParam(required = false) Long almacenId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate desde,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate hasta) {
+        service.cargar(user.companiaId(), id);
+        if (desde != null && hasta != null && hasta.isBefore(desde)) {
+            throw new com.agroinsumos.backend.common.exception.BusinessException("RANGO_INVALIDO", "La fecha final es anterior a la inicial");
+        }
+        return kardexService.reporte(user.companiaId(), id, almacenId, desde, hasta);
     }
 
     @Operation(summary = "Kardex (movimientos) del artículo, del más reciente al más antiguo")
