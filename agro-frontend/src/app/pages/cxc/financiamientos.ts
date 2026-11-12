@@ -96,7 +96,7 @@ type Pendiente = S['EstadoCuentaDocumentoPendiente'];
               @if (cliente()) {
                 <mat-form-field style="width:100%"><mat-label>Factura a financiar</mat-label><mat-select [(ngModel)]="facturaId">
                   @for (d of facturas(); track d.id) {
-                    <mat-option [value]="d.id">Factura {{ d.numero }} · {{ d.comprobante }} · {{ d.fecha | date: 'dd/MM/yyyy' }} · saldo {{ d.balance | currency }}</mat-option>
+                    <mat-option [value]="d.id">Factura {{ d.numero }}@if (d.comprobante) { · {{ d.comprobante }} } · {{ d.fecha | date: 'dd/MM/yyyy' }} · saldo {{ d.balance | currency }}</mat-option>
                   } @empty { <mat-option disabled>El cliente no tiene facturas pendientes</mat-option> }
                 </mat-select></mat-form-field>
                 <div class="grid-form">

@@ -58,6 +58,12 @@ mat-form-field + app-articulo-buscador, .fila + app-articulo-buscador, .grid-for
    y los campos quedaban amontonados sin separación (egreso de caja, pago a suplidor, nota de débito, cotización). */
 .mat-mdc-dialog-content.grid-form { display: grid; }
 .mat-mdc-dialog-content .grid-form, .mat-mdc-dialog-content form { padding-top: 2px; }
+/* Bloques de campos apilados uno debajo de otro en una tarjeta, formulario o diálogo (fuera de .grid-form/.fila,
+   que ya separan con gap): la etiqueta flotante del bloque de abajo pisaba el borde del de arriba (financiamientos). */
+:is(.tarjeta, form:not(.grid-form, .fila), .mat-mdc-dialog-content:not(.grid-form), .mat-mdc-tab-body-content > div)
+  > :is(mat-form-field, .fila, .grid-form, app-cliente-selector, app-articulo-buscador, div:has(> app-cliente-selector))
+  + :is(mat-form-field, .fila, .grid-form, app-cliente-selector, div:has(> app-cliente-selector)) { margin-top: 14px; }
+app-cliente-selector { display: block; }
 .num, td.num, th.num { text-align: right !important; font-variant-numeric: tabular-nums; }
 /* Separación entre ícono y texto en botones (no en botones de solo ícono) */
 .mat-mdc-button-base:not(.mat-mdc-icon-button) .material-symbols-outlined { margin-right: 6px; font-size: 20px; }
