@@ -21,4 +21,10 @@ public interface CajaMovimientoRepository extends JpaRepository<CajaMovimiento, 
             where m.referenciaTipo = :refTipo and m.referenciaId = :refId and m.tipo = :tipo
             """)
     BigDecimal totalReferencia(String refTipo, Long refId, CajaMovimiento.Tipo tipo);
+
+    @Query("""
+            select count(m) > 0 from CajaMovimiento m
+            where m.referenciaTipo = :refTipo and m.referenciaId = :refId and m.tipo = :tipo and m.formaPago = :forma
+            """)
+    boolean existe(String refTipo, Long refId, CajaMovimiento.Tipo tipo, com.agroinsumos.backend.common.pago.FormaPago forma);
 }

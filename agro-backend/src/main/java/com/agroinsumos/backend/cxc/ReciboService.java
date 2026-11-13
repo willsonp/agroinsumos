@@ -164,7 +164,9 @@ public class ReciboService {
         rec.setTotalRecibido(recibido);
         rec.setDevuelta(devuelta);
 
-        var sesion = usaCaja ? caja.abiertaDe(user) : null;
+        // Efectivo, tarjeta o cheque exigen caja abierta; una transferencia se anota en la caja si el cajero la tiene abierta
+        boolean transferencia = pagos.stream().anyMatch(p -> p.forma() == FormaPago.TRANSFERENCIA);
+        var sesion = usaCaja ? caja.abiertaDe(user) : transferencia ? caja.abiertaOpcional(user).orElse(null) : null;
         if (sesion != null) rec.setSesionCajaId(sesion.getId());
         repo.save(rec);
         repo.flush();   // el balance total del cliente se lee de la base con los abonos ya aplicados
@@ -210,6 +212,9 @@ public class ReciboService {
             BigDecimal efectivo = BigDecimal.ZERO;
             for (var p : rec.getPagos()) {
                 if (p.getFormaPago() == FormaPago.EFECTIVO) efectivo = efectivo.add(p.getMonto());
+                // Las transferencias de recibos anteriores a este cambio no se anotaron en caja: no se revierten
+                else if (p.getFormaPago() == FormaPago.TRANSFERENCIA
+                        && !caja.anotado(DOC_TIPO, rec.getId(), CajaMovimiento.Tipo.COBRO, FormaPago.TRANSFERENCIA)) continue;
                 else caja.registrar(sesion, CajaMovimiento.Tipo.ANULACION_COBRO, p.getFormaPago(), p.getMonto(), DOC_TIPO,
                         rec.getId(), "Anulación recibo " + rec.getNumero());
             }

@@ -94,6 +94,21 @@ class VentasPendientesIntegrationTest extends IntegrationTestBase {
         assertThat(code(post(cajero, "/api/v1/ventas/conduces/facturar-contado", """
                 {"facturar":{"conduceIds":[%d],"condicion":"CREDITO"},"pagos":[{"forma":"EFECTIVO","monto":3000}]}""".formatted(c2), 422)))
                 .isEqualTo("CONDICION_INVALIDA");
+
+        // Pago mixto: efectivo + tarjeta + transferencia; la transferencia también cuenta en el cuadre de la caja
+        long c3 = id(post(cajero, "/api/v1/ventas/conduces", conduce(finca, 1), 201));
+        post(cajero, "/api/v1/ventas/conduces/facturar-contado", """
+                {"facturar":{"conduceIds":[%d],"condicion":"CONTADO"},
+                 "pagos":[{"forma":"EFECTIVO","monto":1000},{"forma":"TARJETA","monto":500,"referencia":"AUT1"},
+                          {"forma":"TRANSFERENCIA","monto":978,"referencia":"TRX-1","banco":"BHD"}]}""".formatted(c3), 201);
+        String cierre2 = getJson(cajero, "/api/v1/caja/sesiones/" + sesion + "/cierre");
+        String fc = "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].";
+        assertThat(JsonPath.<java.util.List<Number>>read(cierre2, fc + "transferencia").getFirst().doubleValue()).isEqualTo(978.0);
+        assertThat(JsonPath.<java.util.List<Number>>read(cierre2, fc + "tarjeta").getFirst().doubleValue()).isEqualTo(500.0);
+        assertThat(JsonPath.<java.util.List<Number>>read(cierre2, fc + "efectivo").getFirst().doubleValue()).isEqualTo(2478.0 + 1000.0);
+        assertThat(JsonPath.<java.util.List<Number>>read(cierre2, fc + "cantidad").getFirst().intValue()).isEqualTo(2);
+        // El efectivo esperado no incluye la tarjeta ni la transferencia
+        assertThat(num(getJson(cajero, "/api/v1/caja/sesiones/actual"), "$.cuadre.efectivoEsperado")).isEqualTo(2478.0 + 1000.0);
     }
 
     @Test

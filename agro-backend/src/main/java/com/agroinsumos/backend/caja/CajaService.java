@@ -120,6 +120,11 @@ public class CajaService {
         return sesiones.findByIdAndCompaniaId(id, companiaId).orElseThrow(() -> new NotFoundException("Caja", id));
     }
 
+    /** ¿El documento dejó este movimiento en la caja? (para revertir solo lo que se anotó) */
+    public boolean anotado(String refTipo, Long refId, CajaMovimiento.Tipo tipo, FormaPago forma) {
+        return movimientos.existe(refTipo, refId, tipo, forma);
+    }
+
     public Optional<CajaSesion> abiertaOpcional(AuthUser user) {
         return sesiones.findByUsuarioIdAndEstado(user.usuarioId(), CajaSesion.Estado.ABIERTA);
     }
@@ -129,7 +134,7 @@ public class CajaService {
     public void registrar(CajaSesion sesion, CajaMovimiento.Tipo tipo, FormaPago forma, BigDecimal monto,
                           String refTipo, Long refId, String descripcion) {
         if (!sesion.abierta()) throw new BusinessException("CAJA_CERRADA", "La caja " + sesion.getNumero() + " está cerrada");
-        if (!forma.pasaPorCaja() || monto.signum() <= 0) return;
+        if (!forma.seAnotaEnCaja() || monto.signum() <= 0) return;
         if (tipo.signo() < 0 && forma == FormaPago.EFECTIVO) {
             BigDecimal disponible = cuadre(sesion, null).efectivoEsperado();
             if (monto.compareTo(disponible) > 0) {

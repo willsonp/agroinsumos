@@ -10,4 +10,10 @@ public enum FormaPago {
      * (efectivo, voucher de tarjeta, cheque). Transferencias y saldo a favor no requieren caja abierta.
      */
     public boolean pasaPorCaja() { return this == EFECTIVO || this == TARJETA || this == CHEQUE; }
+
+    /**
+     * Se anota en la caja del cajero que la cobró: lo que pasa por caja y también las transferencias (no entran
+     * físicamente, pero cuentan en el cuadre del día como "depósitos", igual que en el sistema anterior).
+     */
+    public boolean seAnotaEnCaja() { return pasaPorCaja() || this == TRANSFERENCIA; }
 }

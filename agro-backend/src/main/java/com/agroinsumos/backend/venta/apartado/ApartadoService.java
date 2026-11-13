@@ -133,7 +133,8 @@ public class ApartadoService {
         ab.setMonto(p.monto());
         ab.setReferencia(p.referencia());
         ab.setUsuarioId(user.usuarioId());
-        var sesion = p.forma().pasaPorCaja() ? caja.abiertaDe(user) : null;
+        var sesion = p.forma().pasaPorCaja() ? caja.abiertaDe(user)
+                : p.forma() == FormaPago.TRANSFERENCIA ? caja.abiertaOpcional(user).orElse(null) : null;
         if (sesion != null) ab.setSesionCajaId(sesion.getId());
         abonos.saveAndFlush(ab);
         if (sesion != null) {

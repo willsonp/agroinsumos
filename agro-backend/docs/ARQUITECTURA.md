@@ -542,6 +542,9 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   declara tarjetas, cheques y depósitos (`caja_sesion.*_contado`, V26). Diferencia = contado − total del día:
   0 "Caja cuadrada" (verde), positiva "sobrante" (amarillo), negativa "faltante" (rojo, entre paréntesis). El impreso
   de cierre lleva el resumen, el resultado y el desglose de monedas; queda registrado con la sesión.
+  Las **transferencias** cobradas se anotan en la caja abierta del cajero (`FormaPago.seAnotaEnCaja`; V28 completa
+  los recibos anteriores): aparecen en "Transf." del cuadre y se declaran como "Monto depósitos", sin cambiar el
+  efectivo esperado. Una transferencia sola no exige caja abierta.
 - **Presentaciones en documentos de inventario**: entradas, salidas, ajustes y transferencias aceptan la cantidad
   por saco/caja (`empaque`); se guardan en la unidad base (2 sacos de 100 lb = 200 lb; el costo se divide). El kárdex
   aclara que cantidades y costo van en la unidad base y muestra el equivalente por presentación (costo por saco,
