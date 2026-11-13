@@ -38,8 +38,18 @@
     <aside class="tarjeta resumen">
       <app-cliente-selector [(cliente)]="cliente" />
       @if (cliente(); as c) {
+        @if (comp.conComprobante()) {
+          <mat-form-field class="comprobante" subscriptSizing="dynamic"><mat-label>Comprobante</mat-label>
+            <mat-select [value]="tipoEcf()" (selectionChange)="tipoEcf.set($event.value)">
+              @for (t of tiposComprobante; track t.tipo) {
+                <mat-option [value]="t.tipo" [disabled]="t.rnc && !clienteConRnc()">{{ t.nombre }}{{ comp.entreParentesis(t.tipo) }}
+                  @if (t.rnc && !clienteConRnc()) { <span class="muted"> · requiere cliente con RNC</span> }</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
         <div class="muted pequeno">
-          {{ comprobante() }} · Lista {{ lista() }}@if (c.exentoItbis) { · Exento de ITBIS }
+          @if (comprobante()) { {{ comprobante() }} · } Lista {{ lista() }}@if (c.exentoItbis) { · Exento de ITBIS }
           @if ((c.saldoAFavor ?? 0) > 0) { <br />Saldo a favor: {{ c.saldoAFavor | currency }} }
         </div>
       }

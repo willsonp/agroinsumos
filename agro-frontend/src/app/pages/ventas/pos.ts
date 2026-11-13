@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { CurrencyPipe } from '@angular/common';
@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import type { Pagina, S } from '../../api/tipos';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
@@ -30,7 +31,7 @@ type Articulo = S['ArticuloResponse'];
  */
 @Component({
   selector: 'app-pos',
-  imports: [RouterLink, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, PresentacionSelector,
+  imports: [RouterLink, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, PresentacionSelector,
     MatProgressBarModule, MatTooltipModule, ArticuloBuscador, ClienteSelector],
   templateUrl: './pos.html',
   styleUrl: './pos.scss',
@@ -50,11 +51,21 @@ export class Pos {
   protected readonly lista = computed<TipoPrecio>(() => (this.cliente()?.tipoPrecio as TipoPrecio) ?? 'CONTADO');
   protected readonly exento = computed(() => !!this.cliente()?.exentoItbis);
   protected readonly totales = computed(() => calcular(this.lineas(), this.lista(), this.exento()));
-  protected readonly comprobante = computed(() => {
-    if (!this.comp.conComprobante()) return 'Sin comprobante fiscal';
-    const t = [31, 44, 45].includes(this.cliente()?.tipoEcfPreferido ?? 0) ? this.cliente()!.tipoEcfPreferido! : 32;
-    return ({ 31: 'Crédito fiscal', 44: 'Régimen especial', 45: 'Gubernamental' }[t] ?? 'Consumo') + this.comp.entreParentesis(t);
+  /** Tipos de comprobante que se pueden elegir en la venta; los que no son de consumo exigen RNC/cédula del cliente. */
+  protected readonly tiposComprobante = [
+    { tipo: 32, nombre: 'Consumo', rnc: false }, { tipo: 31, nombre: 'Crédito fiscal', rnc: true },
+    { tipo: 44, nombre: 'Régimen especial', rnc: true }, { tipo: 45, nombre: 'Gubernamental', rnc: true },
+  ];
+  /**
+   * Comprobante de esta venta: propone el preferido del cliente y el cajero lo puede cambiar solo para esta venta
+   * (un cliente que hoy pide crédito fiscal o régimen especial). Al cambiar de cliente vuelve a su preferido.
+   */
+  protected readonly tipoEcf = linkedSignal(() => {
+    const t = this.cliente()?.tipoEcfPreferido ?? 32;
+    return this.tiposComprobante.some((x) => x.tipo === t) ? t : 32;
   });
+  protected readonly clienteConRnc = computed(() => !!this.cliente()?.rncCedula);
+  protected readonly comprobante = computed(() => !this.comp.conComprobante() ? 'Sin comprobante fiscal' : '');
 
   protected readonly precio = (l: LineaCarrito) => precioLista(l.articulo, this.lista(), l.empaque) * (1 + (this.exento() ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]) / 100);
   protected readonly importe = (l: LineaCarrito) => importeConItbis(l, this.lista(), this.exento());
@@ -127,6 +138,7 @@ export class Pos {
     return {
       clienteId: this.cliente()!.id!,
       condicion,
+      tipoEcf: this.comp.conComprobante() ? this.tipoEcf() : undefined,
       lineas: this.lineas().filter((l) => l.cantidad > 0).map((l) => ({
         articuloId: l.articulo.id!, cantidad: l.cantidad,
         descuentoPorcentaje: l.descuentoPorcentaje || undefined, empaque: l.empaque || undefined,
