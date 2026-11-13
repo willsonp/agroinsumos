@@ -17,8 +17,17 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     boolean existsByCompaniaIdAndRncCedula(Long companiaId, String rncCedula);
 
-    /** Balance pendiente (CxC) del cliente: reemplaza el proc. Consulta_BalanceCliente. */
-    @Query(value = "select coalesce(sum(balance),0) from factura where cliente_id = :clienteId and condicion = 'CREDITO' and estado <> 'ANULADA'",
+    /**
+     * Lo que debe el cliente (CxC), lo mismo que muestra Cobros: facturas con balance (a crédito o de contado sin
+     * cobrar) y notas de débito pendientes (mora, intereses). Reemplaza el proc. Consulta_BalanceCliente.
+     */
+    @Query(value = """
+            select coalesce((select sum(balance) from factura where cliente_id = :clienteId and balance > 0 and estado <> 'ANULADA'), 0)
+                 + coalesce((select sum(balance) from nota_debito where cliente_id = :clienteId and balance > 0), 0)""",
             nativeQuery = true)
     BigDecimal balancePendiente(Long clienteId);
+
+    /** Bloquea la fila del cliente hasta el fin de la transacción (dos ventas a crédito simultáneas no pasan juntas el límite). */
+    @Query(value = "select id from cliente where id = :clienteId for update", nativeQuery = true)
+    Long bloquear(Long clienteId);
 }

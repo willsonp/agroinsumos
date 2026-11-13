@@ -91,4 +91,19 @@ public class ClienteService extends CrudService<Cliente, ClienteService.Request,
     public BigDecimal balancePendiente(Long clienteId) {
         return repo.balancePendiente(clienteId);
     }
+
+    /** @param limite 0 = sin límite; @param disponible null cuando no tiene límite */
+    public record Credito(java.math.BigDecimal limite, java.math.BigDecimal deuda, java.math.BigDecimal disponible, int diasCredito) {}
+
+    public Credito credito(Long companiaId, Long clienteId) {
+        Cliente c = cargar(companiaId, clienteId);
+        BigDecimal deuda = repo.balancePendiente(c.getId());
+        BigDecimal disponible = c.getLimiteCredito().signum() <= 0 ? null : c.getLimiteCredito().subtract(deuda).max(BigDecimal.ZERO);
+        return new Credito(c.getLimiteCredito(), deuda, disponible, c.getDiasCredito());
+    }
+
+    /** Bloquea al cliente en la transacción actual (para validar su límite de crédito sin carreras). */
+    public void bloquear(Long clienteId) {
+        repo.bloquear(clienteId);
+    }
 }

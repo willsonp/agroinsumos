@@ -176,10 +176,13 @@ public class FacturaService {
 
     private void validarLimiteCredito(Cliente c, BigDecimal monto) {
         if (c.getLimiteCredito().signum() <= 0) return; // 0 = sin límite configurado
+        clientes.bloquear(c.getId());   // la deuda no cambia hasta que esta factura termine
         BigDecimal pendiente = clientes.balancePendiente(c.getId());
-        if (pendiente.add(monto).compareTo(c.getLimiteCredito()) > 0) {
+        BigDecimal disponible = c.getLimiteCredito().subtract(pendiente).max(BigDecimal.ZERO);
+        if (monto.compareTo(disponible) > 0) {
             throw new BusinessException("LIMITE_CREDITO_EXCEDIDO", "Límite de crédito RD$" + c.getLimiteCredito()
-                    + " excedido: pendiente RD$" + pendiente + " + esta factura RD$" + monto);
+                    + ": el cliente debe RD$" + pendiente + " y solo tiene disponible RD$" + disponible
+                    + "; esta factura es de RD$" + monto);
         }
     }
 }

@@ -117,8 +117,8 @@ export class Pos {
   protected venderACredito(): void {
     if (!this.validar()) return;
     const c = this.cliente()!;
-    this.dialog.open(CreditoDialog, { data: { cliente: c.nombre!, diasSugeridos: c.diasCredito ?? 0, total: this.totales().total,
-      limiteCredito: c.limiteCredito } satisfies CreditoDatos }).afterClosed().subscribe((dias?: number) => {
+    this.dialog.open(CreditoDialog, { data: { clienteId: c.id!, cliente: c.nombre!, diasSugeridos: c.diasCredito ?? 0,
+      total: this.totales().total } satisfies CreditoDatos }).afterClosed().subscribe((dias?: number) => {
       if (!dias) return;
       this.procesando.set(true);
       this.http.post<S['FacturaResponse']>('/api/v1/ventas/facturas', { ...this.request('CREDITO'), diasCredito: dias }).subscribe({

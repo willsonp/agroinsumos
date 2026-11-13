@@ -518,6 +518,11 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
 - **Venta a crédito**: como en el sistema anterior, los días se eligen al facturar (15/30/45/60 o los que se
   escriban; por defecto los del cliente o 15). `diasCredito` del request tiene prioridad sobre el del cliente; se
   sigue validando el límite de crédito. La migración asigna a cada cliente los días que más usó en sus facturas.
+- **Límite de crédito**: al facturar a crédito, la factura no puede pasar de lo disponible = límite − deuda. La deuda
+  es lo mismo que muestra Cobros: facturas con balance (a crédito o de contado sin cobrar) y notas de débito
+  pendientes. La fila del cliente se bloquea durante la validación (dos ventas simultáneas no pasan juntas el
+  límite). `GET /catalogos/clientes/{id}/credito` da límite, deuda y disponible; el diálogo de venta a crédito los
+  muestra y no deja facturar si se excede. Límite 0 = sin límite. Prueba: `LimiteCreditoIntegrationTest`.
   Prueba: `TicketYCreditoIntegrationTest`.
 
 ## 5.17 Recibo de ingreso, cuadre de caja y presentaciones en inventario
