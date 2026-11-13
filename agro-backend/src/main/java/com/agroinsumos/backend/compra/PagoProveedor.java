@@ -54,6 +54,9 @@ public class PagoProveedor extends Auditable {
     /** Pesos pagados − pesos históricos de lo aplicado (positivo = pérdida cambiaria). */
     @Column(name = "diferencia_cambiaria", nullable = false, precision = 18, scale = 2)
     private BigDecimal diferenciaCambiaria = BigDecimal.ZERO;
+    /** Lo que se le debe al suplidor (RD$) después de este pago, para el comprobante. */
+    @Column(name = "balance_proveedor_despues", precision = 18, scale = 2)
+    private BigDecimal balanceProveedorDespues;
 
     @OneToMany(mappedBy = "pago", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id")
@@ -81,6 +84,9 @@ public class PagoProveedor extends Auditable {
         /** Pesos que rebaja del balance de la compra (a la tasa de la compra). */
         @Column(name = "monto_dop", nullable = false, precision = 18, scale = 2)
         private BigDecimal montoDop;
+        /** Balance que quedó en la compra (en la moneda del pago). */
+        @Column(name = "balance_despues", precision = 18, scale = 2)
+        private BigDecimal balanceDespues;
     }
 
     @Getter

@@ -20,6 +20,7 @@ import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { params, redondear } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { ComprobanteService } from '../../core/comprobante.service';
+import { ComprobantePagoDialog } from './comprobante-pago-dialog';
 
 interface LineaCompra { articulo: S['ArticuloResponse']; cantidad: number; costo: number; descuento: number; tasa: number; lote?: string; vence?: string; empaque?: boolean; }
 
@@ -147,6 +148,7 @@ export class Compras {
           const dif = p.diferenciaCambiaria ?? 0;
           this.notif.ok('Pago registrado' + (dif ? ` · diferencia cambiaria RD$${Math.abs(dif).toFixed(2)} (${dif > 0 ? 'pérdida' : 'ganancia'})` : ''));
           this.cargar();
+          this.dialog.open(ComprobantePagoDialog, { data: { pagoId: p.id } });
         },
         error: (e) => this.notif.error(e),
       });
@@ -171,11 +173,12 @@ export class Compras {
   selector: 'app-pago-proveedor-dialog',
   imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, CurrencyPipe, DecimalPipe],
   template: `
-    <h2 mat-dialog-title>Pagar compra {{ compra.numero }}</h2>
+    <h2 mat-dialog-title>{{ compra.titulo ?? 'Pagar compra ' + compra.numero }}</h2>
     <mat-dialog-content class="grid-form" style="min-width:min(460px,90vw)">
-      <p class="ancho-completo">Balance pendiente: <strong>{{ pendiente | currency: compra.moneda }}</strong>
+      <p class="ancho-completo">{{ compra.montoFijo ? 'Total a pagar' : 'Balance pendiente' }}: <strong>{{ pendiente | currency: compra.moneda }}</strong>
         @if (ext) { <span class="muted"> (RD$ {{ compra.balance }} a la tasa de la compra {{ compra.tasaCambio }})</span> }</p>
-      <mat-form-field><mat-label>Monto ({{ compra.moneda }})</mat-label><input matInput type="number" [(ngModel)]="monto" [max]="pendiente" /></mat-form-field>
+      <mat-form-field><mat-label>Monto ({{ compra.moneda }})</mat-label><input matInput type="number" [(ngModel)]="monto" [max]="pendiente" [readonly]="!!compra.montoFijo" />
+        @if (compra.montoFijo) { <mat-hint>Lo distribuido entre las compras</mat-hint> }</mat-form-field>
       @if (ext) {
         <mat-form-field><mat-label>Tasa de hoy (RD$ por {{ compra.moneda }})</mat-label><input matInput type="number" [(ngModel)]="tasa" />
           @if (tasa) { <mat-hint>RD$ {{ monto * tasa | number: '1.2-2' }} · diferencia {{ (monto * tasa) - (monto * (compra.tasaCambio ?? 1)) | number: '1.2-2' }}</mat-hint> }
@@ -203,7 +206,8 @@ export class Compras {
     </mat-dialog-actions>`,
 })
 export class PagoProveedorDialog {
-  protected readonly compra = inject<S['CompraResponse']>(MAT_DIALOG_DATA);
+  /** Una compra, o el total de varias (Pagos a suplidores) con título propio y monto fijo. */
+  protected readonly compra = inject<S['CompraResponse'] & { titulo?: string; montoFijo?: boolean }>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<PagoProveedorDialog>);
   protected readonly ext = this.compra.moneda !== 'DOP';
   protected readonly pendiente = (this.ext ? this.compra.balanceMoneda : this.compra.balance) ?? 0;

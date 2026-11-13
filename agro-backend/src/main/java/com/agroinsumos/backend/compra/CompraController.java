@@ -53,33 +53,45 @@ public class CompraController {
     }
 
     @Operation(summary = "Pago a suplidor (el efectivo sale de la caja abierta del usuario)")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @PostMapping("/cxp/pagos")
     public ResponseEntity<PagoProveedorService.Response> pagar(AuthUser user, @Valid @RequestBody PagoProveedorService.Request r) {
         return ResponseEntity.status(201).body(pagos.pagar(user, r));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @GetMapping("/cxp/pagos")
     public Page<PagoProveedorService.Response> listarPagos(AuthUser user, @RequestParam(required = false) Long proveedorId,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable p) {
         return pagos.buscar(user.companiaId(), proveedorId, p);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @GetMapping("/cxp/pagos/{id}")
     public PagoProveedorService.Response pago(AuthUser user, @PathVariable Long id) {
         return pagos.obtener(user.companiaId(), id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @PostMapping("/cxp/pagos/{id}/anular")
     public PagoProveedorService.Response anularPago(AuthUser user, @PathVariable Long id,
                                                     @Valid @RequestBody PagoProveedorService.AnularRequest r) {
         return pagos.anular(user, id, r.motivo());
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
+    @GetMapping("/cxp/pagos/{id}/impresion")
+    public PagoProveedorService.PagoImpresion impresionPago(AuthUser user, @PathVariable Long id) {
+        return pagos.impresion(user.companiaId(), id);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @GetMapping("/cxp/proveedores/{proveedorId}/pendientes")
     public List<PagoProveedorService.CompraPendiente> pendientes(AuthUser user, @PathVariable Long proveedorId) {
         return pagos.pendientes(user.companiaId(), proveedorId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR') and @permisos.tiene('COMPRAS_REGISTRO','CXP_PAGOS')")
     @GetMapping("/cxp/antiguedad")
     public List<PagoProveedorService.Antiguedad> antiguedad(AuthUser user) {
         return pagos.antiguedad(user.companiaId());

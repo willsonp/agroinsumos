@@ -32,6 +32,7 @@ export const NAVEGACION: Modulo[] = [
   ]},
   { nombre: 'Compras', icono: 'local_shipping', opciones: [
     { codigo: 'COMPRAS_REGISTRO', nombre: 'Compras', ruta: '/compras', icono: 'add_shopping_cart', rol: 'SUPERVISOR' },
+    { codigo: 'CXP_PAGOS', nombre: 'Pagos a suplidores', ruta: '/compras/pagos', icono: 'payments', rol: 'SUPERVISOR' },
     { codigo: 'COMPRAS_NOTAS', nombre: 'Notas de suplidores', ruta: '/compras/notas', icono: 'note_alt', rol: 'SUPERVISOR' },
   ]},
   { nombre: 'Banco', icono: 'account_balance', opciones: [

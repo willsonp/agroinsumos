@@ -126,6 +126,7 @@ public class PagoProveedorService {
             var ap = new PagoProveedor.Aplicacion();
             ap.setPago(p);
             ap.setCompraId(c.getId());
+            ap.setBalanceDespues(ext ? c.getBalanceMoneda() : c.getBalance());
             ap.setMonto(a.monto());
             ap.setMontoDop(montoDop);
             p.getAplicaciones().add(ap);
@@ -164,6 +165,8 @@ public class PagoProveedorService {
         var sesion = efectivo.signum() > 0 ? caja.abiertaDe(user) : null;
         if (sesion != null) p.setSesionCajaId(sesion.getId());
         repo.save(p);
+        repo.flush();   // el balance del suplidor se lee de la base con los pagos ya aplicados
+        p.setBalanceProveedorDespues(balanceProveedor(cia, proveedor.getId()));
         if (sesion != null) {
             caja.registrar(sesion, CajaMovimiento.Tipo.PAGO_PROVEEDOR, FormaPago.EFECTIVO, efectivo, DOC_TIPO, p.getId(),
                     "Pago " + p.getNumero() + " a " + proveedor.getNombre());
@@ -227,6 +230,42 @@ public class PagoProveedorService {
                 c.getNcfProveedor(), c.getFecha(), c.getFechaVencimiento(), c.aPagar(), c.getBalance(),
                 (int) Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(c.getFechaVencimiento(), hoy)), c.getMoneda(),
                 c.getBalanceMoneda())).toList();
+    }
+
+    /** Lo que se le debe al suplidor en pesos (compras con balance). */
+    BigDecimal balanceProveedor(Long cia, Long proveedorId) {
+        return jdbc.queryForObject("select coalesce(sum(balance), 0) from compra where compania_id = ? and proveedor_id = ? and balance > 0 and estado <> 'ANULADA'",
+                BigDecimal.class, cia, proveedorId);
+    }
+
+    public record DocumentoPagado(long numero, String ncfProveedor, LocalDate fecha, BigDecimal monto, BigDecimal balanceDespues,
+                                  boolean saldado) {}
+
+    /** Comprobante de pago a suplidor impreso: qué compras se pagaron o abonaron y cuánto quedó. */
+    public record PagoImpresion(Long id, long numero, LocalDate fecha, String estado, Long proveedorId, String proveedor,
+                                String proveedorRnc, String concepto, String atendio, String moneda, BigDecimal tasaCambio,
+                                BigDecimal total, BigDecimal balanceProveedor, List<DocumentoPagado> documentos,
+                                List<PagoRequest> formas) {}
+
+    public PagoImpresion impresion(Long cia, Long id) {
+        var p = repo.findById(id).filter(x -> x.getCompaniaId().equals(cia)).orElseThrow(() -> new NotFoundException("Pago", id));
+        var docs = jdbc.query("""
+                select c.numero, c.ncf_proveedor, c.fecha, a.monto, a.balance_despues
+                  from pago_proveedor_aplicacion a join compra c on c.id = a.compra_id
+                 where a.pago_id = ? order by a.id""", (rs, i) -> {
+            BigDecimal bal = rs.getBigDecimal("balance_despues");
+            return new DocumentoPagado(rs.getLong("numero"), rs.getString("ncf_proveedor"), rs.getObject("fecha", LocalDate.class),
+                    rs.getBigDecimal("monto"), bal, bal != null && bal.signum() == 0);
+        }, id);
+        var datos = jdbc.queryForMap("""
+                select pr.nombre, pr.rnc_cedula, u.username
+                  from pago_proveedor p join proveedor pr on pr.id = p.proveedor_id left join usuario u on u.id = p.usuario_id
+                 where p.id = ?""", id);
+        return new PagoImpresion(p.getId(), p.getNumero(), p.getFecha(), p.getEstado().name(), p.getProveedorId(),
+                (String) datos.get("nombre"), (String) datos.get("rnc_cedula"), p.getConcepto(), (String) datos.get("username"),
+                p.getMoneda(), p.getTasaCambio(), p.getTotal(), p.getBalanceProveedorDespues(), docs,
+                p.getFormas().stream().map(f -> new PagoRequest(f.getFormaPago(), f.getMonto(), f.getReferencia(), f.getBanco(),
+                        f.getCuentaBancariaId())).toList());
     }
 
     public List<Antiguedad> antiguedad(Long cia) {

@@ -65,6 +65,8 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/contabilidad/catalogo').then((m) => m.Catalogo) },
       { path: 'contabilidad/periodos', title: 'Cierre de períodos', ...p('CONT_PERIODOS'),
         loadComponent: () => import('./pages/contabilidad/periodos').then((m) => m.Periodos) },
+      { path: 'compras/pagos', title: 'Pagos a suplidores', ...p('CXP_PAGOS'),
+        loadComponent: () => import('./pages/compras/pagos').then((m) => m.PagosSuplidores) },
       { path: 'compras/notas', title: 'Notas de suplidores', ...p('COMPRAS_NOTAS'),
         loadComponent: () => import('./pages/compras/notas').then((m) => m.Notas) },
       { path: 'reportes/ventas', title: 'Reportes de ventas', ...p('REP_VENTAS'), data: { permiso: 'REP_VENTAS', grupo: 'ventas' },

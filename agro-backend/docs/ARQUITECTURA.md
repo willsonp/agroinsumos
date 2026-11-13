@@ -546,6 +546,21 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   muestra el saldo en presentación y unidad base (384.5 lb = "3 Saco + 84.5 Libra").
   Pruebas: `ReciboImpresionYDocumentosIntegrationTest`, `CajaCxcComprasIntegrationTest`.
 
+## 5.18 Cuentas por pagar: pagos a suplidores
+
+Como el módulo CxP del sistema anterior (opción **Compras → Pagos a suplidores**, `CXP_PAGOS`, V27; quien ya tenía
+"Compras" la recibe):
+- **Pagar**: se elige un suplidor con balance pendiente, se ven sus compras (vencidas en rojo) y se paga o abona
+  varias en un solo pago; **Distribuir monto** reparte de la que vence primero a la más reciente. La forma de pago
+  usa el mismo diálogo que la pantalla de Compras (transferencia o cheque desde una cuenta bancaria, efectivo de la
+  caja, tasa si es en otra moneda). Una moneda por pago.
+- **Comprobante de pago a suplidor** (80 mm): suma en números y letras, cada compra saldada o abonada con el balance
+  que le quedó, formas de pago, lo que se le sigue debiendo al suplidor y firmas de entregado/recibido. Los balances
+  se guardan al pagar (`pago_proveedor_aplicacion.balance_despues`, `pago_proveedor.balance_proveedor_despues`).
+  `GET /cxp/pagos/{id}/impresion`. Sale también al pagar desde Compras.
+- **Pagos realizados** (reimprimir, anular con motivo) y **Antigüedad de saldos** (corriente, 1-30, 31-60, 61-90,
+  más de 90 días). Prueba: `PagosSuplidoresIntegrationTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.
