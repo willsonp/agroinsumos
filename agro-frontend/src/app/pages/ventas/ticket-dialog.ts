@@ -20,7 +20,7 @@ const FORMAS: Record<string, string> = { EFECTIVO: 'Efectivo', TARJETA: 'Tarjeta
   selector: 'app-ticket-dialog',
   imports: [MatDialogModule, MatButtonModule, DatePipe, DecimalPipe, SlicePipe, UpperCasePipe, Qr],
   templateUrl: './ticket-dialog.html',
-  styleUrl: './ticket-dialog.scss',
+  styleUrl: '../../shared/ticket.scss',
 })
 export class TicketDialog {
   private readonly http = inject(HttpClient);

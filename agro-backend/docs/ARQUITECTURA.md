@@ -520,6 +520,28 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   sigue validando el límite de crédito. La migración asigna a cada cliente los días que más usó en sus facturas.
   Prueba: `TicketYCreditoIntegrationTest`.
 
+## 5.17 Recibo de ingreso, cuadre de caja y presentaciones en inventario
+
+- **Recibo de ingreso impreso** (acuse de recibo, 80 mm): "Hemos recibido de", la suma en números y letras
+  (`shared/letras.ts`), cada factura o nota pagada ("Saldo") o abonada con el balance que le quedó, formas de pago y
+  el **balance total del cliente** después del cobro. Los balances se guardan al cobrar
+  (`recibo_aplicacion.balance_despues`, `recibo.balance_cliente_despues`, V24), así las reimpresiones muestran lo de
+  ese momento. `GET /cxc/recibos/{id}/impresion`. Sale al cobrar y se reimprime desde el estado de cuenta.
+- **Distribuir monto** (Cobros): reparte lo que entrega el cliente entre sus documentos, del que vence primero al más
+  reciente, saldando los que alcance.
+- **Cuadre de caja** como el sistema anterior (`GET /caja/sesiones/{id}/cierre`): totales del día por concepto
+  (monto inicial, facturas a contado, recibos de CxC, apartados, ingresos, salidas) y forma de pago, con cantidad de
+  transacciones. Los recibos guardan su origen (`recibo.origen` VENTA/COBRO, V25) para no confundir una factura de
+  contado cobrada después en Cobros con una venta del punto de venta. Al cerrar, el cajero cuenta las monedas y
+  declara tarjetas, cheques y depósitos (`caja_sesion.*_contado`, V26). Diferencia = contado − total del día:
+  0 "Caja cuadrada" (verde), positiva "sobrante" (amarillo), negativa "faltante" (rojo, entre paréntesis). El impreso
+  de cierre lleva el resumen, el resultado y el desglose de monedas; queda registrado con la sesión.
+- **Presentaciones en documentos de inventario**: entradas, salidas, ajustes y transferencias aceptan la cantidad
+  por saco/caja (`empaque`); se guardan en la unidad base (2 sacos de 100 lb = 200 lb; el costo se divide). El kárdex
+  aclara que cantidades y costo van en la unidad base y muestra el equivalente por presentación (costo por saco,
+  saldo en sacos). La ficha del artículo indica que el costo es por la unidad base.
+  Pruebas: `ReciboImpresionYDocumentosIntegrationTest`, `CajaCxcComprasIntegrationTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

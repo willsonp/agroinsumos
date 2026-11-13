@@ -23,13 +23,15 @@
       </div>
       <app-articulo-buscador (elegido)="agregar($event)" />
       <div class="tabla-contenedor"><table class="tabla">
-        <tr><th>Artículo</th>@if (tipo === 'AJUSTE') { <th class="num">Existencia actual</th> }<th class="num">{{ tipo === 'AJUSTE' ? 'Conteo físico' : 'Cantidad' }}</th><th></th></tr>
+        <tr><th>Artículo</th>@if (tipo === 'AJUSTE') { <th class="num">Existencia actual</th> }<th class="num">{{ tipo === 'AJUSTE' ? 'Conteo físico' : 'Cantidad' }}</th><th>Unidad</th><th></th></tr>
         @for (l of lineas(); track l.articulo.id; let i = $index) {
           <tr><td>{{ l.articulo.nombre }}</td>
-            @if (tipo === 'AJUSTE') { <td class="num">{{ l.articulo.existencia | number: '1.0-3' }}</td> }
-            <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, +$event)" /></td>
+            @if (tipo === 'AJUSTE') { <td class="num">{{ l.articulo.existencia | number: '1.0-3' }} {{ l.articulo.unidad }}</td> }
+            <td class="num"><input class="celda" type="number" min="0" [ngModel]="l.cantidad" (ngModelChange)="fijar(i, +$event)" />
+              @if (l.empaque) { <div class="muted pequeno">= {{ l.cantidad * (l.articulo.factorEmpaque ?? 1) | number: '1.0-3' }} {{ l.articulo.unidad }}</div> }</td>
+            <td><app-presentacion [articulo]="l.articulo" [empaque]="!!l.empaque" (cambio)="fijarEmpaque(i, $event)" /></td>
             <td><button mat-icon-button (click)="quitar(i)" aria-label="Quitar"><span class="material-symbols-outlined">delete</span></button></td></tr>
-        } @empty { <tr><td colspan="4" class="muted">Agregue artículos</td></tr> }
+        } @empty { <tr><td colspan="5" class="muted">Agregue artículos</td></tr> }
       </table></div>
       <div class="fila" style="margin-top:12px"><span class="espaciador"></span>
         <button mat-button (click)="nuevo.set(false); lineas.set([])">Cancelar</button>

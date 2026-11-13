@@ -55,7 +55,14 @@ public class CajaService {
 
     public record ConteoItem(@NotNull @DecimalMin("0.01") BigDecimal denominacion, @NotNull @Min(0) Integer cantidad) {}
 
-    public record CerrarRequest(@NotNull List<@Valid ConteoItem> conteo, @Size(max = 200) String observacion) {}
+    /**
+     * @param tarjetas       vouchers de tarjeta que el cajero tiene (opcional; si falta se toma lo del sistema)
+     * @param cheques        cheques recibidos (opcional)
+     * @param transferencias depósitos y transferencias (opcional)
+     */
+    public record CerrarRequest(@NotNull List<@Valid ConteoItem> conteo, @Size(max = 200) String observacion,
+                                @DecimalMin("0") BigDecimal tarjetas, @DecimalMin("0") BigDecimal cheques,
+                                @DecimalMin("0") BigDecimal transferencias) {}
 
     public record TotalForma(FormaPago forma, BigDecimal cobros, BigDecimal ingresos, BigDecimal salidas, BigDecimal neto) {}
 
@@ -203,6 +210,9 @@ public class CajaService {
         s.setEfectivoContado(contado);
         s.setDiferencia(q.diferencia());
         s.setObservacion(r.observacion());
+        s.setTarjetaContado(r.tarjetas());
+        s.setChequeContado(r.cheques());
+        s.setTransferenciaContado(r.transferencias());
         s.setCerradaEn(Instant.now());
         s.setEstado(CajaSesion.Estado.CERRADA);
         return respuesta(s);

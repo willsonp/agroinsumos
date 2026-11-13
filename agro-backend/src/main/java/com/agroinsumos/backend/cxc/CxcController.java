@@ -24,6 +24,7 @@ import java.util.List;
 public class CxcController {
 
     private final ReciboService recibos;
+    private final ReciboImpresionService reciboImpresion;
     private final NotaDebitoService notasDebito;
     private final EstadoCuentaService estadoCuenta;
 
@@ -48,6 +49,12 @@ public class CxcController {
     @PreAuthorize("@permisos.tiene('CXC_RECIBOS','CXC_ESTADO_CUENTA')")
     public ReciboService.ReciboResponse recibo(AuthUser user, @PathVariable Long id) {
         return recibos.obtener(user.companiaId(), id);
+    }
+
+    @GetMapping("/recibos/{id}/impresion")
+    @PreAuthorize("@permisos.tiene('CXC_RECIBOS','CXC_ESTADO_CUENTA')")
+    public ReciboImpresionService.ReciboImpresion impresion(AuthUser user, @PathVariable Long id) {
+        return reciboImpresion.impresion(user.companiaId(), id);
     }
 
     @PostMapping("/recibos/{id}/anular")

@@ -38,6 +38,13 @@ public class CajaSesion extends Auditable {
     private BigDecimal efectivoContado;
     @Column(precision = 18, scale = 2)
     private BigDecimal diferencia;
+    /** Montos que el cajero declara al cerrar (vouchers, cheques, depósitos); null = no declarados. */
+    @Column(name = "tarjeta_contado", precision = 18, scale = 2)
+    private BigDecimal tarjetaContado;
+    @Column(name = "cheque_contado", precision = 18, scale = 2)
+    private BigDecimal chequeContado;
+    @Column(name = "transferencia_contado", precision = 18, scale = 2)
+    private BigDecimal transferenciaContado;
     @Column(length = 200)
     private String observacion;
     @Enumerated(EnumType.STRING)

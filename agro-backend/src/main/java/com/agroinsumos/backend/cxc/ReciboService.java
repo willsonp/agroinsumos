@@ -81,6 +81,7 @@ public class ReciboService {
     private final com.agroinsumos.backend.banco.CuentaBancariaRepository cuentasBancarias;
     private final NumeradorService numerador;
     private final Clock clock;
+    private final ReciboImpresionService impresion;
 
     @Transactional
     public ReciboResponse cobrar(AuthUser user, ReciboRequest r) {
@@ -115,7 +116,7 @@ public class ReciboService {
             ap.setRetencionItbis(cero(a.retencionItbis()));
             ap.setRetencionIsr(cero(a.retencionIsr()));
             if (ap.totalAbonado().signum() <= 0) throw new BusinessException("MONTO_INVALIDO", "Abono en cero para el documento " + a.documentoId());
-            abonar(cia, cliente.getId(), ap.getDocumentoTipo(), ap.getDocumentoId(), ap.totalAbonado());
+            ap.setBalanceDespues(abonar(cia, cliente.getId(), ap.getDocumentoTipo(), ap.getDocumentoId(), ap.totalAbonado()));
             rec.getAplicaciones().add(ap);
             aplicado = aplicado.add(ap.getMonto());
             retenciones = retenciones.add(ap.getRetencionItbis()).add(ap.getRetencionIsr());
@@ -166,6 +167,8 @@ public class ReciboService {
         var sesion = usaCaja ? caja.abiertaDe(user) : null;
         if (sesion != null) rec.setSesionCajaId(sesion.getId());
         repo.save(rec);
+        repo.flush();   // el balance total del cliente se lee de la base con los abonos ya aplicados
+        rec.setBalanceClienteDespues(impresion.balanceCliente(cia, cliente.getId()));
         if (sesion != null) {
             for (var p : rec.getPagos()) {
                 BigDecimal neto = p.getFormaPago() == FormaPago.EFECTIVO ? null : p.getMonto();
@@ -228,21 +231,24 @@ public class ReciboService {
         return repo.buscar(cia, clienteId, desde, hasta, numero, p).map(ReciboResponse::de);
     }
 
-    private void abonar(Long cia, Long clienteId, TipoDocumento tipo, Long id, BigDecimal monto) {
-        switch (tipo) {
+    /** Aplica el abono y devuelve el balance que queda en el documento. */
+    private BigDecimal abonar(Long cia, Long clienteId, TipoDocumento tipo, Long id, BigDecimal monto) {
+        return switch (tipo) {
             case FACTURA -> {
                 Factura f = facturas.cargar(cia, id);
                 validarDocumento(f.getClienteId(), clienteId, f.getEstado() == Factura.Estado.ANULADA, f.getBalance(), monto, "factura " + f.getNumero());
                 f.setBalance(f.getBalance().subtract(monto));
                 if (f.getBalance().signum() == 0) f.setEstado(Factura.Estado.PAGADA);
+                yield f.getBalance();
             }
             case NOTA_DEBITO -> {
                 NotaDebito nd = notasDebito.findByIdAndCompaniaId(id, cia).orElseThrow(() -> new NotFoundException("Nota de débito", id));
                 validarDocumento(nd.getClienteId(), clienteId, false, nd.getBalance(), monto, "nota de débito " + nd.getNumero());
                 nd.setBalance(nd.getBalance().subtract(monto));
                 if (nd.getBalance().signum() == 0) nd.setEstado(NotaDebito.Estado.PAGADA);
+                yield nd.getBalance();
             }
-        }
+        };
     }
 
     private void revertir(Long cia, TipoDocumento tipo, Long id, BigDecimal monto) {

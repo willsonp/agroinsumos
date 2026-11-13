@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import type { S } from '../../api/tipos';
 import { Notificacion } from '../../core/notificacion.service';
 import { CierreDialog, EgresoDialog } from './caja-dialogs';
+import { CierreImpreso } from './cierre-impreso';
 import { SesionDetalle } from './sesion-detalle';
 
 @Component({
@@ -22,6 +23,7 @@ import { SesionDetalle } from './sesion-detalle';
             <h1>Caja #{{ s.numero }} <span class="muted">· abierta {{ s.abiertaEn | date: 'short' }}</span></h1>
             <button mat-stroked-button (click)="movimiento(true)"><span class="material-symbols-outlined">add</span> Ingreso</button>
             <button mat-stroked-button (click)="movimiento(false)"><span class="material-symbols-outlined">remove</span> Egreso</button>
+            <button mat-stroked-button (click)="dialog.open(resumen, { data: { sesionId: s.id } })"><span class="material-symbols-outlined">receipt_long</span> Resumen</button>
             <button mat-flat-button (click)="cerrar()"><span class="material-symbols-outlined">lock</span> Cerrar caja</button>
           </div>
           <div class="tarjeta"><app-sesion-detalle [sesion]="s" [movimientos]="movimientos()" /></div>
@@ -41,7 +43,8 @@ import { SesionDetalle } from './sesion-detalle';
 })
 export class MiCaja {
   private readonly http = inject(HttpClient);
-  private readonly dialog = inject(MatDialog);
+  protected readonly dialog = inject(MatDialog);
+  protected readonly resumen = CierreImpreso;
   private readonly notif = inject(Notificacion);
   protected readonly sesion = signal<S['CajaSesionResponse'] | null>(null);
   protected readonly movimientos = signal<S['CajaMovimientoResponse'][]>([]);
@@ -81,11 +84,15 @@ export class MiCaja {
 
   protected cerrar(): void {
     this.http.get<number[]>('/api/v1/caja/denominaciones').subscribe((denominaciones) => {
-      this.dialog.open(CierreDialog, { data: { denominaciones, esperado: this.sesion()?.cuadre?.efectivoEsperado ?? 0 } })
+      this.dialog.open(CierreDialog, { data: { denominaciones, sesionId: this.sesion()!.id! }, width: 'min(1100px, 96vw)', maxWidth: '96vw' })
         .afterClosed().subscribe((req) => {
           if (!req) return;
           this.http.post<S['CajaSesionResponse']>('/api/v1/caja/sesiones/actual/cerrar', req).subscribe({
-            next: (s) => { this.notif.ok(`Caja cerrada · diferencia ${s.cuadre?.diferencia}`); this.cargar(); },
+            next: (s) => {
+              this.notif.ok('Caja cerrada');
+              this.cargar();
+              this.dialog.open(CierreImpreso, { data: { sesionId: s.id } });   // cuadre con desglose de monedas para imprimir
+            },
             error: (e) => this.notif.error(e),
           });
         });

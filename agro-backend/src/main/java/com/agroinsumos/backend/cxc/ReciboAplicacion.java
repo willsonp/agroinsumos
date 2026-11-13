@@ -30,6 +30,9 @@ public class ReciboAplicacion {
     private BigDecimal retencionItbis = BigDecimal.ZERO;
     @Column(name = "retencion_isr", nullable = false, precision = 18, scale = 2)
     private BigDecimal retencionIsr = BigDecimal.ZERO;
+    /** Balance que quedó en el documento después de este abono. */
+    @Column(name = "balance_despues", precision = 18, scale = 2)
+    private BigDecimal balanceDespues;
 
     /** Lo que se descuenta del balance del documento. */
     public BigDecimal totalAbonado() { return monto.add(retencionItbis).add(retencionIsr); }

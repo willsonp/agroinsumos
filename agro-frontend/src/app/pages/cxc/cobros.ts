@@ -12,6 +12,7 @@ import { ClienteSelector } from '../../shared/cliente-selector';
 import { redondear } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { PagoDialog } from '../ventas/pago-dialog';
+import { ReciboDialog } from './recibo-dialog';
 
 type Pendiente = S['EstadoCuentaDocumentoPendiente'];
 interface Abono { doc: Pendiente; monto: number; retItbis: number; retIsr: number; }
@@ -35,6 +36,8 @@ export class Cobros {
   protected readonly ultimo = signal<S['ReciboResponse'] | null>(null);
   protected conRetenciones = false;
   protected concepto = '';
+  /** Monto que entrega el cliente para repartir entre sus documentos (legacy: botón Distribuir monto). */
+  protected montoDistribuir: number | null = null;
 
   protected readonly totalAbono = computed(() => redondear(this.abonos().reduce((s, a) => s + a.monto, 0)));
   protected readonly totalRetenciones = computed(() => redondear(this.abonos().reduce((s, a) => s + a.retItbis + a.retIsr, 0)));
@@ -63,6 +66,29 @@ export class Cobros {
     this.abonos.set(this.abonos().map((a) => ({ ...a, monto: redondear((a.doc.balance ?? 0) - a.retItbis - a.retIsr) })));
   }
 
+  /**
+   * Reparte el monto entre los documentos pendientes, del más antiguo (vence primero) al más reciente: salda los que
+   * alcance y el resto queda como abono al siguiente.
+   */
+  protected distribuir(): void {
+    let restante = redondear(this.montoDistribuir ?? 0);
+    if (restante <= 0) { this.notif.error(null, 'Indique el monto a distribuir'); return; }
+    const orden = this.abonos().map((a, i) => ({ i, clave: a.doc.vencimiento ?? a.doc.fecha ?? '' }))
+      .sort((x, y) => x.clave.localeCompare(y.clave) || x.i - y.i).map((x) => x.i);
+    const montos = new Map<number, number>();
+    for (const i of orden) {
+      const a = this.abonos()[i];
+      const disponible = redondear((a.doc.balance ?? 0) - a.retItbis - a.retIsr);
+      const abono = Math.min(restante, Math.max(0, disponible));
+      montos.set(i, abono);
+      restante = redondear(restante - abono);
+    }
+    this.abonos.set(this.abonos().map((a, i) => ({ ...a, monto: montos.get(i) ?? 0 })));
+    if (restante > 0) this.notif.error(null, `El monto supera la deuda en ${restante.toFixed(2)}: se aplicó solo lo pendiente`);
+  }
+
+  protected imprimir(id: number): void { this.dialog.open(ReciboDialog, { data: { reciboId: id } }); }
+
   protected cobrar(): void {
     const aplicaciones = this.abonos().filter((a) => a.monto + a.retItbis + a.retIsr > 0).map((a) => ({
       documentoTipo: a.doc.tipo as 'FACTURA' | 'NOTA_DEBITO', documentoId: a.doc.id!, monto: a.monto,
@@ -77,6 +103,8 @@ export class Cobros {
           this.ultimo.set(r);
           this.notif.ok(`Recibo ${r.numero} registrado`);
           this.concepto = '';
+          this.montoDistribuir = null;
+          this.imprimir(r.id!);   // constancia de pago para el cliente con el balance que le queda
           this.cargarPendientes(this.cliente()!.id!);
         },
         error: (e) => this.notif.error(e),

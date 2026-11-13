@@ -32,8 +32,12 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class DocumentoInventarioService {
 
+    /**
+     * @param empaque true: cantidad y costo en la presentación del artículo (Saco, Caja); se guardan convertidos a la
+     *                unidad base (5 sacos de 100 lb a RD$1,000 = 500 lb a RD$10).
+     */
     public record LineaRequest(@NotNull Long articuloId, @NotNull @DecimalMin("0") BigDecimal cantidad,
-                               @DecimalMin("0") BigDecimal costoUnitario) {}
+                               @DecimalMin("0") BigDecimal costoUnitario, Boolean empaque) {}
 
     public record Request(@NotNull Tipo tipo, LocalDate fecha, Long almacenId, Long almacenDestinoId,
                           @Size(max = 200) String descripcion, @NotEmpty @Size(max = 500) List<@Valid LineaRequest> lineas) {}
@@ -151,8 +155,14 @@ public class DocumentoInventarioService {
             var l = new DocumentoInventarioLinea();
             l.setDocumento(d);
             l.setArticuloId(a.getId());
-            l.setCantidad(lr.cantidad());
-            l.setCostoUnitario(lr.costoUnitario() != null ? lr.costoUnitario() : a.getCostoPromedio());
+            boolean empaque = Boolean.TRUE.equals(lr.empaque());
+            if (empaque && !a.tieneEmpaque()) {
+                throw new BusinessException("EMPAQUE_NO_DEFINIDO", "'" + a.getNombre() + "' no tiene presentación definida");
+            }
+            BigDecimal factor = empaque ? a.getFactorEmpaque() : BigDecimal.ONE;
+            l.setCantidad(lr.cantidad().multiply(factor));
+            l.setCostoUnitario(lr.costoUnitario() == null ? a.getCostoPromedio()
+                    : lr.costoUnitario().divide(factor, 4, java.math.RoundingMode.HALF_UP));
             d.getLineas().add(l);
         }
     }

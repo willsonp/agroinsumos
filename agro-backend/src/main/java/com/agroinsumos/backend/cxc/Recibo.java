@@ -50,6 +50,12 @@ public class Recibo extends Auditable {
     private String motivoAnulacion;
     @Column(name = "usuario_id")
     private Long usuarioId;
+    /** Balance pendiente total del cliente (facturas a crédito y notas de débito) después de este cobro. */
+    @Column(name = "balance_cliente_despues", precision = 18, scale = 2)
+    private BigDecimal balanceClienteDespues;
+    /** VENTA: cobro de una venta de contado del punto de venta; COBRO: recibo de ingreso de CxC. */
+    @Column(nullable = false, length = 5)
+    private String origen = "COBRO";
     @Version
     private long version;
 

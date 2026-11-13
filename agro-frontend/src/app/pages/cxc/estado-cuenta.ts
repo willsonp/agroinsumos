@@ -7,6 +7,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ReciboDialog } from './recibo-dialog';
 import type { S } from '../../api/tipos';
 import { AuthService } from '../../core/auth.service';
 import { Notificacion } from '../../core/notificacion.service';
@@ -17,7 +20,7 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
 
 @Component({
   selector: 'app-estado-cuenta',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatTabsModule, ClienteSelector],
+  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatTabsModule, MatTooltipModule, ClienteSelector],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Cuentas por cobrar</h1><button mat-stroked-button class="no-imprimir" (click)="imprimir()">Imprimir</button></div>
@@ -38,7 +41,8 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
                 <tr><th>Fecha</th><th>Documento</th><th>Referencia</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Balance</th></tr>
                 <tr><td colspan="5"><em>Saldo inicial</em></td><td class="num">{{ e.saldoInicial | currency }}</td></tr>
                 @for (m of e.movimientos; track $index) {
-                  <tr><td>{{ m.fecha | date: 'dd/MM/yyyy' }}</td><td>{{ tipo(m.tipo) }} {{ m.numero }}</td><td>{{ m.referencia }}</td>
+                  <tr><td>{{ m.fecha | date: 'dd/MM/yyyy' }}</td><td>{{ tipo(m.tipo) }} {{ m.numero }}
+                      @if (m.tipo === 'RECIBO') { <button mat-icon-button class="no-imprimir" (click)="reimprimir(m.documentoId!)" matTooltip="Reimprimir recibo" aria-label="Reimprimir recibo"><span class="material-symbols-outlined">print</span></button> }</td><td>{{ m.referencia }}</td>
                     <td class="num">{{ m.debito ? (m.debito | currency) : '' }}</td><td class="num">{{ m.credito ? (m.credito | currency) : '' }}</td>
                     <td class="num">{{ m.balance | currency }}</td></tr>
                 }
@@ -70,6 +74,9 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
 })
 export class EstadoCuenta {
   private readonly http = inject(HttpClient);
+  private readonly dialog = inject(MatDialog);
+
+  protected reimprimir(reciboId: number): void { this.dialog.open(ReciboDialog, { data: { reciboId } }); }
   private readonly notif = inject(Notificacion);
   protected readonly auth = inject(AuthService);
   protected readonly cliente = signal<S['ClienteResponse'] | null>(null);

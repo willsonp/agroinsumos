@@ -24,6 +24,7 @@ public class CajaController {
 
     private final CajaService caja;
     private final VentaContadoService ventas;
+    private final CierreCajaService cierres;
 
     @Operation(summary = "Abre la caja del usuario autenticado (una abierta por usuario)")
     @PreAuthorize("@permisos.tiene('CAJA_SESION')")
@@ -71,6 +72,13 @@ public class CajaController {
     @GetMapping("/sesiones/{id}")
     public CajaService.SesionDetalle detalle(AuthUser user, @PathVariable Long id) {
         return caja.detalle(user, id);
+    }
+
+    @Operation(summary = "Reporte de cierre: conceptos con cantidad de transacciones, subtotal, cuadre y desglose de monedas")
+    @PreAuthorize("@permisos.tiene('CAJA_SESION','CAJA_SESIONES')")
+    @GetMapping("/sesiones/{id}/cierre")
+    public CierreCajaService.CierreResumen cierre(AuthUser user, @PathVariable Long id) {
+        return cierres.resumen(user, id);
     }
 
     @PreAuthorize("@permisos.tiene('CAJA_SESION')")

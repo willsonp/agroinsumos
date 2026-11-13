@@ -110,9 +110,9 @@ tr.mat-mdc-row.clickable:hover { background: var(--mat-sys-surface-container); }
   .hoja { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
   .hoja table { font-size: 11px; } .tabla-contenedor { overflow: visible !important; }
   /* Ticket POS (80 mm): sin márgenes ni recortes del diálogo, pegado al borde del papel */
-  .cdk-overlay-pane:has(app-ticket-dialog) { position: static !important; max-width: none !important; width: auto !important; transform: none !important; margin: 0 !important; }
-  .cdk-overlay-pane:has(app-ticket-dialog) .mat-mdc-dialog-container,
-  .cdk-overlay-pane:has(app-ticket-dialog) .mat-mdc-dialog-surface { position: static !important; padding: 0 !important; border-radius: 0 !important;
+  .cdk-overlay-pane:has(.ticket) { position: static !important; max-width: none !important; width: auto !important; transform: none !important; margin: 0 !important; }
+  .cdk-overlay-pane:has(.ticket) .mat-mdc-dialog-container,
+  .cdk-overlay-pane:has(.ticket) .mat-mdc-dialog-surface { position: static !important; padding: 0 !important; border-radius: 0 !important;
     background: white !important; max-height: none !important; overflow: visible !important; }
-  app-ticket-dialog .mat-mdc-dialog-content { padding: 0 !important; max-height: none !important; overflow: visible !important; }
+  .cdk-overlay-pane:has(.ticket) .mat-mdc-dialog-content { padding: 0 !important; max-height: none !important; overflow: visible !important; }
 }

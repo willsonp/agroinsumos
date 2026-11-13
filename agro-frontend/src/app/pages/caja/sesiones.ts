@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import type { Pagina, S } from '../../api/tipos';
 import { params } from '../../shared/http';
 import { SesionDetalle } from './sesion-detalle';
+import { CierreImpreso } from './cierre-impreso';
+import { MatDialog } from '@angular/material/dialog';
 
 /** Supervisión de cajas: listado y arqueo de cada sesión. */
 @Component({
@@ -34,6 +36,7 @@ import { SesionDetalle } from './sesion-detalle';
       @if (detalle(); as d) {
         <div class="tarjeta" style="margin-top:16px">
           <div class="fila"><h2 style="flex:1">Arqueo caja #{{ d.sesion?.numero }}</h2>
+            <button mat-stroked-button (click)="imprimir(d.sesion!.id!)"><span class="material-symbols-outlined">print</span> Imprimir cierre</button>
             <button mat-button (click)="detalle.set(null)">Cerrar</button></div>
           <app-sesion-detalle [sesion]="d.sesion!" [movimientos]="d.movimientos ?? []" />
         </div>
@@ -42,6 +45,9 @@ import { SesionDetalle } from './sesion-detalle';
 })
 export class Sesiones {
   private readonly http = inject(HttpClient);
+  private readonly dialog = inject(MatDialog);
+
+  protected imprimir(sesionId: number): void { this.dialog.open(CierreImpreso, { data: { sesionId } }); }
   protected readonly columnas = ['numero', 'usuario', 'abierta', 'cerrada', 'esperado', 'diferencia', 'estado'];
   protected readonly pagina = signal<Pagina<S['CajaSesionResponse']> | null>(null);
   protected readonly detalle = signal<S['CajaSesionDetalle'] | null>(null);

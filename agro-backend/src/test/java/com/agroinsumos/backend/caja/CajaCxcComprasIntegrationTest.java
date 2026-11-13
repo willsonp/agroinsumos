@@ -143,6 +143,22 @@ class CajaCxcComprasIntegrationTest extends IntegrationTestBase {
         // El supervisor ve el arqueo
         String detalle = getJson(admin, "/api/v1/caja/sesiones/" + JsonPath.read(cierre, "$.id"));
         assertThat(JsonPath.<List<?>>read(detalle, "$.movimientos")).hasSize(3);
+        // Reporte de cierre: la venta del POS cuenta como factura a contado (1 transacción, efectivo neto + tarjeta)
+        String rc = getJson(cajero, "/api/v1/caja/sesiones/" + JsonPath.read(cierre, "$.id") + "/cierre");
+        assertThat(JsonPath.<String>read(rc, "$.usuario")).isEqualTo("cajero");
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='MONTO_INICIAL')].monto")).isEqualTo(1000.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].monto")).isEqualTo(4956.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].cantidad")).isEqualTo(1.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='RECIBOS_CXC')].cantidad")).isEqualTo(0.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='EGRESO')].monto")).isEqualTo(-500.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].efectivo")).isEqualTo(2956.0);
+        assertThat(primero(rc, "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].tarjeta")).isEqualTo(2000.0);
+        assertThat(num(rc, "$.totalDia.monto")).isEqualTo(5456.0);           // 1000 + 4956 - 500 (todas las formas)
+        // Contado: 3450 en efectivo + tarjetas no declaradas (se toman las del sistema, 2000) = 5450; faltan 6
+        assertThat(num(rc, "$.contado.total")).isEqualTo(5450.0);
+        assertThat(num(rc, "$.diferencia")).isEqualTo(-6.0);
+        assertThat(JsonPath.<String>read(rc, "$.resultado")).isEqualTo("FALTANTE");
+        assertThat(JsonPath.<List<?>>read(rc, "$.detalle.conteo")).hasSize(4);
         assertThat(JsonPath.<List<?>>read(detalle, "$.conteo")).hasSize(4);
     }
 
@@ -265,6 +281,8 @@ class CajaCxcComprasIntegrationTest extends IntegrationTestBase {
     }
 
     private static long id(String json) { return JsonPath.<Number>read(json, "$.id").longValue(); }
+
+    private static double primero(String json, String path) { return JsonPath.<List<Number>>read(json, path).getFirst().doubleValue(); }
 
     private static double num(String json, String path) { return JsonPath.<Number>read(json, path).doubleValue(); }
 

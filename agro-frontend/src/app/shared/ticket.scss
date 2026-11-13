@@ -1,4 +1,5 @@
-// Ticket térmico de 80 mm: monoespaciado, negro sobre blanco aunque la app esté en modo oscuro
+// Impresos de 80 mm (factura, recibo de ingreso, cierre de caja): monoespaciado, negro sobre blanco aunque la app esté en
+// modo oscuro. Lo usan los diálogos con la clase .ticket; styles.scss los imprime sin márgenes del diálogo.
 .ticket { width: 300px; margin: 0 auto; font: 12.5px/1.4 'Courier New', Courier, monospace; color: #000; background: #fff; padding: 10px 8px; color-scheme: light; }
 .centro { text-align: center; }
 .negrita { font-weight: 700; }
@@ -25,3 +26,6 @@ th, td { text-align: right; padding: 0; vertical-align: top; }
 .total td { font-weight: 700; font-size: 20px; padding-top: 4px; }
 @media print { .ticket { width: 72mm; padding: 0; } }
 .detalle thead th { overflow: visible; }
+.fila-dos { display: flex; justify-content: space-between; gap: 8px; }
+hr.doble { border-top: 3px double #000; }
+.totales td + td { padding-left: 8px; white-space: nowrap; }

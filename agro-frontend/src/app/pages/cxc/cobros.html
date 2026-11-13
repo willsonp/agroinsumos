@@ -31,6 +31,9 @@
       </div>
       @if (abonos().length) {
         <div class="pie">
+          <mat-form-field style="flex:0 1 200px"><mat-label>Monto recibido</mat-label>
+            <input matInput type="number" min="0" [(ngModel)]="montoDistribuir" (keydown.enter)="distribuir()" /></mat-form-field>
+          <button mat-stroked-button (click)="distribuir()"><span class="material-symbols-outlined">call_split</span> Distribuir monto</button>
           <button mat-stroked-button (click)="saldarTodo()">Saldar todo</button>
           <mat-form-field style="flex:1 1 260px"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="concepto" maxlength="200" /></mat-form-field>
           <div>
@@ -48,6 +51,7 @@
       <h3>Recibo {{ r.numero }} · {{ r.fecha | date: 'dd/MM/yyyy' }}</h3>
       <p>Aplicado {{ r.totalAplicado | currency }} · Retenciones {{ r.totalRetenciones | currency }} · Recibido {{ r.totalRecibido | currency }}
         @if ((r.devuelta ?? 0) > 0) { · <strong>Devuelta {{ r.devuelta | currency }}</strong> }</p>
+      <button mat-flat-button class="no-imprimir" (click)="imprimir(r.id!)"><span class="material-symbols-outlined">print</span> Imprimir recibo</button>
       <button mat-stroked-button class="no-imprimir" (click)="ultimo.set(null)">Cerrar</button>
     </div>
   }

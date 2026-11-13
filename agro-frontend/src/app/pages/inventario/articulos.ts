@@ -54,14 +54,16 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
             <dl class="datos">
               <div class="ancho"><dt>Artículo</dt><dd>@if (k.codigo) { {{ k.codigo }} · }{{ k.articulo }} ({{ k.unidad }})</dd></div>
               <div><dt>Almacén</dt><dd>{{ k.almacen ?? 'Todos' }}</dd></div>
-              <div><dt>Costo promedio</dt><dd>{{ k.costoPromedio | currency }}</dd></div>
+              <div><dt>Costo promedio</dt><dd>{{ k.costoPromedio | currency }} por {{ k.unidad }}
+                @if (k.factorEmpaque) { <div class="muted">= {{ (k.costoPromedio ?? 0) * k.factorEmpaque | currency }} por {{ k.unidadEmpaque }} de {{ k.factorEmpaque | number: '1.0-3' }} {{ k.unidad }}</div> }</dd></div>
               <div><dt>Existencia por almacén</dt><dd>@for (e of existencias(); track e.almacenId) { {{ almacen(e.almacenId) }}: {{ e.cantidad | number: '1.0-3' }}@if (!$last) { · } } @empty { 0 }</dd></div>
             </dl>
             <div class="resumen">
               <div><span>Saldo anterior</span><strong>{{ k.saldoAnterior | number: '1.0-3' }}</strong></div>
               <div><span>Entradas</span><strong class="entrada">+{{ k.entradas | number: '1.0-3' }}</strong></div>
               <div><span>Salidas</span><strong class="salida">-{{ k.salidas | number: '1.0-3' }}</strong></div>
-              <div><span>Saldo final</span><strong>{{ k.saldoFinal | number: '1.0-3' }}</strong></div>
+              <div><span>Saldo final ({{ k.unidad }})</span><strong>{{ k.saldoFinal | number: '1.0-3' }}</strong>
+                @if (k.factorEmpaque) { <small class="muted">= {{ (k.saldoFinal ?? 0) / k.factorEmpaque | number: '1.0-2' }} {{ k.unidadEmpaque }}</small> }</div>
             </div>
             @if (k.truncado) { <p class="error-texto">Hay demasiados movimientos: se muestran los primeros 20,000. Acote el período.</p> }
 
@@ -82,7 +84,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
             }
             <div class="tabla-contenedor"><table class="tabla">
               <thead><tr><th>Fecha</th><th>Movimiento</th><th>Documento</th><th>Almacén</th><th class="num">Entrada</th><th class="num">Salida</th>
-                <th class="num">Saldo</th><th class="num">Costo</th><th>Usuario</th></tr></thead>
+                <th class="num">Saldo</th><th class="num">Costo x {{ k.unidad }}</th><th>Usuario</th></tr></thead>
               <tbody>
                 <tr class="saldo-anterior"><td colspan="6">Saldo anterior</td><td class="num">{{ k.saldoAnterior | number: '1.0-3' }}</td><td colspan="2"></td></tr>
                 @for (m of k.movimientos; track m.id) {

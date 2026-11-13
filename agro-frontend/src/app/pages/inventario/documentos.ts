@@ -19,7 +19,8 @@ import { params } from '../../shared/http';
 
 type Doc = S['DocumentoInventarioResponse'];
 type Tipo = 'AJUSTE' | 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA';
-interface Linea { articulo: S['ArticuloResponse']; cantidad: number; }
+/** empaque: la cantidad va en la presentación (Saco x 100); se guarda convertida a la unidad base. */
+interface Linea { articulo: S['ArticuloResponse']; cantidad: number; empaque?: boolean; }
 
 const TIPOS_TEXTO: Record<string, string> = { AJUSTE: 'Ajuste por conteo', ENTRADA: 'Entrada de inventario', SALIDA: 'Salida de inventario',
   TRANSFERENCIA: 'Transferencia' };
@@ -32,9 +33,10 @@ const AYUDA: Record<Tipo, string> = {
 };
 
 /** Ajustes por conteo, entradas, salidas y transferencias (legacy ajuste / transentsalida). */
+import { PresentacionSelector } from '../../shared/presentacion-selector';
 @Component({
   selector: 'app-documentos-inventario',
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule,
+  imports: [PresentacionSelector, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatTableModule, MatPaginatorModule, ArticuloBuscador],
   templateUrl: './documentos.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
@@ -101,13 +103,22 @@ export class Documentos {
     this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, cantidad: Math.max(0, v || 0) } : l)));
   }
 
+  /** Cambia la unidad de la línea conservando la cantidad física (100 lb ↔ 1 saco). */
+  protected fijarEmpaque(i: number, empaque: boolean): void {
+    this.lineas.set(this.lineas().map((l, j) => {
+      if (j !== i || !!l.empaque === empaque) return l;
+      const f = l.articulo.factorEmpaque ?? 1;
+      return { ...l, empaque, cantidad: Math.round((empaque ? l.cantidad / f : l.cantidad * f) * 1000) / 1000 };
+    }));
+  }
+
   protected quitar(i: number): void { this.lineas.set(this.lineas().filter((_, j) => j !== i)); }
 
   protected guardar(aplicar: boolean): void {
     const req: S['DocumentoInventarioRequest'] = {
       tipo: this.tipo, almacenId: this.almacenId ?? undefined, descripcion: this.descripcion || undefined,
       almacenDestinoId: this.tipo === 'TRANSFERENCIA' ? this.almacenDestinoId ?? undefined : undefined,
-      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad })),
+      lineas: this.lineas().map((l) => ({ articuloId: l.articulo.id!, cantidad: l.cantidad, empaque: l.empaque || undefined })),
     };
     this.http.post<Doc>('/api/v1/inventario/documentos', req).subscribe({
       next: (d) => {

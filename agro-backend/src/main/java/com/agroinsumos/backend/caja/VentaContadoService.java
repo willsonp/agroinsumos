@@ -45,6 +45,7 @@ public class VentaContadoService {
         var recibo = recibos.cobrarEntidad(user, new ReciboService.ReciboRequest(f.getClienteId(), "Factura " + f.getNumero(),
                 List.of(new ReciboService.AplicacionRequest(ReciboAplicacion.TipoDocumento.FACTURA, f.getId(), f.getTotal(), null, null)),
                 r.pagos()));
+        recibo.setOrigen("VENTA");   // el cierre de caja lo cuenta como factura a contado
         return new Response(FacturaDtos.FacturaResponse.de(f), ReciboService.ReciboResponse.de(recibo));
     }
 }

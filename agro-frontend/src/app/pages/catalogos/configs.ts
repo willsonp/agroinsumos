@@ -63,9 +63,10 @@ export const ARTICULOS: CatalogoConfig = {
     { nombre: 'proveedorId', etiqueta: 'Proveedor habitual', tipo: 'select', opcionesUrl: '/api/v1/catalogos/proveedores' },
     { nombre: 'indicadorItbis', etiqueta: 'ITBIS', tipo: 'select', requerido: true, opciones: [
       { valor: 1, texto: '18 %' }, { valor: 2, texto: '16 %' }, { valor: 3, texto: '0 %' }, { valor: 4, texto: 'Exento' }] },
-    { nombre: 'costo', etiqueta: 'Costo', tipo: 'numero', requerido: true, min: 0 },
+    { nombre: 'costo', etiqueta: 'Costo por unidad (la de arriba)', tipo: 'numero', requerido: true, min: 0,
+      ayuda: 'Por Libra si se lleva en libras: un saco de 100 lb a RD$1,000 es RD$10' },
     { nombre: 'preciosIncluyenItbis', etiqueta: 'Los precios que escribo incluyen ITBIS', tipo: 'check', anchoCompleto: true },
-    { nombre: 'precioContado', etiqueta: 'Precio contado', tipo: 'numero', requerido: true, min: 0 },
+    { nombre: 'precioContado', etiqueta: 'Precio contado (por unidad)', tipo: 'numero', requerido: true, min: 0 },
     { nombre: 'precioCredito', etiqueta: 'Precio crédito', tipo: 'numero', min: 0 },
     { nombre: 'precioMayor', etiqueta: 'Precio por mayor', tipo: 'numero', min: 0 },
     { nombre: 'descuentoMaximo', etiqueta: 'Descuento máximo %', tipo: 'numero', min: 0, max: 100 },

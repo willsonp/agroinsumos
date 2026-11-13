@@ -2262,6 +2262,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cxc/recibos/{id}/impresion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["impresion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cxc/notas-debito/{id}": {
         parameters: {
             query?: never;
@@ -2538,6 +2554,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/caja/sesiones/{id}/cierre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reporte de cierre: conceptos con cantidad de transacciones, subtotal, cuadre y desglose de monedas */
+        get: operations["cierre"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/caja/sesiones/actual": {
         parameters: {
             query?: never;
@@ -2798,6 +2831,7 @@ export interface components {
             articuloId: number;
             cantidad: number;
             costoUnitario?: number;
+            empaque?: boolean;
         };
         DocumentoInventarioRequest: {
             /** @enum {string} */
@@ -4355,6 +4389,9 @@ export interface components {
         CajaCerrarRequest: {
             conteo: components["schemas"]["CajaConteoItem"][];
             observacion?: string;
+            tarjetas?: number;
+            cheques?: number;
+            transferencias?: number;
         };
         CajaConteoItem: {
             denominacion: number;
@@ -4868,6 +4905,8 @@ export interface components {
             codigo?: string;
             articulo?: string;
             unidad?: string;
+            unidadEmpaque?: string;
+            factorEmpaque?: number;
             costoPromedio?: number;
             /** Format: date */
             desde?: string;
@@ -5103,6 +5142,43 @@ export interface components {
             numberOfElements?: number;
             pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        ReciboImpresion: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            numero?: number;
+            /** Format: date */
+            fecha?: string;
+            estado?: string;
+            /** Format: int64 */
+            clienteId?: number;
+            clienteNombre?: string;
+            clienteRnc?: string;
+            concepto?: string;
+            atendio?: string;
+            totalAplicado?: number;
+            totalRetenciones?: number;
+            totalRecibido?: number;
+            devuelta?: number;
+            balanceCliente?: number;
+            documentos?: components["schemas"]["ReciboImpresionDocumento"][];
+            pagos?: components["schemas"]["ReciboImpresionPago"][];
+        };
+        ReciboImpresionDocumento: {
+            tipo?: string;
+            /** Format: int64 */
+            numero?: number;
+            comprobante?: string;
+            monto?: number;
+            retenciones?: number;
+            balanceDespues?: number;
+            saldado?: boolean;
+        };
+        ReciboImpresionPago: {
+            forma?: string;
+            monto?: number;
+            referencia?: string;
         };
         PageFinanciamientoResponse: {
             /** Format: int64 */
@@ -5538,6 +5614,33 @@ export interface components {
             sesion?: components["schemas"]["CajaSesionResponse"];
             movimientos?: components["schemas"]["CajaMovimientoResponse"][];
             conteo?: components["schemas"]["CajaConteoItem"][];
+        };
+        CierreCajaCierreResumen: {
+            detalle?: components["schemas"]["CajaSesionDetalle"];
+            usuario?: string;
+            conceptos?: components["schemas"]["CierreCajaConcepto"][];
+            totalDia?: components["schemas"]["CierreCajaConcepto"];
+            contado?: components["schemas"]["CierreCajaContado"];
+            diferencia?: number;
+            resultado?: string;
+        };
+        CierreCajaConcepto: {
+            codigo?: string;
+            descripcion?: string;
+            /** Format: int32 */
+            cantidad?: number;
+            efectivo?: number;
+            tarjeta?: number;
+            cheque?: number;
+            transferencia?: number;
+            monto?: number;
+        };
+        CierreCajaContado: {
+            efectivo?: number;
+            tarjeta?: number;
+            cheque?: number;
+            transferencia?: number;
+            total?: number;
         };
         PageMovimientoBancarioResponse: {
             /** Format: int64 */
@@ -10498,6 +10601,28 @@ export interface operations {
             };
         };
     };
+    impresion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReciboImpresion"];
+                };
+            };
+        };
+    };
     notaDebito_1: {
         parameters: {
             query?: never;
@@ -10873,6 +10998,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CajaSesionDetalle"];
+                };
+            };
+        };
+    };
+    cierre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CierreCajaCierreResumen"];
                 };
             };
         };

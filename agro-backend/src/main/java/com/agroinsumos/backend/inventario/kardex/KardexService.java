@@ -29,7 +29,12 @@ public class KardexService {
     public record Fila(Long id, Instant fecha, String tipo, String documentoTipo, Long documentoId, Long almacenId, String almacen,
                        BigDecimal cantidad, BigDecimal costoUnitario, BigDecimal saldo, String usuario) {}
 
-    public record Reporte(Long articuloId, String codigo, String articulo, String unidad, BigDecimal costoPromedio,
+    /**
+     * Cantidades y costos van en la unidad base del artículo ({@code unidad}); si tiene presentación (Saco de 100 lb),
+     * {@code unidadEmpaque} y {@code factorEmpaque} permiten mostrar la equivalencia (el costo del saco = costo × factor).
+     */
+    public record Reporte(Long articuloId, String codigo, String articulo, String unidad, String unidadEmpaque,
+                          BigDecimal factorEmpaque, BigDecimal costoPromedio,
                           LocalDate desde, LocalDate hasta, Long almacenId, String almacen,
                           BigDecimal saldoAnterior, BigDecimal entradas, BigDecimal salidas, BigDecimal saldoFinal,
                           List<Fila> movimientos, boolean truncado) {}
@@ -44,8 +49,11 @@ public class KardexService {
                 .addValue("max", MAX_FILAS + 1, Types.INTEGER);
         var art = jdbc.queryForMap("""
                 select coalesce(a.codigo_barra, a.referencia) codigo, a.nombre, u.nombre unidad, a.costo_promedio,
+                       case when a.factor_empaque > 1 then ue.nombre end unidad_empaque,
+                       case when a.factor_empaque > 1 then a.factor_empaque end factor_empaque,
                        (select al.nombre from almacen al where al.id = :almacen) almacen
-                  from articulo a join unidad u on u.id = a.unidad_id where a.id = :articulo and a.compania_id = :cia""", p);
+                  from articulo a join unidad u on u.id = a.unidad_id left join unidad ue on ue.id = a.unidad_empaque_id
+                 where a.id = :articulo and a.compania_id = :cia""", p);
         BigDecimal anterior = desde == null ? BigDecimal.ZERO : jdbc.queryForObject("""
                 select coalesce(sum(m.cantidad), 0) from inventario_movimiento m
                  where m.articulo_id = :articulo and m.compania_id = :cia and (cast(:almacen as bigint) is null or m.almacen_id = :almacen)
@@ -68,6 +76,7 @@ public class KardexService {
         BigDecimal entradas = filas.stream().map(Fila::cantidad).filter(c -> c.signum() > 0).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal salidas = filas.stream().map(Fila::cantidad).filter(c -> c.signum() < 0).reduce(BigDecimal.ZERO, BigDecimal::add).negate();
         return new Reporte(articuloId, (String) art.get("codigo"), (String) art.get("nombre"), (String) art.get("unidad"),
+                (String) art.get("unidad_empaque"), (BigDecimal) art.get("factor_empaque"),
                 (BigDecimal) art.get("costo_promedio"), desde, hasta, almacenId, (String) art.get("almacen"),
                 anterior, entradas, salidas, anterior.add(entradas).subtract(salidas), filas, truncado);
     }
