@@ -9,6 +9,11 @@ import java.util.List;
 
 public interface MovimientoInventarioRepository extends JpaRepository<MovimientoInventario, Long> {
 
+    /** ¿El artículo ya recibió compras o saldo inicial? (desde entonces el costo promedio lo calculan las compras) */
+    @Query(value = "select exists (select 1 from inventario_movimiento where articulo_id = :articuloId and tipo in ('COMPRA', 'SALDO_INICIAL'))",
+            nativeQuery = true)
+    boolean tieneCompras(Long articuloId);
+
     @Query("""
             select m from MovimientoInventario m
             where m.articuloId = :articuloId and (:almacenId is null or m.almacenId = :almacenId)

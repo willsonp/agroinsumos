@@ -65,6 +65,8 @@ export const ARTICULOS: CatalogoConfig = {
       { valor: 1, texto: '18 %' }, { valor: 2, texto: '16 %' }, { valor: 3, texto: '0 %' }, { valor: 4, texto: 'Exento' }] },
     { nombre: 'costo', etiqueta: 'Costo por unidad (la de arriba)', tipo: 'numero', requerido: true, min: 0,
       ayuda: 'Por Libra si se lleva en libras: un saco de 100 lb a RD$1,000 es RD$10' },
+    { nombre: 'aplicarCostoPromedio', etiqueta: 'Corregir también el costo promedio con este costo (si el artículo aún no tiene compras se corrige solo)',
+      tipo: 'check', anchoCompleto: true },
     { nombre: 'preciosIncluyenItbis', etiqueta: 'Los precios que escribo incluyen ITBIS', tipo: 'check', anchoCompleto: true },
     { nombre: 'precioContado', etiqueta: 'Precio contado (por unidad)', tipo: 'numero', requerido: true, min: 0 },
     { nombre: 'precioCredito', etiqueta: 'Precio crédito', tipo: 'numero', min: 0 },

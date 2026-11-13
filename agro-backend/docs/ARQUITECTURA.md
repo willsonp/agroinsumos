@@ -540,6 +540,10 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   por saco/caja (`empaque`); se guardan en la unidad base (2 sacos de 100 lb = 200 lb; el costo se divide). El kárdex
   aclara que cantidades y costo van en la unidad base y muestra el equivalente por presentación (costo por saco,
   saldo en sacos). La ficha del artículo indica que el costo es por la unidad base.
+  **Costo de la ficha y costo promedio**: el costo promedio lo calculan las compras; editar el costo de la ficha
+  lo reemplaza solo si el artículo nunca tuvo compras (carga inicial) o si se marca "Corregir también el costo
+  promedio" (`aplicarCostoPromedio`). Los movimientos pasados conservan el costo con que se registraron. El kárdex
+  muestra el saldo en presentación y unidad base (384.5 lb = "3 Saco + 84.5 Libra").
   Pruebas: `ReciboImpresionYDocumentosIntegrationTest`, `CajaCxcComprasIntegrationTest`.
 
 ## 6. Convenciones (SOLID y buenas prácticas)

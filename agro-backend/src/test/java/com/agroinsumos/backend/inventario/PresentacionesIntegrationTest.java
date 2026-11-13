@@ -111,6 +111,31 @@ class PresentacionesIntegrationTest extends IntegrationTestBase {
         assertThat(code(post("/api/v1/ventas/facturas", """
                 {"clienteId":%d,"condicion":"CONTADO","lineas":[{"articuloId":%d,"cantidad":1,"empaque":true}]}""".formatted(cliente, pala), 422)))
                 .isEqualTo("EMPAQUE_NO_DEFINIDO");
+
+        // Costo de la ficha y costo promedio: con compras, editar el costo no toca el promedio salvo que se pida
+        String ficha = """
+                {"nombre":"Urea 46%%","codigoBarra":"UREA-LB","tipo":"B","departamentoId":%d,"unidadId":%d,"indicadorItbis":1,"costo":%s,
+                 "precioContado":25,"unidadEmpaqueId":%d,"factorEmpaque":100,"precioEmpaqueContado":2200,"codigoBarraEmpaque":"UREA-SACO"%s}""";
+        long saco = JsonPath.<Number>read(getJson("/api/v1/inventario/articulos/" + urea), "$.unidadEmpaqueId").longValue();
+        put("/api/v1/inventario/articulos/" + urea, ficha.formatted(depto, libra, "22", saco, ""));
+        assertThat(costoPromedio(urea)).isEqualTo(20.0);
+        put("/api/v1/inventario/articulos/" + urea, ficha.formatted(depto, libra, "22", saco, ",\"aplicarCostoPromedio\":true"));
+        assertThat(costoPromedio(urea)).isEqualTo(22.0);
+        // Sin compras (carga inicial): el promedio sigue al costo de la ficha
+        put("/api/v1/inventario/articulos/" + pala, """
+                {"nombre":"Pala","tipo":"B","departamentoId":%d,"unidadId":%d,"indicadorItbis":1,"costo":250,"precioContado":400}"""
+                .formatted(depto, libra));
+        assertThat(costoPromedio(pala)).isEqualTo(250.0);
+    }
+
+    private double costoPromedio(long articulo) throws Exception {
+        return JsonPath.<Number>read(getJson("/api/v1/inventario/articulos/" + articulo), "$.costoPromedio").doubleValue();
+    }
+
+    private void put(String url, String body) throws Exception {
+        var res = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(url)
+                .header("Authorization", "Bearer " + admin).contentType("application/json").content(body)).andReturn().getResponse();
+        assertThat(res.getStatus()).as("PUT %s -> %s", url, res.getContentAsString()).isEqualTo(200);
     }
 
     // ------------------------------------------------------------------ utilidades

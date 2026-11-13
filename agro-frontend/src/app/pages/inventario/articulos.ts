@@ -63,7 +63,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
               <div><span>Entradas</span><strong class="entrada">+{{ k.entradas | number: '1.0-3' }}</strong></div>
               <div><span>Salidas</span><strong class="salida">-{{ k.salidas | number: '1.0-3' }}</strong></div>
               <div><span>Saldo final ({{ k.unidad }})</span><strong>{{ k.saldoFinal | number: '1.0-3' }}</strong>
-                @if (k.factorEmpaque) { <small class="muted">= {{ (k.saldoFinal ?? 0) / k.factorEmpaque | number: '1.0-2' }} {{ k.unidadEmpaque }}</small> }</div>
+                @if (k.factorEmpaque) { <small class="muted">= {{ equivalente(k.saldoFinal ?? 0, k) }}</small> }</div>
             </div>
             @if (k.truncado) { <p class="error-texto">Hay demasiados movimientos: se muestran los primeros 20,000. Acote el período.</p> }
 
@@ -127,6 +127,18 @@ export class Articulos {
   private readonly almacenes = signal<Map<number, string>>(new Map());
   protected readonly listaAlmacenes = computed(() => [...this.almacenes().entries()]);
   protected readonly hoy = new Date();
+
+  /** 384.5 lb con saco de 100 → "3 Saco + 84.5 Libras"; 0.25 lb → "0.25 Libras (menos de 1 Saco)". */
+  protected equivalente(cantidad: number, k: S['KardexReporte']): string {
+    const f = k.factorEmpaque ?? 1;
+    const signo = cantidad < 0 ? '-' : '';
+    const n = Math.abs(cantidad);
+    const enteros = Math.floor(n / f + 1e-9);
+    const resto = Math.round((n - enteros * f) * 1000) / 1000;
+    const fmt = (x: number) => x.toLocaleString('en-US', { maximumFractionDigits: 3 });
+    if (enteros === 0) return `${signo}${fmt(resto)} ${k.unidad} (menos de 1 ${k.unidadEmpaque})`;
+    return `${signo}${fmt(enteros)} ${k.unidadEmpaque}${resto ? ` + ${fmt(resto)} ${k.unidad}` : ''}`;
+  }
   protected ahora = new Date();
   /** Por defecto, los últimos 3 meses (vaciar "Desde" trae todo el historial). */
   protected f = { desde: isoFecha(new Date(this.hoy.getFullYear(), this.hoy.getMonth() - 2, 1)) as string | null,

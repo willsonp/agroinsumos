@@ -2910,6 +2910,7 @@ export interface components {
             precioEmpaqueCredito?: number;
             precioEmpaqueMayor?: number;
             codigoBarraEmpaque?: string;
+            aplicarCostoPromedio?: boolean;
         };
         ArticuloResponse: {
             /** Format: int64 */

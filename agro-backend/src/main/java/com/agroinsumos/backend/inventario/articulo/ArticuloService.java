@@ -41,7 +41,12 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
             /** Presentación opcional (Saco, Caja): equivale a factorEmpaque unidades base. Precios vacíos = base × factor. */
             Long unidadEmpaqueId, @DecimalMin(value = "1", inclusive = false) BigDecimal factorEmpaque,
             @DecimalMin("0") BigDecimal precioEmpaqueContado, @DecimalMin("0") BigDecimal precioEmpaqueCredito,
-            @DecimalMin("0") BigDecimal precioEmpaqueMayor, @Size(max = 20) String codigoBarraEmpaque) {}
+            @DecimalMin("0") BigDecimal precioEmpaqueMayor, @Size(max = 20) String codigoBarraEmpaque,
+            /**
+             * true: el costo también reemplaza al costo promedio (corrige un costo mal cargado). Si el artículo nunca
+             * tuvo compras se aplica siempre: aún está en la carga inicial y el promedio sigue al costo de la ficha.
+             */
+            Boolean aplicarCostoPromedio) {}
 
     public record Response(Long id, String codigoBarra, String referencia, String nombre, String descripcion,
                            Articulo.Tipo tipo, Long departamentoId, Long unidadId, Long proveedorId, int indicadorItbis,
@@ -56,6 +61,7 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
 
     private final ArticuloRepository repo;
     private final ExistenciaRepository existencias;
+    private final com.agroinsumos.backend.inventario.kardex.MovimientoInventarioRepository movimientos;
     private final DepartamentoService departamentos;
     private final UnidadService unidades;
     private final ProveedorService proveedores;
@@ -122,7 +128,9 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
         a.setProveedorId(r.proveedorId());
         a.setIndicadorItbis(r.indicadorItbis().shortValue());
         a.setCosto(r.costo());
-        if (a.getId() == null) a.setCostoPromedio(r.costo());
+        if (a.getId() == null || Boolean.TRUE.equals(r.aplicarCostoPromedio()) || !movimientos.tieneCompras(a.getId())) {
+            a.setCostoPromedio(r.costo());
+        }
         boolean conItbis = Boolean.TRUE.equals(r.preciosIncluyenItbis());
         BigDecimal factor = BigDecimal.ONE.add(a.tasaItbis().movePointLeft(2));
         a.setPrecioContado(base(r.precioContado(), conItbis, factor));
