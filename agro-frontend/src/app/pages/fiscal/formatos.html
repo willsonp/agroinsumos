@@ -7,7 +7,14 @@
         <mat-button-toggle value="606">606 · Compras</mat-button-toggle>
         <mat-button-toggle value="608">608 · Anulados</mat-button-toggle>
       </mat-button-toggle-group>
-      <mat-form-field style="max-width:200px"><mat-label>Periodo</mat-label><input matInput type="month" [(ngModel)]="periodo" (change)="generar()" /></mat-form-field>
+      <mat-form-field style="max-width:160px"><mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="mes" (selectionChange)="generar()">
+          @for (m of meses; track $index) { <mat-option [value]="$index + 1">{{ m }}</mat-option> }
+        </mat-select></mat-form-field>
+      <mat-form-field style="max-width:120px"><mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="anio" (selectionChange)="generar()">
+          @for (a of anios; track a) { <mat-option [value]="a">{{ a }}</mat-option> }
+        </mat-select></mat-form-field>
       @if (formato === '607') {
         <mat-slide-toggle [(ngModel)]="incluirEcf" (change)="generar()">Incluir e-CF</mat-slide-toggle>
       }

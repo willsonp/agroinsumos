@@ -35,7 +35,13 @@ export class Formatos {
   private readonly http = inject(HttpClient);
   private readonly notif = inject(Notificacion);
   protected formato: '606' | '607' | '608' = '607';
-  protected periodo = this.periodoAnterior();
+  protected readonly meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre',
+    'Noviembre', 'Diciembre'];
+  /** Año actual y los 5 anteriores (la DGII permite remitir o rectificar periodos pasados). */
+  protected readonly anios = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
+  // Por defecto, el mes anterior: es el que normalmente se declara (vence el 15 del mes siguiente)
+  protected mes = this.mesAnterior().getMonth() + 1;
+  protected anio = this.mesAnterior().getFullYear();
   protected incluirEcf = true;
   protected readonly reporte = signal<Reporte | null>(null);
   protected readonly r606 = () => this.reporte() as S['Formato606Reporte'];
@@ -46,15 +52,15 @@ export class Formatos {
 
   constructor() { this.generar(); }
 
-  /** Mes anterior en formato AAAA-MM (input type="month"): es el que normalmente se declara. */
-  private periodoAnterior(): string {
+  private mesAnterior(): Date {
     const d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return d;
   }
 
-  private aaaamm(): string { return this.periodo.replace('-', ''); }
+  /** Periodo AAAAMM que piden los formatos de la DGII. */
+  private aaaamm(): string { return `${this.anio}${String(this.mes).padStart(2, '0')}`; }
 
   protected generar(): void {
     this.reporte.set(null);
