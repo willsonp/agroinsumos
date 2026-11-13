@@ -36,7 +36,7 @@ class ReciboImpresionYDocumentosIntegrationTest extends IntegrationTestBase {
                 {"nombre":"Abono 20-5-20","tipo":"B","departamentoId":%d,"unidadId":%d,"indicadorItbis":4,"costo":0,"precioContado":20,
                  "unidadEmpaqueId":%d,"factorEmpaque":100}""".formatted(depto, libra, saco), 201));
         cliente = id(post("/api/v1/catalogos/clientes", """
-                {"nombre":"Rosa Los Guallos","tipoEcfPreferido":32,"tipoPrecio":"CONTADO","limiteCredito":0,"diasCredito":30}""", 201));
+                {"nombre":"Rosa Los Guallos","tipoEcfPreferido":32,"tipoPrecio":"CONTADO","limiteCredito":1000000,"diasCredito":30}""", 201));
     }
 
     @Test

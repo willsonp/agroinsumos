@@ -92,13 +92,13 @@ public class ClienteService extends CrudService<Cliente, ClienteService.Request,
         return repo.balancePendiente(clienteId);
     }
 
-    /** @param limite 0 = sin límite; @param disponible null cuando no tiene límite */
+    /** @param limite 0 = sin crédito aprobado (solo contado); @param disponible límite − deuda (nunca negativo) */
     public record Credito(java.math.BigDecimal limite, java.math.BigDecimal deuda, java.math.BigDecimal disponible, int diasCredito) {}
 
     public Credito credito(Long companiaId, Long clienteId) {
         Cliente c = cargar(companiaId, clienteId);
         BigDecimal deuda = repo.balancePendiente(c.getId());
-        BigDecimal disponible = c.getLimiteCredito().signum() <= 0 ? null : c.getLimiteCredito().subtract(deuda).max(BigDecimal.ZERO);
+        BigDecimal disponible = c.getLimiteCredito().subtract(deuda).max(BigDecimal.ZERO);
         return new Credito(c.getLimiteCredito(), deuda, disponible, c.getDiasCredito());
     }
 

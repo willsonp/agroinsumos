@@ -36,7 +36,7 @@ class ReportesIntegrationTest extends IntegrationTestBase {
                  "precioContado":2100,"precioCredito":2100,"stockMinimo":20}""".formatted(depto, unidad), 201));
         long prov = id(post("/api/v1/catalogos/proveedores", "{\"nombre\":\"Fertilizantes del Cibao\",\"rncCedula\":\"131000002\"}", 201));
         finca = id(post("/api/v1/catalogos/clientes", """
-                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":0,"diasCredito":30}""", 201));
+                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":1000000,"diasCredito":30}""", 201));
         vendedor = id(post("/api/v1/catalogos/vendedores", "{\"nombre\":\"Pedro Vendedor\",\"comision\":5}", 201));
         long compra = id(post("/api/v1/compras", """
                 {"proveedorId":%d,"ncfProveedor":"B0100000001","condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":10,"costoUnitario":1000}]}"""

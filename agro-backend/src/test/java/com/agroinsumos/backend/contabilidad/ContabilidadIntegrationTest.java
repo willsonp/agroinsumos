@@ -40,7 +40,7 @@ class ContabilidadIntegrationTest extends IntegrationTestBase {
                  "precioContado":2100,"precioCredito":2100}""".formatted(depto, unidad), 201));
         finca = id(post(admin, "/api/v1/catalogos/clientes", """
                 {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO",
-                 "limiteCredito":0,"diasCredito":30}""", 201));
+                 "limiteCredito":1000000,"diasCredito":30}""", 201));
         proveedor = id(post(admin, "/api/v1/catalogos/proveedores", "{\"nombre\":\"Fertilizantes del Cibao\",\"rncCedula\":\"131000002\"}", 201));
         long banco = id(post(admin, "/api/v1/banco/bancos", "{\"nombre\":\"BHD\"}", 201));
         cuentaBanco = id(post(admin, "/api/v1/banco/cuentas", """

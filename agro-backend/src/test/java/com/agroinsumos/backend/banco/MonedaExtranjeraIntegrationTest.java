@@ -33,7 +33,7 @@ class MonedaExtranjeraIntegrationTest extends IntegrationTestBase {
                  "precioContado":2100,"precioCredito":2100}""".formatted(depto, unidad), 201));
         proveedor = id(post("/api/v1/catalogos/proveedores", "{\"nombre\":\"Yara International\",\"rncCedula\":\"131000002\"}", 201));
         finca = id(post("/api/v1/catalogos/clientes", """
-                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":0,"diasCredito":30}""", 201));
+                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":1000000,"diasCredito":30}""", 201));
         long banco = id(post("/api/v1/banco/bancos", "{\"nombre\":\"BHD\"}", 201));
         cuentaUsd = id(post("/api/v1/banco/cuentas", """
                 {"bancoId":%d,"numero":"USD-1","nombre":"Dólares","moneda":"USD","saldoInicial":5000,"fechaSaldoInicial":"2020-01-01"}""".formatted(banco), 201));

@@ -30,7 +30,10 @@ const PLAZOS = [15, 30, 45, 60];
           </div>
           @if (excede()) { <p class="ancho-completo error-texto">La factura excede el crédito disponible en {{ datos.total - (c.disponible ?? 0) | currency }}.
             Cobre una parte de contado o registre un abono primero.</p> }
-        } @else { <p class="ancho-completo muted">Sin límite de crédito configurado · debe {{ c.deuda | currency }}</p> }
+        } @else {
+          <p class="ancho-completo error-texto">El cliente no tiene crédito aprobado (límite de crédito en 0). Asígnele un límite en su
+            ficha (Catálogos → Clientes) o venda de contado.</p>
+        }
       }
       <mat-button-toggle-group class="ancho-completo" [value]="dias()" (change)="dias.set($event.value)" [hideSingleSelectionIndicator]="true" aria-label="Plazo">
         @for (p of plazos; track p) { <mat-button-toggle [value]="p">{{ p }} días</mat-button-toggle> }
@@ -56,7 +59,8 @@ export class CreditoDialog {
   protected readonly credito = signal<S['ClienteCredito'] | null>(null);
   protected readonly excede = computed(() => {
     const c = this.credito();
-    return !!c && (c.limite ?? 0) > 0 && this.datos.total > (c.disponible ?? 0) + 0.001;
+    // Sin límite (0) no hay crédito aprobado; con límite, la factura no puede pasar de lo disponible
+    return !!c && ((c.limite ?? 0) <= 0 || this.datos.total > (c.disponible ?? 0) + 0.001);
   });
 
   constructor() {

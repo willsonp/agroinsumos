@@ -37,7 +37,7 @@ class TicketYCreditoIntegrationTest extends IntegrationTestBase {
                 .formatted(depto, unidad), 201));
         cliente = id(post("/api/v1/catalogos/clientes", """
                 {"nombre":"Juan Pérez","telefono":"809-000-0000","direccion":"La Vega","tipoEcfPreferido":32,"tipoPrecio":"CONTADO",
-                 "limiteCredito":0,"diasCredito":0}""", 201));
+                 "limiteCredito":1000000,"diasCredito":0}""", 201));
     }
 
     @Test

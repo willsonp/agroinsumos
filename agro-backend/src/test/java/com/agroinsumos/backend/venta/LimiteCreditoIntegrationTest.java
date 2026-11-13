@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /**
  * Límite de crédito: con límite 15,000 y deuda de 10,000, solo se puede facturar a crédito hasta 5,000. La deuda es
- * todo lo pendiente (facturas a crédito y de contado sin cobrar), igual que en Cobros.
+ * todo lo pendiente (facturas a crédito y de contado sin cobrar), igual que en Cobros. Límite 0 = sin crédito aprobado.
  */
 class LimiteCreditoIntegrationTest extends IntegrationTestBase {
 
@@ -68,6 +68,14 @@ class LimiteCreditoIntegrationTest extends IntegrationTestBase {
         post("/api/v1/ventas/facturas", factura("CONTADO", 2), 201);
         assertThat(num(getJson("/api/v1/catalogos/clientes/" + cliente + "/credito"), "$.deuda")).isEqualTo(15000.0);
         assertThat(code(post("/api/v1/ventas/facturas", factura("CREDITO", 1), 422))).isEqualTo("LIMITE_CREDITO_EXCEDIDO");
+
+        // Límite 0 = sin crédito aprobado: solo de contado
+        long sinCredito = id(post("/api/v1/catalogos/clientes", """
+                {"nombre":"Pedro Gómez","tipoEcfPreferido":32,"tipoPrecio":"CONTADO","limiteCredito":0,"diasCredito":30}""", 201));
+        String sc = post("/api/v1/ventas/facturas", """
+                {"clienteId":%d,"condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":1}]}""".formatted(sinCredito, abono), 422);
+        assertThat(code(sc)).isEqualTo("SIN_CREDITO_APROBADO");
+        assertThat(num(getJson("/api/v1/catalogos/clientes/" + sinCredito + "/credito"), "$.disponible")).isZero();
 
         // Las ventas de contado pagadas no tienen límite
         post("/api/v1/caja/ventas", """

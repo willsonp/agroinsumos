@@ -39,9 +39,9 @@ class VentasPendientesIntegrationTest extends IntegrationTestBase {
         post(admin, "/api/v1/compras", """
                 {"proveedorId":%d,"condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":20,"costoUnitario":1000}]}""".formatted(prov, urea), 201);
         finca = id(post(admin, "/api/v1/catalogos/clientes", """
-                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":0,"diasCredito":30}""", 201));
+                {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":1000000,"diasCredito":30}""", 201));
         otro = id(post(admin, "/api/v1/catalogos/clientes", """
-                {"nombre":"Hacienda Los Pinos SRL","rncCedula":"130000001","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":0,"diasCredito":30}""", 201));
+                {"nombre":"Hacienda Los Pinos SRL","rncCedula":"130000001","tipoEcfPreferido":31,"tipoPrecio":"CREDITO","limiteCredito":1000000,"diasCredito":30}""", 201));
     }
 
     @Test

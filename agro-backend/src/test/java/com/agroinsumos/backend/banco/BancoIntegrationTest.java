@@ -147,7 +147,7 @@ class BancoIntegrationTest extends IntegrationTestBase {
         long art = JsonPath.<Number>read(getJson(admin, "/api/v1/inventario/articulos"), "$.content[0].id").longValue();
         long cliente = id(post(admin, "/api/v1/catalogos/clientes", """
                 {"nombre":"Finca La Esperanza SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO",
-                 "limiteCredito":0,"diasCredito":30}""", 201));
+                 "limiteCredito":1000000,"diasCredito":30}""", 201));
         long fac = id(post(admin, "/api/v1/ventas/facturas", """
                 {"clienteId":%d,"condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":1}]}""".formatted(cliente, art), 201));
         String rec = post(admin, "/api/v1/cxc/recibos", """

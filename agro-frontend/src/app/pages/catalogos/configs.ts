@@ -17,7 +17,8 @@ export const CLIENTES: CatalogoConfig = {
       { valor: 44, texto: '44 · Régimen especial' }, { valor: 45, texto: '45 · Gubernamental' }] },
     { nombre: 'tipoPrecio', etiqueta: 'Lista de precios', tipo: 'select', requerido: true, opciones: [
       { valor: 'CONTADO', texto: 'Contado' }, { valor: 'CREDITO', texto: 'Crédito' }, { valor: 'MAYOR', texto: 'Por mayor' }] },
-    { nombre: 'limiteCredito', etiqueta: 'Límite de crédito (0 = sin límite)', tipo: 'numero', requerido: true, min: 0 },
+    { nombre: 'limiteCredito', etiqueta: 'Límite de crédito', tipo: 'numero', requerido: true, min: 0,
+      ayuda: '0 = sin crédito aprobado (solo compra de contado)' },
     { nombre: 'diasCredito', etiqueta: 'Días de crédito', tipo: 'numero', min: 0, max: 365 },
     { nombre: 'exentoItbis', etiqueta: 'Exento de ITBIS', tipo: 'check' },
     { nombre: 'telefono', etiqueta: 'Teléfono' }, { nombre: 'celular', etiqueta: 'Celular' },

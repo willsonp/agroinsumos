@@ -37,7 +37,7 @@ class CajaCxcComprasIntegrationTest extends IntegrationTestBase {
                  "precioContado":2100,"precioCredito":2100}""".formatted(depto, unidad), 201));
         finca = id(post(admin, "/api/v1/catalogos/clientes", """
                 {"nombre":"Finca El Progreso SRL","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO",
-                 "limiteCredito":0,"diasCredito":30}""", 201));
+                 "limiteCredito":1000000,"diasCredito":30}""", 201));
         consumidor = id(post(admin, "/api/v1/catalogos/clientes",
                 "{\"nombre\":\"Consumidor final\",\"tipoEcfPreferido\":32,\"tipoPrecio\":\"CONTADO\",\"limiteCredito\":0}", 201));
         proveedor = id(post(admin, "/api/v1/catalogos/proveedores", "{\"nombre\":\"Fertilizantes del Cibao\",\"rncCedula\":\"131000002\"}", 201));

@@ -522,7 +522,8 @@ en Administración → Empresa, decide qué comprobante lleva cada documento:
   es lo mismo que muestra Cobros: facturas con balance (a crédito o de contado sin cobrar) y notas de débito
   pendientes. La fila del cliente se bloquea durante la validación (dos ventas simultáneas no pasan juntas el
   límite). `GET /catalogos/clientes/{id}/credito` da límite, deuda y disponible; el diálogo de venta a crédito los
-  muestra y no deja facturar si se excede. Límite 0 = sin límite. Prueba: `LimiteCreditoIntegrationTest`.
+  muestra y no deja facturar si se excede. **Límite 0 = sin crédito aprobado** (`SIN_CREDITO_APROBADO`): el cliente
+  solo compra de contado. Prueba: `LimiteCreditoIntegrationTest`.
   Prueba: `TicketYCreditoIntegrationTest`.
 
 ## 5.17 Recibo de ingreso, cuadre de caja y presentaciones en inventario

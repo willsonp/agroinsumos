@@ -175,7 +175,11 @@ public class FacturaService {
     }
 
     private void validarLimiteCredito(Cliente c, BigDecimal monto) {
-        if (c.getLimiteCredito().signum() <= 0) return; // 0 = sin límite configurado
+        // Límite 0 = el cliente no tiene crédito aprobado: solo compra de contado
+        if (c.getLimiteCredito().signum() <= 0) {
+            throw new BusinessException("SIN_CREDITO_APROBADO", "El cliente " + c.getNombre()
+                    + " no tiene crédito aprobado (límite de crédito en 0): asígnele un límite en su ficha o venda de contado");
+        }
         clientes.bloquear(c.getId());   // la deuda no cambia hasta que esta factura termine
         BigDecimal pendiente = clientes.balancePendiente(c.getId());
         BigDecimal disponible = c.getLimiteCredito().subtract(pendiente).max(BigDecimal.ZERO);

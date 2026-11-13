@@ -52,7 +52,7 @@ class FiscalIntegrationTest extends IntegrationTestBase {
         informal = id(post("/api/v1/catalogos/proveedores", "{\"nombre\":\"Juan Agricultor\",\"rncCedula\":\"001-1234567-8\"}", 201));
         finca = id(post("/api/v1/catalogos/clientes", """
                 {"nombre":"Finca El Progreso","rncCedula":"101010101","tipoEcfPreferido":31,"tipoPrecio":"CREDITO",
-                 "limiteCredito":0,"diasCredito":30}""", 201));
+                 "limiteCredito":1000000,"diasCredito":30}""", 201));
         consumidor = id(post("/api/v1/catalogos/clientes",
                 "{\"nombre\":\"Consumidor final\",\"tipoEcfPreferido\":32,\"tipoPrecio\":\"CONTADO\",\"limiteCredito\":0}", 201));
     }
