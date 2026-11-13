@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class ConduceController {
 
     private final ConduceService service;
+    private final com.agroinsumos.backend.caja.VentaContadoService ventasContado;
 
     @Operation(summary = "Conduce: entrega de mercancía sin factura (sale del inventario)")
     @PostMapping
@@ -46,6 +47,14 @@ public class ConduceController {
     @PreAuthorize("@permisos.tiene('VENTAS_CONDUCES')")
     public ResponseEntity<FacturaDtos.FacturaResponse> facturar(AuthUser user, @Valid @RequestBody ConduceService.FacturarRequest r) {
         return ResponseEntity.status(201).body(service.facturar(user, r));
+    }
+
+    @Operation(summary = "Factura conduces de contado y los cobra en la caja abierta (factura + e-CF + recibo, una transacción)")
+    @PostMapping("/facturar-contado")
+    @PreAuthorize("@permisos.tiene('VENTAS_CONDUCES')")
+    public ResponseEntity<com.agroinsumos.backend.caja.VentaContadoService.Response> facturarContado(AuthUser user,
+            @Valid @RequestBody com.agroinsumos.backend.caja.VentaContadoService.ConducesRequest r) {
+        return ResponseEntity.status(201).body(ventasContado.facturarConduces(user, r));
     }
 
     @PostMapping("/{id}/anular")

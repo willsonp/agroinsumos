@@ -567,6 +567,16 @@ Como el módulo CxP del sistema anterior (opción **Compras → Pagos a suplidor
 - **Pagos realizados** (reimprimir, anular con motivo) y **Antigüedad de saldos** (corriente, 1-30, 31-60, 61-90,
   más de 90 días). Prueba: `PagosSuplidoresIntegrationTest`.
 
+## 5.19 Conduces: proceso completo
+
+1. **Conduce** (constancia de entrega): sale la mercancía y se rebaja el inventario; sin comprobante fiscal ni dinero.
+2. **Facturar** uno o varios conduces abiertos del mismo cliente y almacén (no vuelve a rebajar inventario):
+   - **Crédito**: `POST /ventas/conduces/facturar`; pasa a CxC y se valida el límite de crédito.
+   - **Contado**: `POST /ventas/conduces/facturar-contado` factura y cobra en la caja abierta en una sola transacción
+     (mismo diálogo de cobro y ticket que el punto de venta; el recibo es de origen VENTA y el cierre lo cuenta como
+     factura a contado). Sin caja abierta o con pago insuficiente no se emite la factura y el conduce sigue abierto.
+3. **Anular** un conduce abierto devuelve la mercancía. Prueba: `VentasPendientesIntegrationTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

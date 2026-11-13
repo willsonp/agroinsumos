@@ -17,8 +17,9 @@ import { ClienteSelector } from '../../shared/cliente-selector';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
 import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
 import { PresentacionSelector } from '../../shared/presentacion-selector';
-import { params } from '../../shared/http';
+import { params, redondear } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
+import { PagoDialog } from './pago-dialog';
 import { ComprobanteService } from '../../core/comprobante.service';
 
 type Conduce = S['ConduceResponse'];
@@ -70,7 +71,7 @@ type Conduce = S['ConduceResponse'];
           <span>{{ seleccion().length }} conduce(s) seleccionado(s) · {{ totalSeleccion() | currency }}</span>
           <span class="espaciador"></span>
           <mat-form-field style="width:160px"><mat-label>Condición</mat-label><mat-select [(ngModel)]="condicion">
-            <mat-option value="CREDITO">Crédito</mat-option><mat-option value="CONTADO">Contado (se cobra en caja)</mat-option></mat-select></mat-form-field>
+            <mat-option value="CREDITO">Crédito</mat-option><mat-option value="CONTADO">Contado (cobrar ahora en caja)</mat-option></mat-select></mat-form-field>
           <button mat-flat-button (click)="facturar()">Facturar seleccionados</button>
         </div>
       }
@@ -174,14 +175,25 @@ export class Conduces {
   }
 
   protected facturar(): void {
-    this.http.post<S['FacturaResponse']>('/api/v1/ventas/conduces/facturar', { conduceIds: this.seleccion().map((c) => c.id), condicion: this.condicion })
-      .subscribe({
-        next: (f) => {
-          this.seleccion.set([]); this.cargar();
-          this.notif.ok(`Factura ${f.numero} emitida${this.comp.sufijo(f.encf)}`);
-          this.dialog.open(TicketDialog, { data: { factura: f } });
-        },
-        error: (e) => this.notif.error(e) });
+    const conduceIds = this.seleccion().map((c) => c.id!);
+    const emitida = (f: S['FacturaResponse'], recibo?: S['ReciboResponse']) => {
+      this.seleccion.set([]); this.cargar();
+      this.notif.ok(`Factura ${f.numero} emitida${this.comp.sufijo(f.encf)}`);
+      this.dialog.open(TicketDialog, { data: { factura: f, recibo } });
+    };
+    if (this.condicion === 'CREDITO') {
+      this.http.post<S['FacturaResponse']>('/api/v1/ventas/conduces/facturar', { conduceIds, condicion: 'CREDITO' })
+        .subscribe({ next: (f) => emitida(f), error: (e) => this.notif.error(e) });
+      return;
+    }
+    // Contado: se cobra en el momento con el mismo diálogo del punto de venta (entra a la caja como factura a contado)
+    this.dialog.open(PagoDialog, { data: { total: redondear(this.totalSeleccion()) }, autoFocus: 'dialog' })
+      .afterClosed().subscribe((pagos?: S['PagoRequest'][]) => {
+        if (!pagos) return;
+        this.http.post<S['VentaContadoResponse']>('/api/v1/ventas/conduces/facturar-contado',
+          { facturar: { conduceIds, condicion: 'CONTADO' }, pagos })
+          .subscribe({ next: (r) => emitida(r.factura!, r.recibo), error: (e) => this.notif.error(e) });
+      });
   }
 
   protected ver(c: Conduce): void { this.visto.set(c); }

@@ -31,9 +31,14 @@ public class VentaContadoService {
 
     public record Response(FacturaDtos.FacturaResponse factura, ReciboService.ReciboResponse recibo) {}
 
+    /** Conduces facturados de contado y cobrados en el momento. */
+    public record ConducesRequest(@NotNull @Valid com.agroinsumos.backend.venta.conduce.ConduceService.FacturarRequest facturar,
+                                  @NotEmpty List<@Valid PagoRequest> pagos) {}
+
     private final CajaService caja;
     private final FacturaService facturas;
     private final ReciboService recibos;
+    private final com.agroinsumos.backend.venta.conduce.ConduceService conduces;
 
     @Transactional
     public Response vender(AuthUser user, Request r) {
@@ -42,9 +47,26 @@ public class VentaContadoService {
         }
         caja.abiertaDe(user);
         Factura f = facturas.crearEntidad(user.companiaId(), user, r.factura(), false, null);
+        return cobrar(user, f, r.pagos());
+    }
+
+    /**
+     * Factura conduces de contado y los cobra en la caja en la misma transacción (como el punto de venta): si la caja
+     * está cerrada o el pago no alcanza, no se emite la factura ni se consume el NCF y los conduces siguen abiertos.
+     */
+    @Transactional
+    public Response facturarConduces(AuthUser user, ConducesRequest r) {
+        if (r.facturar().condicion() != Factura.Condicion.CONTADO) {
+            throw new BusinessException("CONDICION_INVALIDA", "El cobro en caja es para facturas de contado");
+        }
+        caja.abiertaDe(user);
+        return cobrar(user, conduces.facturarEntidad(user, r.facturar()), r.pagos());
+    }
+
+    private Response cobrar(AuthUser user, Factura f, List<PagoRequest> pagos) {
         var recibo = recibos.cobrarEntidad(user, new ReciboService.ReciboRequest(f.getClienteId(), "Factura " + f.getNumero(),
                 List.of(new ReciboService.AplicacionRequest(ReciboAplicacion.TipoDocumento.FACTURA, f.getId(), f.getTotal(), null, null)),
-                r.pagos()));
+                pagos));
         recibo.setOrigen("VENTA");   // el cierre de caja lo cuenta como factura a contado
         return new Response(FacturaDtos.FacturaResponse.de(f), ReciboService.ReciboResponse.de(recibo));
     }

@@ -68,6 +68,35 @@ class VentasPendientesIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void conduceDeContadoSeCobraEnCajaAlFacturar() throws Exception {
+        long c1 = id(post(cajero, "/api/v1/ventas/conduces", conduce(finca, 1), 201));   // 2100 + 18% = 2478
+        String body = """
+                {"facturar":{"conduceIds":[%d],"condicion":"CONTADO"},"pagos":[{"forma":"EFECTIVO","monto":%s}]}""";
+        // Sin caja abierta, o con pago insuficiente: no se emite la factura y el conduce sigue abierto
+        assertThat(code(post(cajero, "/api/v1/ventas/conduces/facturar-contado", body.formatted(c1, "3000"), 422))).isEqualTo("CAJA_CERRADA");
+        post(cajero, "/api/v1/caja/sesiones/abrir", "{\"montoInicial\":0}", 201);
+        assertThat(code(post(cajero, "/api/v1/ventas/conduces/facturar-contado", body.formatted(c1, "1000"), 422))).isEqualTo("PAGO_INSUFICIENTE");
+        assertThat(jdbc.queryForObject("select count(*) from factura", Integer.class)).isZero();
+        assertThat(JsonPath.<String>read(getJson(cajero, "/api/v1/ventas/conduces/" + c1), "$.estado")).isEqualTo("ABIERTO");
+
+        String r = post(cajero, "/api/v1/ventas/conduces/facturar-contado", body.formatted(c1, "3000"), 201);
+        assertThat(JsonPath.<String>read(r, "$.factura.estado")).isEqualTo("PAGADA");
+        assertThat(num(r, "$.recibo.devuelta")).isEqualTo(522.0);
+        assertThat(existencia()).isEqualTo(19.0);                 // solo salió con el conduce
+        assertThat(JsonPath.<String>read(getJson(cajero, "/api/v1/ventas/conduces/" + c1), "$.estado")).isEqualTo("FACTURADO");
+        // Entra a la caja como factura a contado
+        long sesion = JsonPath.<Number>read(getJson(cajero, "/api/v1/caja/sesiones/actual"), "$.id").longValue();
+        String cierre = getJson(cajero, "/api/v1/caja/sesiones/" + sesion + "/cierre");
+        assertThat(JsonPath.<java.util.List<Number>>read(cierre, "$.conceptos[?(@.codigo=='FACTURAS_CONTADO')].monto").getFirst().doubleValue())
+                .isEqualTo(2478.0);
+        // A crédito no se usa este cobro
+        long c2 = id(post(cajero, "/api/v1/ventas/conduces", conduce(finca, 1), 201));
+        assertThat(code(post(cajero, "/api/v1/ventas/conduces/facturar-contado", """
+                {"facturar":{"conduceIds":[%d],"condicion":"CREDITO"},"pagos":[{"forma":"EFECTIVO","monto":3000}]}""".formatted(c2), 422)))
+                .isEqualTo("CONDICION_INVALIDA");
+    }
+
+    @Test
     void apartadoConAbonosSeFacturaConElAnticipo() throws Exception {
         post(cajero, "/api/v1/caja/sesiones/abrir", "{\"montoInicial\":0}", 201);
         // 1 saco = 2478 con ITBIS; primer abono de 1000 en efectivo

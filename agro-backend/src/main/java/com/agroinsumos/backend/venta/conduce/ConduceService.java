@@ -121,6 +121,12 @@ public class ConduceService {
     /** Factura uno o varios conduces abiertos del mismo cliente y almacén (e-CF a los precios de los conduces). */
     @Transactional
     public FacturaDtos.FacturaResponse facturar(AuthUser user, FacturarRequest r) {
+        return FacturaDtos.FacturaResponse.de(facturarEntidad(user, r));
+    }
+
+    /** Igual que {@link #facturar}, devolviendo la factura (la venta de contado en caja la cobra en la misma transacción). */
+    @Transactional
+    public Factura facturarEntidad(AuthUser user, FacturarRequest r) {
         Long cia = user.companiaId();
         var ids = new ArrayList<>(new LinkedHashSet<>(r.conduceIds()));
         var conduces = repo.findByIdInAndCompaniaId(ids, cia);
@@ -148,7 +154,7 @@ public class ConduceService {
             c.setEstado(Conduce.Estado.FACTURADO);
             c.setFacturaId(f.getId());
         }
-        return FacturaDtos.FacturaResponse.de(f);
+        return f;
     }
 
     /** Solo conduces abiertos: la mercancía regresa al almacén. */
