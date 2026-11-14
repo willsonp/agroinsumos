@@ -113,7 +113,8 @@ export class ArticuloBuscador {
     this.enfocar();
   }
 
+  /** Solo enfoca: tras agregar un artículo el campo queda vacío y el siguiente escaneo/texto sugiere normalmente. */
   enfocar(): void {
-    setTimeout(() => { this.campo().nativeElement.focus(); this.trigger().closePanel(); });
+    setTimeout(() => this.campo().nativeElement.focus());
   }
 }
