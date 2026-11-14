@@ -621,6 +621,14 @@ rechaza fechas imposibles con el aviso "Fecha no válida"). El valor sigue siend
 `ngModel` o `formControlName`; `(cambio)` avisa después de actualizar el modelo. `[compacto]` es para celdas de tabla.
 No se usa `<input type="date">` (en Firefox es texto libre y cambia según el navegador).
 
+### Buscadores de artículo, cliente y suplidor
+
+Los tres tienen autocompletado y una lupa (o F2) que abre una ventana con filtro y lista (artículos: código, nombre,
+existencia, precio; clientes: RNC, teléfono, límite de crédito; suplidores: RNC, teléfono, contacto). Clic o flechas +
+Enter elige y devuelve el foco al campo. El lector de código de barras sigue agregando directo con Enter.
+`<app-proveedor-selector>` reemplaza las listas desplegables de suplidores (compras, notas, filtros de reportes); su
+valor (ngModel) es el id del suplidor.
+
 ### Exportar a Excel
 
 `shared/excel.ts` arma un .xlsx real en el navegador (Office Open XML comprimido con `fflate`): título, empresa y

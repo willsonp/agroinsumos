@@ -25,9 +25,10 @@ const GRUPOS: Record<string, { grupo: string; titulo: string }> = {
 
 /** Visor genérico: lista de reportes del grupo, filtros que pide cada uno, tabla con totales, impresión y Excel. */
 import { Fecha } from '../../shared/fecha';
+import { ProveedorSelector } from '../../shared/proveedor-selector';
 @Component({
   selector: 'app-reportes',
-  imports: [Fecha, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
+  imports: [ProveedorSelector, Fecha, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, ClienteSelector],
   template: `
     <div class="pagina">
@@ -56,10 +57,8 @@ import { Fecha } from '../../shared/fecha';
                   <mat-option [value]="null">Todos</mat-option>@for (o of departamentos(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
                 @if (pide('ALMACEN')) { <mat-form-field><mat-label>Almacén</mat-label><mat-select [(ngModel)]="f.almacenId">
                   <mat-option [value]="null">Todos</mat-option>@for (o of almacenes(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
-                @if (pide('PROVEEDOR')) { <mat-form-field><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId">
-                  <mat-option [value]="null">Todos</mat-option>@for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
-                @if (pide('PROVEEDOR_REQUERIDO')) { <mat-form-field style="min-width:260px"><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId">
-                  @for (o of proveedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }
+                @if (pide('PROVEEDOR')) { <app-proveedor-selector vacio="Todos" [(ngModel)]="f.proveedorId" /> }
+                @if (pide('PROVEEDOR_REQUERIDO')) { <app-proveedor-selector [requerido]="true" [(ngModel)]="f.proveedorId" /> }
                 @if (pide('DIAS')) { <mat-form-field style="width:170px"><mat-label>Próximos días</mat-label>
                   <input matInput type="number" min="0" max="365" [(ngModel)]="f.dias" /><mat-hint>0 = solo vencidos y hoy</mat-hint></mat-form-field> }
                 @if (pide('CON_EXISTENCIA')) { <mat-checkbox [(ngModel)]="f.conExistencia">Solo con existencia</mat-checkbox> }

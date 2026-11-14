@@ -1,8 +1,12 @@
-import { Component, effect, inject, input, model } from '@angular/core';
+import { Component, ElementRef, effect, inject, input, model, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ClienteBusquedaDialog } from './cliente-busqueda-dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
@@ -11,14 +15,19 @@ import { params } from './http';
 
 type Cliente = S['ClienteResponse'];
 
+/**
+ * Selector de cliente: autocompleta por nombre, RNC o teléfono; la lupa (o F2) abre la ventana de búsqueda con la lista.
+ */
 @Component({
   selector: 'app-cliente-selector',
-  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule],
+  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTooltipModule],
   template: `
     <mat-form-field style="width:100%">
       <mat-label>{{ etiqueta() }}</mat-label>
       <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">person_search</span>
-      <input matInput [formControl]="texto" [matAutocomplete]="auto" placeholder="Nombre, RNC o teléfono" />
+      <input #campo matInput [formControl]="texto" [matAutocomplete]="auto" placeholder="Nombre, RNC o teléfono" (keydown.f2)="buscar($event)" />
+      <button mat-icon-button matSuffix type="button" (click)="buscar()" matTooltip="Buscar cliente (F2)" aria-label="Buscar cliente">
+        <span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto [displayWith]="mostrar" (optionSelected)="cliente.set($event.option.value)">
         @for (c of opciones(); track c.id) {
           <mat-option [value]="c">
@@ -30,6 +39,9 @@ type Cliente = S['ClienteResponse'];
 })
 export class ClienteSelector {
   private readonly http = inject(HttpClient);
+  private readonly dialog = inject(MatDialog);
+  private readonly trigger = viewChild.required(MatAutocompleteTrigger);
+  private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
   readonly cliente = model<Cliente | null>(null);
   readonly etiqueta = input('Cliente');
   protected readonly texto = new FormControl<string | Cliente>('');
@@ -50,6 +62,19 @@ export class ClienteSelector {
       if (!c && typeof this.texto.value !== 'string') this.texto.setValue('', { emitEvent: false });
     });
     this.texto.valueChanges.subscribe((v) => { if (v === '') this.cliente.set(null); });
+  }
+
+  /** Ventana de búsqueda (lupa o F2), con lo escrito como filtro inicial. */
+  protected buscar(ev?: Event): void {
+    ev?.preventDefault();
+    this.trigger().closePanel();
+    const v = this.texto.value;
+    this.dialog.open(ClienteBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(960px, 96vw)',
+      maxWidth: '96vw', restoreFocus: false })
+      .afterClosed().subscribe((c?: Cliente) => {
+        if (c) this.cliente.set(c);
+        setTimeout(() => this.campo().nativeElement.focus());
+      });
   }
 
   protected mostrar = (c: Cliente | string | null) => (typeof c === 'string' ? c : c?.nombre ?? '');

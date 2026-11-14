@@ -10,9 +10,7 @@
     <div class="tarjeta">
       <h2>Nueva compra</h2>
       <div class="grid-form">
-        <mat-form-field><mat-label>Proveedor</mat-label><mat-select [(ngModel)]="f.proveedorId">
-          @for (p of proveedores(); track p.id) { <mat-option [value]="p.id">{{ p.nombre }} @if (p.rncCedula) { · {{ p.rncCedula }} }</mat-option> }
-        </mat-select></mat-form-field>
+        <app-proveedor-selector etiqueta="Proveedor" [requerido]="true" [(ngModel)]="f.proveedorId" />
         <mat-form-field><mat-label>Moneda de la factura</mat-label><mat-select [(ngModel)]="f.moneda" (selectionChange)="cambiarMoneda()">
           @for (m of monedas; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
         </mat-select></mat-form-field>

@@ -31,9 +31,10 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
 import { Fecha, aIso } from '../../shared/fecha';
 import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
 import { AuthService } from '../../core/auth.service';
+import { ProveedorSelector } from '../../shared/proveedor-selector';
 @Component({
   selector: 'app-compras',
-  imports: [Fecha, PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  imports: [ProveedorSelector, Fecha, PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatTableModule, MatPaginatorModule, ArticuloBuscador],
   templateUrl: './compras.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }

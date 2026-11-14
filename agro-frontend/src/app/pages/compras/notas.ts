@@ -20,9 +20,10 @@ type Compra = S['CompraResponse'];
 
 /** Notas de crédito / débito recibidas de suplidores (legacy notacreditocxp / notadebitocxp). */
 import { Fecha } from '../../shared/fecha';
+import { ProveedorSelector } from '../../shared/proveedor-selector';
 @Component({
   selector: 'app-notas-proveedor',
-  imports: [Fecha, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
+  imports: [ProveedorSelector, Fecha, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule],
   template: `
     <div class="pagina">
@@ -36,9 +37,7 @@ import { Fecha } from '../../shared/fecha';
             <mat-button-toggle value="DEBITO">Nota de débito (aumenta la deuda)</mat-button-toggle>
           </mat-button-toggle-group>
           <div class="grid-form" style="margin-top:12px">
-            <mat-form-field><mat-label>Suplidor</mat-label><mat-select [(ngModel)]="f.proveedorId" (selectionChange)="cargarCompras()">
-              @for (p of proveedores(); track p.id) { <mat-option [value]="p.id">{{ p.nombre }}</mat-option> }
-            </mat-select></mat-form-field>
+            <app-proveedor-selector [requerido]="true" [(ngModel)]="f.proveedorId" (cambio)="cargarCompras()" />
             <mat-form-field><mat-label>Compra afectada</mat-label><mat-select [ngModel]="compra()?.id" (ngModelChange)="elegirCompra($event)">
               @for (c of compras(); track c.id) {
                 <mat-option [value]="c.id">No. {{ c.numero }} · {{ c.ncfProveedor ?? 'sin NCF' }} · {{ c.fecha | date: 'dd/MM/yyyy' }} · bal. {{ c.balance | currency }}</mat-option>
