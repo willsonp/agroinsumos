@@ -29,7 +29,7 @@ type Proveedor = S['ProveedorResponse'];
       <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">local_shipping</span>
       <input #campo matInput [formControl]="texto" [matAutocomplete]="auto" [placeholder]="vacio() || 'Nombre o RNC'"
              [required]="requerido()" (keydown.f2)="buscar($event)" (blur)="alSalir()" />
-      <button mat-icon-button matSuffix type="button" (click)="buscar()" [disabled]="texto.disabled" matTooltip="Buscar suplidor (F2)"
+      <button mat-icon-button matSuffix type="button" (click)="buscar($event)" [disabled]="texto.disabled" matTooltip="Buscar suplidor (F2)"
               aria-label="Buscar suplidor"><span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto [displayWith]="mostrar" (optionSelected)="fijar($event.option.value)">
         @for (p of opciones(); track p.id) {
@@ -60,7 +60,8 @@ export class ProveedorSelector implements ControlValueAccessor {
     debounceTime(250),
     map((v) => (v as string).trim()),
     distinctUntilChanged(),
-    switchMap((q) => this.http.get<Pagina<Proveedor>>('/api/v1/catalogos/proveedores', { params: params({ q, size: 15, sort: 'nombre' }) })
+    // Solo sugiere al escribir: con el campo vacío no aparece una lista (para verla toda está la lupa)
+    switchMap((q) => !q ? of([] as Proveedor[]) : this.http.get<Pagina<Proveedor>>('/api/v1/catalogos/proveedores', { params: params({ q, size: 15, sort: 'nombre' }) })
       .pipe(map((p) => p.content.filter((x) => x.estado === 'A')), catchError(() => of([])))),
   ), { initialValue: [] as Proveedor[] });
 
@@ -96,13 +97,14 @@ export class ProveedorSelector implements ControlValueAccessor {
 
   protected buscar(ev?: Event): void {
     ev?.preventDefault();
+    ev?.stopPropagation();   // el clic de la lupa no llega al campo (lo enfocaría y reabriría las sugerencias)
     this.trigger().closePanel();
     const v = this.texto.value;
     this.dialog.open(ProveedorBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(900px, 96vw)',
       maxWidth: '96vw', restoreFocus: false })
       .afterClosed().subscribe((p?: Proveedor) => {
         if (p) this.fijar(p);
-        setTimeout(() => this.campo().nativeElement.focus());
+        setTimeout(() => { this.campo().nativeElement.focus(); this.trigger().closePanel(); });
       });
   }
 

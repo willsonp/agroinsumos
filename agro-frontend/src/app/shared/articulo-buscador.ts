@@ -32,7 +32,7 @@ type Articulo = S['ArticuloResponse'];
       <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">barcode_scanner</span>
       <input #campo matInput [formControl]="texto" [matAutocomplete]="auto" (keydown.enter)="porCodigo($event)"
              (keydown.f2)="buscar($event)" placeholder="Escanee el código o escriba el nombre" />
-      <button mat-icon-button matSuffix type="button" (click)="buscar()" matTooltip="Buscar artículo (F2)" aria-label="Buscar artículo">
+      <button mat-icon-button matSuffix type="button" (click)="buscar($event)" matTooltip="Buscar artículo (F2)" aria-label="Buscar artículo">
         <span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto (optionSelected)="elegir($event.option.value)">
         @for (a of opciones(); track a.id) {
@@ -93,6 +93,7 @@ export class ArticuloBuscador {
   /** Ventana de búsqueda (botón de lupa o F2), con lo escrito como filtro inicial. */
   protected buscar(ev?: Event): void {
     ev?.preventDefault();
+    ev?.stopPropagation();   // el clic de la lupa no llega al campo (lo enfocaría y reabriría las sugerencias)
     this.trigger().closePanel();
     const v = this.texto.value;
     this.dialog.open(ArticuloBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(900px, 96vw)',
@@ -107,6 +108,6 @@ export class ArticuloBuscador {
   }
 
   enfocar(): void {
-    setTimeout(() => this.campo().nativeElement.focus());
+    setTimeout(() => { this.campo().nativeElement.focus(); this.trigger().closePanel(); });
   }
 }

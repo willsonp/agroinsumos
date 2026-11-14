@@ -26,7 +26,7 @@ type Cliente = S['ClienteResponse'];
       <mat-label>{{ etiqueta() }}</mat-label>
       <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">person_search</span>
       <input #campo matInput [formControl]="texto" [matAutocomplete]="auto" placeholder="Nombre, RNC o teléfono" (keydown.f2)="buscar($event)" />
-      <button mat-icon-button matSuffix type="button" (click)="buscar()" matTooltip="Buscar cliente (F2)" aria-label="Buscar cliente">
+      <button mat-icon-button matSuffix type="button" (click)="buscar($event)" matTooltip="Buscar cliente (F2)" aria-label="Buscar cliente">
         <span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto [displayWith]="mostrar" (optionSelected)="cliente.set($event.option.value)">
         @for (c of opciones(); track c.id) {
@@ -48,9 +48,10 @@ export class ClienteSelector {
 
   protected readonly opciones = toSignal(this.texto.valueChanges.pipe(
     debounceTime(250),
-    map((v) => (typeof v === 'string' ? v : '')),
+    map((v) => (typeof v === 'string' ? v.trim() : '')),
     distinctUntilChanged(),
-    switchMap((q) => this.http.get<Pagina<Cliente>>('/api/v1/catalogos/clientes', { params: params({ q, size: 15, sort: 'nombre' }) })
+    // Solo sugiere al escribir: con el campo vacío no aparece una lista (para verla toda está la lupa)
+    switchMap((q) => !q ? of([] as Cliente[]) : this.http.get<Pagina<Cliente>>('/api/v1/catalogos/clientes', { params: params({ q, size: 15, sort: 'nombre' }) })
       .pipe(map((p) => p.content.filter((c) => c.estado === 'A')), catchError(() => of([])))),
   ), { initialValue: [] as Cliente[] });
 
@@ -67,13 +68,14 @@ export class ClienteSelector {
   /** Ventana de búsqueda (lupa o F2), con lo escrito como filtro inicial. */
   protected buscar(ev?: Event): void {
     ev?.preventDefault();
+    ev?.stopPropagation();   // el clic de la lupa no llega al campo (lo enfocaría y reabriría las sugerencias)
     this.trigger().closePanel();
     const v = this.texto.value;
     this.dialog.open(ClienteBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(960px, 96vw)',
       maxWidth: '96vw', restoreFocus: false })
       .afterClosed().subscribe((c?: Cliente) => {
         if (c) this.cliente.set(c);
-        setTimeout(() => this.campo().nativeElement.focus());
+        setTimeout(() => { this.campo().nativeElement.focus(); this.trigger().closePanel(); });
       });
   }
 
