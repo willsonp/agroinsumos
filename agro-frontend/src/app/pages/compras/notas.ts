@@ -19,9 +19,10 @@ type Nota = S['NotaProveedorResponse'];
 type Compra = S['CompraResponse'];
 
 /** Notas de crédito / débito recibidas de suplidores (legacy notacreditocxp / notadebitocxp). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-notas-proveedor',
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
+  imports: [Fecha, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule],
   template: `
     <div class="pagina">
@@ -45,7 +46,7 @@ type Compra = S['CompraResponse'];
             </mat-select></mat-form-field>
             <mat-form-field><mat-label>NCF del suplidor ({{ f.tipo === 'CREDITO' ? 'B04 / E34' : 'B03 / E33' }})</mat-label>
               <input matInput [(ngModel)]="f.ncf" maxlength="13" /></mat-form-field>
-            <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="f.fecha" /></mat-form-field>
+            <app-fecha etiqueta="Fecha" [(ngModel)]="f.fecha" />
             <mat-form-field class="ancho-completo"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="f.concepto" maxlength="200" /></mat-form-field>
             @if (f.tipo === 'CREDITO') {
               <mat-checkbox class="ancho-completo" [(ngModel)]="f.devolucion">Devolución de mercancía (sale del inventario)</mat-checkbox>

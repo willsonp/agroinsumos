@@ -24,9 +24,10 @@ export const ORIGENES_CONTABLES: Record<string, string> = {
 };
 
 /** Diario general: asientos manuales y generación de los automáticos. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-asientos',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule],
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Asientos contables</h1><span class="espaciador"></span>
@@ -42,8 +43,8 @@ export const ORIGENES_CONTABLES: Record<string, string> = {
           <p class="ayuda">Genera los asientos de facturas, devoluciones, notas de débito, recibos, compras, pagos, notas de suplidores, banco, gastos y sobrantes/faltantes de caja
             del rango que aún no estén contabilizados, y reversa los documentos anulados. Puede ejecutarse las veces que haga falta.</p>
           <div class="fila">
-            <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="gen.desde" /></mat-form-field>
-            <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="gen.hasta" /></mat-form-field>
+            <app-fecha etiqueta="Desde" [(ngModel)]="gen.desde" />
+            <app-fecha etiqueta="Hasta" [(ngModel)]="gen.hasta" />
             <button mat-stroked-button (click)="generar(true)">Simular</button>
             <button mat-flat-button (click)="generar(false)">Generar</button>
           </div>
@@ -70,7 +71,7 @@ export const ORIGENES_CONTABLES: Record<string, string> = {
         <div class="tarjeta">
           <h2>Asiento manual</h2>
           <div class="fila">
-            <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="cab.fecha" /></mat-form-field>
+            <app-fecha etiqueta="Fecha" [(ngModel)]="cab.fecha" />
             <mat-form-field style="flex:1"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="cab.concepto" maxlength="200" /></mat-form-field>
           </div>
           <table class="tabla lineas">
@@ -100,8 +101,8 @@ export const ORIGENES_CONTABLES: Record<string, string> = {
 
       <div class="tarjeta">
         <div class="fila">
-          <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="filtro.desde" (change)="cargar()" /></mat-form-field>
-          <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="filtro.hasta" (change)="cargar()" /></mat-form-field>
+          <app-fecha etiqueta="Desde" [(ngModel)]="filtro.desde" (cambio)="cargar()" />
+          <app-fecha etiqueta="Hasta" [(ngModel)]="filtro.hasta" (cambio)="cargar()" />
           <mat-form-field><mat-label>Origen</mat-label><mat-select [(ngModel)]="filtro.origenTipo" (selectionChange)="cargar()">
             <mat-option [value]="null">Todos</mat-option><mat-option value="MANUAL">Manuales</mat-option>
             @for (o of origenesLista; track o[0]) { <mat-option [value]="o[0]">{{ o[1] }}</mat-option> }

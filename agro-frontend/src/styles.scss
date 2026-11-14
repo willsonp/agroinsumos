@@ -61,8 +61,8 @@ mat-form-field + app-articulo-buscador, .fila + app-articulo-buscador, .grid-for
 /* Bloques de campos apilados uno debajo de otro en una tarjeta, formulario o diálogo (fuera de .grid-form/.fila,
    que ya separan con gap): la etiqueta flotante del bloque de abajo pisaba el borde del de arriba (financiamientos). */
 :is(.tarjeta, form:not(.grid-form, .fila), .mat-mdc-dialog-content:not(.grid-form), .mat-mdc-tab-body-content > div)
-  > :is(mat-form-field, .fila, .grid-form, app-cliente-selector, app-articulo-buscador, div:has(> app-cliente-selector))
-  + :is(mat-form-field, .fila, .grid-form, app-cliente-selector, div:has(> app-cliente-selector)) { margin-top: 14px; }
+  > :is(mat-form-field, app-fecha:not(.compacto), .fila, .grid-form, app-cliente-selector, app-articulo-buscador, div:has(> app-cliente-selector))
+  + :is(mat-form-field, app-fecha:not(.compacto), .fila, .grid-form, app-cliente-selector, div:has(> app-cliente-selector)) { margin-top: 14px; }
 app-cliente-selector { display: block; }
 .num, td.num, th.num { text-align: right !important; font-variant-numeric: tabular-nums; }
 /* Separación entre ícono y texto en botones (no en botones de solo ícono) */

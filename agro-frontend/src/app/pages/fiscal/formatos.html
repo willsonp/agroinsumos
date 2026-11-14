@@ -41,8 +41,8 @@
         <p class="muted">NCF preimpresos o de serie B y e-NCF no utilizados. Un comprobante ya usado en una factura vigente no se anula: se emite nota de crédito.</p>
         <div class="grid-anul">
           <mat-form-field><mat-label>NCF</mat-label><input matInput [(ngModel)]="anul.ncf" maxlength="13" /></mat-form-field>
-          <mat-form-field><mat-label>Fecha del comprobante</mat-label><input matInput type="date" [(ngModel)]="anul.fechaComprobante" /></mat-form-field>
-          <mat-form-field><mat-label>Fecha de anulación</mat-label><input matInput type="date" [(ngModel)]="anul.fechaAnulacion" /></mat-form-field>
+          <app-fecha etiqueta="Fecha del comprobante" [(ngModel)]="anul.fechaComprobante" />
+          <app-fecha etiqueta="Fecha de anulación" [(ngModel)]="anul.fechaAnulacion" />
           <mat-form-field><mat-label>Tipo de anulación</mat-label><mat-select [(ngModel)]="anul.tipoAnulacion">
             @for (t of tiposAnulacion; track t[0]) { <mat-option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</mat-option> }
           </mat-select></mat-form-field>

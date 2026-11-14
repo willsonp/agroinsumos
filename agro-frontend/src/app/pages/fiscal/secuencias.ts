@@ -15,9 +15,10 @@ const TIPOS: [number, string][] = [[31, 'Crédito fiscal'], [32, 'Consumo'], [33
   [41, 'Compras'], [43, 'Gastos menores'], [44, 'Regímenes especiales'], [45, 'Gubernamental']];
 
 /** Rangos de comprobantes (e-NCF serie E o NCF serie B) autorizados por la DGII (Oficina Virtual > Solicitud de secuencias). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-secuencias',
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [Fecha, DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Secuencias de comprobantes</h1></div>
@@ -31,7 +32,7 @@ const TIPOS: [number, string][] = [[31, 'Crédito fiscal'], [32, 'Consumo'], [33
               @for (t of tipos; track t[0]) { <mat-option [value]="t[0]">{{ prefijo(form.controls.serie.value, t[0]) }} · {{ t[1] }}</mat-option> }</mat-select></mat-form-field>
             <mat-form-field><mat-label>Desde</mat-label><input matInput type="number" formControlName="secuenciaDesde" /></mat-form-field>
             <mat-form-field><mat-label>Hasta</mat-label><input matInput type="number" formControlName="secuenciaHasta" /></mat-form-field>
-            <mat-form-field><mat-label>Vence</mat-label><input matInput type="date" formControlName="fechaVencimiento" /></mat-form-field>
+            <app-fecha etiqueta="Vence" formControlName="fechaVencimiento" />
             <button mat-flat-button [disabled]="form.invalid">Registrar</button>
           </div>
           <p class="muted">Registrar un rango nuevo reemplaza al rango activo del mismo tipo y serie. Modo actual de la empresa: <strong>{{ modoTexto() }}</strong> (Administración → Empresa).</p>

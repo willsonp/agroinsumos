@@ -24,9 +24,10 @@ const GRUPOS: Record<string, { grupo: string; titulo: string }> = {
 };
 
 /** Visor genérico: lista de reportes del grupo, filtros que pide cada uno, tabla con totales, impresión y Excel. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-reportes',
-  imports: [DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
+  imports: [Fecha, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, ClienteSelector],
   template: `
     <div class="pagina">
@@ -44,10 +45,10 @@ const GRUPOS: Record<string, { grupo: string; titulo: string }> = {
             <div class="tarjeta no-imprimir">
               <div class="fila">
                 @if (pide('RANGO_FECHAS')) {
-                  <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="f.desde" /></mat-form-field>
-                  <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="f.hasta" /></mat-form-field>
+                  <app-fecha etiqueta="Desde" [(ngModel)]="f.desde" />
+                  <app-fecha etiqueta="Hasta" [(ngModel)]="f.hasta" />
                 }
-                @if (pide('FECHA_CORTE')) { <mat-form-field><mat-label>Al</mat-label><input matInput type="date" [(ngModel)]="f.corte" /></mat-form-field> }
+                @if (pide('FECHA_CORTE')) { <app-fecha etiqueta="Al" [(ngModel)]="f.corte" /> }
                 @if (pide('CLIENTE')) { <div style="flex:1 1 260px"><app-cliente-selector [(cliente)]="cliente" etiqueta="Cliente (todos si vacío)" /></div> }
                 @if (pide('VENDEDOR')) { <mat-form-field><mat-label>Vendedor</mat-label><mat-select [(ngModel)]="f.vendedorId">
                   <mat-option [value]="null">Todos</mat-option>@for (o of vendedores(); track o.id) { <mat-option [value]="o.id">{{ o.nombre }}</mat-option> }</mat-select></mat-form-field> }

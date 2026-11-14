@@ -28,9 +28,10 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
   ['05', 'Representación'], ['06', 'Otras deducciones admitidas'], ['07', 'Gastos financieros'], ['08', 'Gastos extraordinarios'],
   ['09', 'Compras que forman parte del costo de venta'], ['10', 'Adquisiciones de activos'], ['11', 'Seguros']];
 
+import { Fecha, aIso } from '../../shared/fecha';
 @Component({
   selector: 'app-compras',
-  imports: [PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  imports: [Fecha, PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatTableModule, MatPaginatorModule, ArticuloBuscador],
   templateUrl: './compras.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
@@ -112,7 +113,7 @@ export class Compras {
     this.lineas.set(this.lineas().map((l, j) => (j === i ? { ...l, [campo]: v || undefined } : l)));
   }
   protected readonly faltaVencimiento = computed(() => this.lineas().some((l) => l.articulo.manejaVencimiento && !l.vence));
-  protected readonly hoy = new Date().toISOString().slice(0, 10);
+  protected readonly hoy = aIso(new Date())!;   // fecha local (toISOString daba la de mañana en la noche)
 
   protected registrar(): void {
     const req: S['CompraRequest'] = {

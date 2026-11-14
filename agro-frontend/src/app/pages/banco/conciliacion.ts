@@ -22,9 +22,10 @@ type Mov = S['MovimientoBancarioResponse'];
  * Conciliación bancaria (legacy conciliacionbancaria): se marcan los movimientos que aparecen en el estado
  * de cuenta del banco; los no marcados quedan en tránsito. Solo se cierra si la diferencia es cero.
  */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-conciliacion',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Conciliación bancaria</h1></div>
@@ -33,7 +34,7 @@ type Mov = S['MovimientoBancarioResponse'];
           <mat-form-field style="flex:1 1 300px"><mat-label>Cuenta</mat-label><mat-select [(ngModel)]="cuentaId" (selectionChange)="historial()">
             @for (c of cuentas.activas(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> }
           </mat-select></mat-form-field>
-          <mat-form-field><mat-label>Fecha de corte</mat-label><input matInput type="date" [(ngModel)]="fechaCorte" /></mat-form-field>
+          <app-fecha etiqueta="Fecha de corte" [(ngModel)]="fechaCorte" />
           <mat-form-field><mat-label>Saldo según el banco</mat-label>
             <input matInput type="number" [ngModel]="saldoBanco()" (ngModelChange)="saldoBanco.set(+$event || 0)" /></mat-form-field>
           <button mat-flat-button [disabled]="!cuentaId || !fechaCorte" (click)="cargar()">Cargar movimientos</button>

@@ -34,9 +34,10 @@ const ORIGENES: Record<string, string> = {
 };
 
 /** Movimientos bancarios: depósitos, cheques, transferencias y notas de débito/crédito (legacy transaccionesbancarias). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-movimientos-bancarios',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule, MatFormFieldModule,
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatTableModule, MatPaginatorModule],
   template: `
     <div class="pagina">
@@ -67,7 +68,7 @@ const ORIGENES: Record<string, string> = {
                 @for (c of cuentas.activas(); track c.id) { @if (c.id !== nuevo.cuentaId) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> } }
               </mat-select></mat-form-field>
             }
-            <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="nuevo.fecha" /></mat-form-field>
+            <app-fecha etiqueta="Fecha" [(ngModel)]="nuevo.fecha" />
             <mat-form-field><mat-label>Monto ({{ monedaDe(nuevo.cuentaId) }})</mat-label><input matInput type="number" min="0.01" [(ngModel)]="nuevo.monto" /></mat-form-field>
             @if (requiereTasa()) {
               <mat-form-field><mat-label>Tasa (RD$ por {{ monedaExtranjera() }})</mat-label><input matInput type="number" min="0" [(ngModel)]="nuevo.tasa" />
@@ -111,8 +112,8 @@ const ORIGENES: Record<string, string> = {
             <mat-option [value]="null">Todos</mat-option>
             @for (t of tiposLista; track t[0]) { <mat-option [value]="t[0]">{{ t[1] }}</mat-option> }
           </mat-select></mat-form-field>
-          <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="filtro.desde" (change)="cargar()" /></mat-form-field>
-          <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="filtro.hasta" (change)="cargar()" /></mat-form-field>
+          <app-fecha etiqueta="Desde" [(ngModel)]="filtro.desde" (cambio)="cargar()" />
+          <app-fecha etiqueta="Hasta" [(ngModel)]="filtro.hasta" (cambio)="cargar()" />
           @if (cuentaFiltrada(); as c) { <div class="saldo">Saldo en libros <strong>{{ c.saldo | currency: c.moneda }}</strong></div> }
         </div>
         <div class="tabla-contenedor">

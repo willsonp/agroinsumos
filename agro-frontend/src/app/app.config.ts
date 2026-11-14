@@ -4,7 +4,8 @@ import { registerLocaleData } from '@angular/common';
 import localeEsDo from '@angular/common/locales/es-DO';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideNativeDateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
+import { DateAdapter, provideNativeDateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
+import { FechaAdapter } from './shared/fecha-adapter';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { PaginadorEs } from './core/paginador-es';
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideNativeDateAdapter(),
+    { provide: DateAdapter, useClass: FechaAdapter },   // dd/mm/aaaa al escribir la fecha
     { provide: LOCALE_ID, useValue: 'es-DO' },
     { provide: MAT_DATE_LOCALE, useValue: 'es-DO' },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'DOP' },

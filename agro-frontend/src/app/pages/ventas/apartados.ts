@@ -23,9 +23,10 @@ type Apartado = S['ApartadoResponse'];
 type Forma = 'EFECTIVO' | 'TARJETA' | 'CHEQUE' | 'TRANSFERENCIA';
 
 /** Apartados: el cliente separa mercancía y la abona; al completar se factura con el anticipo (legacy apartado). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-apartados',
-  imports: [PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+  imports: [Fecha, PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatPaginatorModule, ArticuloBuscador, ClienteSelector],
   template: `
     <div class="pagina">
@@ -44,7 +45,7 @@ type Forma = 'EFECTIVO' | 'TARJETA' | 'CHEQUE' | 'TRANSFERENCIA';
           <div class="fila">
             <div style="flex:1 1 320px"><app-cliente-selector [(cliente)]="cliente" /></div>
             <mat-form-field style="flex:1 1 260px"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="concepto" maxlength="255" /></mat-form-field>
-            <mat-form-field><mat-label>Retirar a más tardar</mat-label><input matInput type="date" [(ngModel)]="fechaLimite" /></mat-form-field>
+            <app-fecha etiqueta="Retirar a más tardar" [(ngModel)]="fechaLimite" />
           </div>
           <app-articulo-buscador (elegido)="agregar($event)" />
           <table class="tabla">

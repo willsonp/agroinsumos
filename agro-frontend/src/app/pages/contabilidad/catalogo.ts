@@ -28,9 +28,10 @@ const CATALOGO: CatalogoConfig = {
 };
 
 /** Catálogo de cuentas y cuentas por defecto de los asientos automáticos. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-catalogo-contable',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule, CatalogoCrud],
+  imports: [Fecha, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule, CatalogoCrud],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Catálogo de cuentas</h1></div>
@@ -48,9 +49,8 @@ const CATALOGO: CatalogoConfig = {
         <mat-tab label="Cuentas por defecto">
           <div class="tarjeta">
             <div class="fila">
-              <mat-form-field><mat-label>Inicio de la contabilidad</mat-label>
-                <input matInput type="date" [(ngModel)]="fechaInicio" [disabled]="!auth.esAdmin()" />
-                <mat-hint>Los documentos anteriores no generan asientos</mat-hint></mat-form-field>
+              <app-fecha etiqueta="Inicio de la contabilidad" [(ngModel)]="fechaInicio" [disabled]="!auth.esAdmin()"
+                         pista="Los documentos anteriores no generan asientos" />
               @if (auth.esAdmin()) { <button mat-stroked-button (click)="guardarInicio()">Guardar fecha</button> }
             </div>
             <p class="ayuda">Se usan en los asientos automáticos cuando el departamento (ingreso, costo, inventario), el cliente,

@@ -14,9 +14,10 @@ import { MONEDAS } from '../../shared/monedas';
 type Tasa = S['TasaCambioTasa'];
 
 /** Tasas de cambio (pesos por unidad). Se usan en compras, pagos y cuentas bancarias en otra moneda. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-tasas',
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [Fecha, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Tasas de cambio</h1></div>
@@ -26,7 +27,7 @@ type Tasa = S['TasaCambioTasa'];
         <div class="fila">
           <mat-form-field><mat-label>Moneda</mat-label><mat-select [(ngModel)]="moneda">
             @for (m of monedas; track m) { <mat-option [value]="m">{{ m }}</mat-option> }</mat-select></mat-form-field>
-          <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="fecha" /></mat-form-field>
+          <app-fecha etiqueta="Fecha" [(ngModel)]="fecha" />
           <mat-form-field><mat-label>Tasa (RD$ por unidad)</mat-label><input matInput type="number" min="0" step="0.0001" [(ngModel)]="tasa" /></mat-form-field>
           <button mat-flat-button [disabled]="!tasa || tasa <= 0" (click)="guardar()">Guardar</button>
         </div>

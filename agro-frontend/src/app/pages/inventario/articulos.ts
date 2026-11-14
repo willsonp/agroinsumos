@@ -22,9 +22,10 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
   DEVOLUCION_COMPRA: 'Devolución de compra', AJUSTE_ENTRADA: 'Ajuste (+)', AJUSTE_SALIDA: 'Ajuste (-)', ENTRADA: 'Entrada', SALIDA: 'Salida',
   TRANSFERENCIA_ENTRADA: 'Transferencia (+)', TRANSFERENCIA_SALIDA: 'Transferencia (-)' };
 
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-articulos',
-  imports: [CatalogoCrud, DatePipe, DecimalPipe, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [Fecha, CatalogoCrud, DatePipe, DecimalPipe, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo no-imprimir"><h1>Artículos</h1></div>
@@ -33,8 +34,8 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
         <div class="tarjeta hoja" style="margin-top:16px">
           <div class="fila no-imprimir filtros">
             <h2 style="flex:1 1 100%;margin:0">Kardex · {{ a.nombre }}</h2>
-            <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="f.desde" /></mat-form-field>
-            <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="f.hasta" /></mat-form-field>
+            <app-fecha etiqueta="Desde" [(ngModel)]="f.desde" />
+            <app-fecha etiqueta="Hasta" [(ngModel)]="f.hasta" />
             <mat-form-field><mat-label>Almacén</mat-label><mat-select [(ngModel)]="f.almacenId">
               <mat-option [value]="null">Todos</mat-option>
               @for (al of listaAlmacenes(); track al[0]) { <mat-option [value]="al[0]">{{ al[1] }}</mat-option> }</mat-select></mat-form-field>

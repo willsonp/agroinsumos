@@ -20,9 +20,10 @@ type Plan = S['FinanciamientoResponse'];
 type Pendiente = S['EstadoCuentaDocumentoPendiente'];
 
 /** Ventas financiadas en cuotas con interés y mora (legacy cuotas / facturapro financiada). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-financiamientos',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
     MatPaginatorModule, ClienteSelector],
   template: `
     <div class="pagina">
@@ -70,7 +71,7 @@ type Pendiente = S['EstadoCuentaDocumentoPendiente'];
         <mat-tab label="Cuotas vencidas">
           <div class="tarjeta">
             <div class="fila">
-              <mat-form-field><mat-label>Al</mat-label><input matInput type="date" [(ngModel)]="corte" (change)="cargarVencidas()" /></mat-form-field>
+              <app-fecha etiqueta="Al" [(ngModel)]="corte" (cambio)="cargarVencidas()" />
               <mat-form-field><mat-label>Zona</mat-label><mat-select [(ngModel)]="zonaId" (selectionChange)="cargarVencidas()">
                 <mat-option [value]="null">Todas</mat-option>
                 @for (z of zonas(); track z.id) { <mat-option [value]="z.id">{{ z.nombre }}</mat-option> }</mat-select></mat-form-field>
@@ -104,7 +105,7 @@ type Pendiente = S['EstadoCuentaDocumentoPendiente'];
                   <mat-form-field><mat-label>Cantidad de cuotas</mat-label><input matInput type="number" min="1" max="120" [(ngModel)]="f.cantidadCuotas" /></mat-form-field>
                   <mat-form-field><mat-label>Frecuencia</mat-label><mat-select [(ngModel)]="f.frecuenciaDias">
                     <mat-option [value]="30">Mensual</mat-option><mat-option [value]="15">Quincenal</mat-option><mat-option [value]="7">Semanal</mat-option></mat-select></mat-form-field>
-                  <mat-form-field><mat-label>Primera cuota</mat-label><input matInput type="date" [(ngModel)]="f.primeraCuota" /></mat-form-field>
+                  <app-fecha etiqueta="Primera cuota" [(ngModel)]="f.primeraCuota" />
                   <mat-form-field><mat-label>Mora por cuota vencida (%)</mat-label><input matInput type="number" min="0" [(ngModel)]="f.moraPorcentaje" /></mat-form-field>
                   <mat-form-field><mat-label>Días de gracia</mat-label><input matInput type="number" min="0" [(ngModel)]="f.diasGracia" /></mat-form-field>
                 </div>

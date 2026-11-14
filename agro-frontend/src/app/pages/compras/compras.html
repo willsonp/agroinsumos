@@ -56,7 +56,7 @@
               <tr class="lote" [class.falta]="!l.vence"><td colspan="8">
                 <span class="material-symbols-outlined">event</span> Lote del suplidor
                 <input class="celda texto" maxlength="40" placeholder="No. lote (opcional)" [ngModel]="l.lote" (ngModelChange)="fijarLote(i, 'lote', $event)" aria-label="Número de lote" />
-                Vence <input class="celda fecha" type="date" required [min]="hoy" [ngModel]="l.vence" (ngModelChange)="fijarLote(i, 'vence', $event)" aria-label="Fecha de vencimiento" />
+                Vence <app-fecha [compacto]="true" [requerido]="true" [min]="hoy" [ngModel]="l.vence" (ngModelChange)="fijarLote(i, 'vence', $event)" ariaLabel="Fecha de vencimiento" />
                 @if (!l.vence) { <span class="error-texto">Indique la fecha de vencimiento</span> }
               </td></tr>
             }

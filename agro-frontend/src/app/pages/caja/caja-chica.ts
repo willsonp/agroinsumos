@@ -31,9 +31,10 @@ const TIPOS_BIEN: [string, string][] = [
 ];
 
 /** Caja chica (fondo fijo): vales de gasto, reposición por cheque/transferencia/efectivo y arqueos (legacy cajachica). */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-caja-chica',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule],
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo no-imprimir"><h1>Caja chica</h1>
@@ -95,7 +96,7 @@ const TIPOS_BIEN: [string, string][] = [
             <div class="tarjeta">
               <h3>Registrar vale de gasto</h3>
               <div class="grid">
-                <mat-form-field><mat-label>Fecha</mat-label><input matInput type="date" [(ngModel)]="g.fecha" /></mat-form-field>
+                <app-fecha etiqueta="Fecha" [(ngModel)]="g.fecha" />
                 <mat-form-field class="ancho"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="g.concepto" maxlength="200" /></mat-form-field>
                 <mat-form-field><mat-label>Beneficiario</mat-label><input matInput [(ngModel)]="g.beneficiario" maxlength="100" /></mat-form-field>
                 <mat-form-field><mat-label>Monto total</mat-label><input matInput type="number" min="0" [(ngModel)]="g.monto" /></mat-form-field>
@@ -118,8 +119,8 @@ const TIPOS_BIEN: [string, string][] = [
 
             <section class="tarjeta tabla-contenedor">
               <div class="fila">
-                <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="desde" (change)="cargarMovimientos()" /></mat-form-field>
-                <mat-form-field><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="hasta" (change)="cargarMovimientos()" /></mat-form-field>
+                <app-fecha etiqueta="Desde" [(ngModel)]="desde" (cambio)="cargarMovimientos()" />
+                <app-fecha etiqueta="Hasta" [(ngModel)]="hasta" (cambio)="cargarMovimientos()" />
               </div>
               <table class="tabla">
                 <thead><tr><th>No.</th><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Comprobante</th><th class="num">Monto</th><th>Estado</th><th></th></tr></thead>

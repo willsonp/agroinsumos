@@ -18,17 +18,18 @@ type Seccion = S['ReportesContablesSeccion'];
 interface Renglon { texto: string; nivel: number; monto: number | null; clase: '' | 'grupo' | 'total' | 'resultado' | 'titulo'; }
 
 /** Balanza de comprobación, estado de resultados, balance general y mayor. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-reportes-contables',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule],
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Estados financieros</h1><span class="espaciador"></span>
         <button mat-stroked-button (click)="imprimir()"><span class="material-symbols-outlined">print</span> Imprimir</button></div>
       <div class="tarjeta no-imprimir">
         <div class="fila">
-          <mat-form-field><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="desde" /></mat-form-field>
-          <mat-form-field><mat-label>Hasta / fecha de corte</mat-label><input matInput type="date" [(ngModel)]="hasta" /></mat-form-field>
+          <app-fecha etiqueta="Desde" [(ngModel)]="desde" />
+          <app-fecha etiqueta="Hasta / fecha de corte" [(ngModel)]="hasta" />
           @if (pestana === 3) {
             <mat-form-field style="min-width:320px"><mat-label>Cuenta</mat-label>
               <mat-select [(ngModel)]="cuentaMayor">

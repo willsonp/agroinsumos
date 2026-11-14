@@ -613,6 +613,14 @@ Angular 22 · Material 3 · signals · componentes standalone · carga diferida 
 - **Fuentes e íconos alojados localmente** (sin CDN): el punto de venta funciona aunque falle internet.
 - **Verificación:** pruebas unitarias (Vitest: cálculo e interceptor) y recorrido E2E con Playwright (login → caja → POS → cobro → ticket con QR → factura → 607; las 16 pantallas sin errores JS/HTTP; vista móvil).
 
+### Campos de fecha
+
+Todas las fechas se capturan con `<app-fecha>` (`shared/fecha.ts`): calendario de Angular Material en español (se
+abre con un clic en cualquier parte del campo) y escritura dd/mm/aaaa (`FechaAdapter` interpreta día/mes/año y
+rechaza fechas imposibles con el aviso "Fecha no válida"). El valor sigue siendo texto ISO `aaaa-mm-dd` con
+`ngModel` o `formControlName`; `(cambio)` avisa después de actualizar el modelo. `[compacto]` es para celdas de tabla.
+No se usa `<input type="date">` (en Firefox es texto libre y cambia según el navegador).
+
 ## 8. Autorización: rol + opción de menú
 
 Toda la API se autoriza en el **servidor** con dos capas complementarias:

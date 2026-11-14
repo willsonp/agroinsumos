@@ -19,9 +19,10 @@ const TIPOS_ANULACION: [string, string][] = [['01', 'Deterioro de factura preimp
   ['07', 'Omisión de productos'], ['08', 'Errores en secuencia de NCF'], ['09', 'Por cese de operaciones'], ['10', 'Pérdida o hurto de talonarios']];
 
 /** Formatos de envío 606 (compras), 607 (ventas) y 608 (comprobantes anulados) de la DGII. */
+import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-formatos',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule],
+  imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSlideToggleModule],
   templateUrl: './formatos.html',
   styles: `.tabla { width: 100%; border-collapse: collapse; font-size: 13px; td, th { padding: 5px 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; white-space: nowrap; } }
     .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 12px 0;
