@@ -22,7 +22,7 @@ type Cliente = S['ClienteResponse'];
   imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatProgressBarModule, CurrencyPipe],
   template: `
     <h2 mat-dialog-title>Buscar cliente</h2>
-    <mat-dialog-content>
+    <mat-dialog-content class="contenido">
       <mat-form-field class="filtro">
         <mat-label>Escriba parte del nombre, el RNC/cédula o el teléfono</mat-label>
         <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">search</span>
@@ -45,11 +45,15 @@ type Cliente = S['ClienteResponse'];
           </tbody>
         </table>
       </div>
-      <p class="muted pequeno">{{ clientes().length }} cliente(s){{ clientes().length >= limite ? ' (se muestran los primeros ' + limite + '; afine la búsqueda)' : '' }}
+      <p class="muted pequeno pie">{{ clientes().length }} cliente(s){{ clientes().length >= limite ? ' (se muestran los primeros ' + limite + '; afine la búsqueda)' : '' }}
         · ↑ ↓ para moverse, Enter o clic para elegir, Esc para cerrar</p>
     </mat-dialog-content>`,
   styles: `.filtro { width: 100%; }
-    .lista { height: min(440px, 55vh); overflow: auto; border: 1px solid var(--mat-sys-outline-variant); border-radius: 8px; }
+    /* Cabe en la pantalla sin desplazar la ventana: título, filtro y ayuda siempre visibles; la lista usa el resto */
+    .contenido { max-height: calc(100vh - 120px); overflow: hidden; }
+    .lista { height: min(440px, calc(100vh - 330px)); min-height: 150px; overflow: auto;
+      border: 1px solid var(--mat-sys-outline-variant); border-radius: 8px; }
+    .pie { margin: 8px 0 0; }
     table { width: 100%; border-collapse: collapse; }
     th { position: sticky; top: 0; background: var(--mat-sys-surface-container-high); text-align: left; padding: 8px; font: var(--mat-sys-label-large); }
     td { padding: 7px 8px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
