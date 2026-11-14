@@ -11,7 +11,7 @@ import { CatalogoCrud } from '../../shared/catalogo-crud';
 import { ARTICULOS } from '../catalogos/configs';
 import { AuthService } from '../../core/auth.service';
 import { Notificacion } from '../../core/notificacion.service';
-import { isoFecha, params } from '../../shared/http';
+import { fechaRd, isoFecha, params } from '../../shared/http';
 
 /** Nombre legible del documento que originó el movimiento (en el kárdex se guarda como código). */
 const DOCUMENTOS: Record<string, string> = { FACTURA: 'Factura', COMPRA: 'Compra', DEVOLUCION: 'Devolución', CONDUCE: 'Conduce',
@@ -23,6 +23,7 @@ const TIPOS: Record<string, string> = { SALDO_INICIAL: 'Saldo inicial', COMPRA: 
   TRANSFERENCIA_ENTRADA: 'Transferencia (+)', TRANSFERENCIA_SALIDA: 'Transferencia (-)' };
 
 import { Fecha } from '../../shared/fecha';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
 @Component({
   selector: 'app-articulos',
   imports: [Fecha, CatalogoCrud, DatePipe, DecimalPipe, CurrencyPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
@@ -42,6 +43,7 @@ import { Fecha } from '../../shared/fecha';
             <button mat-flat-button (click)="consultar()"><span class="material-symbols-outlined">play_arrow</span> Consultar</button>
             <span class="espaciador"></span>
             <button mat-stroked-button [disabled]="!reporte()" (click)="imprimir()"><span class="material-symbols-outlined">print</span> Imprimir</button>
+            <button mat-stroked-button [disabled]="!reporte()" (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
             <button mat-button (click)="seleccionado.set(null)">Cerrar</button>
           </div>
 
@@ -174,4 +176,24 @@ export class Articulos {
   }
 
   protected imprimir(): void { this.ahora = new Date(); setTimeout(() => window.print()); }
+
+  /** Kárdex en Excel: cantidades y costo en la unidad base (como en pantalla). */
+  protected excel(): void {
+    const k = this.reporte();
+    if (!k) return;
+    const hora = (iso?: string) => { const d = iso ? new Date(iso) : null; return d ? d.toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' }) : ''; };
+    const movs = k.movimientos ?? [];
+    exportarExcel({
+      archivo: `kardex-${(k.articulo ?? 'articulo').replace(/\W+/g, '-').toLowerCase()}`, titulo: `Kardex · ${k.articulo}`,
+      subtitulos: subtitulosEmpresa(this.empresa(),
+        `${k.codigo ? k.codigo + ' · ' : ''}Unidad: ${k.unidad}${k.factorEmpaque ? ` (${k.unidadEmpaque} de ${k.factorEmpaque} ${k.unidad})` : ''} · Almacén: ${k.almacen ?? 'Todos'}`,
+        `${k.desde ? 'Del ' + fechaRd(k.desde) : 'Desde el inicio'} al ${k.hasta ? fechaRd(k.hasta) : 'hoy'} · Costo promedio ${k.costoPromedio} por ${k.unidad}`),
+      columnas: [{ titulo: 'Fecha' }, { titulo: 'Movimiento' }, { titulo: 'Documento' }, { titulo: 'Almacén' }, { titulo: 'Entrada', tipo: 'numero' },
+        { titulo: 'Salida', tipo: 'numero' }, { titulo: 'Saldo', tipo: 'numero' }, { titulo: `Costo x ${k.unidad}`, tipo: 'moneda' }, { titulo: 'Usuario' }],
+      filas: [[null, 'Saldo anterior', null, null, null, null, k.saldoAnterior, null, null],
+        ...movs.map((m) => [hora(m.fecha), this.tipo(m.tipo), `${this.documento(m.documentoTipo)} ${m.documentoId || ''}`.trim(), m.almacen,
+          (m.cantidad ?? 0) > 0 ? m.cantidad : null, (m.cantidad ?? 0) < 0 ? -(m.cantidad ?? 0) : null, m.saldo, m.costoUnitario, m.usuario])],
+      totales: [`TOTAL (${movs.length} movimientos)`, null, null, null, k.entradas, k.salidas, k.saldoFinal, null, null],
+    });
+  }
 }

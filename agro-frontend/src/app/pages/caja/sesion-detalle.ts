@@ -1,4 +1,7 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../core/auth.service';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import type { S } from '../../api/tipos';
 
@@ -11,7 +14,7 @@ const TIPOS: Record<string, string> = { COBRO: 'Cobro', INGRESO: 'Ingreso', EGRE
 /** Cuadre por forma de pago y movimientos de una sesión de caja (arqueo). */
 @Component({
   selector: 'app-sesion-detalle',
-  imports: [CurrencyPipe, DatePipe],
+  imports: [CurrencyPipe, DatePipe, MatButtonModule],
   template: `
     @if (sesion(); as s) {
       <div class="cuadre">
@@ -35,7 +38,7 @@ const TIPOS: Record<string, string> = { COBRO: 'Cobro', INGRESO: 'Ingreso', EGRE
       <p class="muted pequeno">En caja = inicial + cobros + ingresos − salidas. En efectivo debe coincidir con el efectivo esperado.</p>
     }
     @if (movimientos().length) {
-      <h3>Movimientos</h3>
+      <div class="fila"><h3 style="flex:1">Movimientos</h3><button mat-stroked-button (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button></div>
       <table class="tabla">
         <tr><th>Hora</th><th>Tipo</th><th>Forma</th><th>Descripción</th><th class="num">Monto</th></tr>
         @for (m of movimientos(); track m.id) {
@@ -66,5 +69,21 @@ export class SesionDetalle {
     if (!filas.some((f) => f.forma === 'EFECTIVO')) filas.unshift({ forma: 'EFECTIVO', inicial, cobros: 0, ingresos: 0, salidas: 0, enCaja: inicial });
     return filas;
   }
+  private readonly auth = inject(AuthService);
+
+  protected excel(): void {
+    const s = this.sesion();
+    const movs = this.movimientos();
+    const signo = (m: S['CajaMovimientoResponse']) => (this.esSalida(m.tipo) ? -1 : 1) * (m.monto ?? 0);
+    exportarExcel({
+      archivo: `caja-${s?.numero ?? ''}`, titulo: `Movimientos de la caja #${s?.numero ?? ''}`,
+      subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania, `Monto inicial ${s?.cuadre?.montoInicial ?? 0} · Efectivo esperado ${s?.cuadre?.efectivoEsperado ?? 0}`),
+      columnas: [{ titulo: 'Hora' }, { titulo: 'Tipo' }, { titulo: 'Forma' }, { titulo: 'Descripción' }, { titulo: 'Monto', tipo: 'moneda' }],
+      filas: movs.map((m) => [m.fecha ? new Date(m.fecha).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' }) : '',
+        this.tipo(m.tipo), this.forma(m.forma), m.descripcion, signo(m)]),
+      totales: ['NETO', null, null, null, movs.reduce((t, m) => t + signo(m), 0)],
+    });
+  }
+
   protected esSalida(t?: string): boolean { return ['EGRESO', 'PAGO_PROVEEDOR', 'ANULACION_COBRO'].includes(t ?? ''); }
 }

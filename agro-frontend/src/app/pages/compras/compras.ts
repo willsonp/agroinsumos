@@ -17,7 +17,7 @@ import { ESCANEADOS_EMPAQUE, TASAS } from '../../shared/calculo';
 import { PresentacionSelector } from '../../shared/presentacion-selector';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { params, redondear } from '../../shared/http';
+import { params, redondear, traerTodo } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 import { ComprobanteService } from '../../core/comprobante.service';
 import { ComprobantePagoDialog } from './comprobante-pago-dialog';
@@ -29,6 +29,8 @@ const TIPOS_606 = [['01', 'Gastos de personal'], ['02', 'Trabajos, suministros y
   ['09', 'Compras que forman parte del costo de venta'], ['10', 'Adquisiciones de activos'], ['11', 'Seguros']];
 
 import { Fecha, aIso } from '../../shared/fecha';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { AuthService } from '../../core/auth.service';
 @Component({
   selector: 'app-compras',
   imports: [Fecha, PresentacionSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
@@ -81,6 +83,31 @@ export class Compras {
   }
 
   protected nombreProveedor(id?: number): string { return this.proveedores().find((p) => p.id === id)?.nombre ?? String(id); }
+
+  protected readonly exportando = signal(false);
+  private readonly auth = inject(AuthService);
+
+  /** Todas las compras (no solo la página visible), con el total en pesos y lo pendiente. */
+  protected excel(): void {
+    this.exportando.set(true);
+    traerTodo<S['CompraResponse']>(this.http, '/api/v1/compras', { sort: 'id,asc' }).subscribe({
+      next: (cs) => {
+        this.exportando.set(false);
+        const vigentes = cs.filter((c) => c.estado !== 'ANULADA');
+        exportarExcel({
+          archivo: 'compras', titulo: 'Compras', subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania),
+          columnas: [{ titulo: 'No.', tipo: 'numero' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Proveedor' }, { titulo: 'Comprobante' },
+            { titulo: 'Condición' }, { titulo: 'Moneda' }, { titulo: 'Total (RD$)', tipo: 'moneda' }, { titulo: 'Por pagar (RD$)', tipo: 'moneda' },
+            { titulo: 'Estado' }],
+          filas: cs.map((c) => [c.numero, c.fecha, this.nombreProveedor(c.proveedorId), c.ncfProveedor ?? c.encfCompra, c.condicion, c.moneda,
+            c.total, c.balance, c.estado]),
+          totales: ['TOTAL', null, `${cs.length} compra(s)`, null, null, null, vigentes.reduce((s, c) => s + (c.total ?? 0), 0),
+            vigentes.reduce((s, c) => s + (c.balance ?? 0), 0), null],
+        });
+      },
+      error: (e) => { this.exportando.set(false); this.notif.error(e); },
+    });
+  }
 
   protected cargar(e?: PageEvent): void {
     this.http.get<Pagina<S['CompraResponse']>>('/api/v1/compras', { params: params({ page: e?.pageIndex ?? 0, size: 20 }) })

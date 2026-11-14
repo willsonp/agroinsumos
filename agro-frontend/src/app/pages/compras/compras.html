@@ -1,6 +1,9 @@
 <div class="pagina">
   <div class="pagina-titulo"><h1>Compras</h1>
-    @if (!nueva()) { <button mat-flat-button (click)="nueva.set(true)"><span class="material-symbols-outlined">add</span> Registrar compra</button> }
+    @if (!nueva()) {
+      <button mat-stroked-button [disabled]="exportando()" (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
+      <button mat-flat-button (click)="nueva.set(true)"><span class="material-symbols-outlined">add</span> Registrar compra</button>
+    }
   </div>
 
   @if (nueva()) {

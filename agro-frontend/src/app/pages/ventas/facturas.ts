@@ -11,9 +11,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
 import type { Pagina, S } from '../../api/tipos';
-import { isoFecha, params } from '../../shared/http';
+import { fechaRd, isoFecha, params, traerTodo } from '../../shared/http';
 import { Notificacion } from '../../core/notificacion.service';
 
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { AuthService } from '../../core/auth.service';
 @Component({
   selector: 'app-facturas',
   imports: [CurrencyPipe, DatePipe, FormsModule, MatTableModule, MatPaginatorModule, MatFormFieldModule, MatInputModule,
@@ -33,6 +35,7 @@ import { Notificacion } from '../../core/notificacion.service';
               <mat-option value="EMITIDA">Emitida (pendiente)</mat-option><mat-option value="PAGADA">Pagada</mat-option>
               <mat-option value="ANULADA">Anulada</mat-option></mat-select></mat-form-field>
           <button mat-flat-button (click)="buscar(0)">Buscar</button>
+          <button mat-stroked-button [disabled]="exportando()" (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
         </div>
         <div class="tabla-contenedor">
           <table mat-table [dataSource]="pagina()?.content ?? []">
@@ -76,6 +79,33 @@ export class Facturas {
   }
 
   protected cambiarPagina(e: PageEvent): void { this.buscar(e.pageIndex); }
+
+  protected readonly exportando = signal(false);
+  private readonly auth = inject(AuthService);
+
+  /** Todas las facturas del filtro actual (no solo la página visible). */
+  protected excel(): void {
+    this.exportando.set(true);
+    traerTodo<S['FacturaResumen']>(this.http, '/api/v1/ventas/facturas',
+      { numero: this.numero, desde: isoFecha(this.desde), hasta: isoFecha(this.hasta), estado: this.estado, sort: 'id,asc' })
+      .subscribe({
+        next: (fs) => {
+          this.exportando.set(false);
+          const filtro = [this.desde ? 'Desde ' + fechaRd(isoFecha(this.desde)) : '', this.hasta ? 'hasta ' + fechaRd(isoFecha(this.hasta)) : '',
+            this.estado ? 'Estado ' + this.estado : ''].filter(Boolean).join(' · ');
+          exportarExcel({
+            archivo: 'facturas', titulo: 'Facturas', subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania, filtro),
+            columnas: [{ titulo: 'No.', tipo: 'numero' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Cliente' }, { titulo: 'NCF' },
+              { titulo: 'Condición' }, { titulo: 'Total', tipo: 'moneda' }, { titulo: 'Balance', tipo: 'moneda' }, { titulo: 'Estado' }],
+            filas: fs.map((f) => [f.numero, f.fecha, f.clienteNombre, f.encf, f.condicion, f.total, f.balance, f.estado]),
+            totales: ['TOTAL', null, `${fs.length} factura(s)`, null, null,
+              fs.filter((f) => f.estado !== 'ANULADA').reduce((s, f) => s + (f.total ?? 0), 0),
+              fs.filter((f) => f.estado !== 'ANULADA').reduce((s, f) => s + (f.balance ?? 0), 0), null],
+          });
+        },
+        error: (e) => { this.exportando.set(false); this.notif.error(e); },
+      });
+  }
 
   protected abrir(f: S['FacturaResumen']): void { this.router.navigate(['/ventas/facturas', f.id]); }
 }

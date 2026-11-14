@@ -18,6 +18,8 @@ import { isoFecha, params } from '../../shared/http';
 
 const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota de débito', RECIBO: 'Recibo', NOTA_CREDITO: 'Nota de crédito' };
 
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { fechaRd } from '../../shared/http';
 @Component({
   selector: 'app-estado-cuenta',
   imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatTabsModule, MatTooltipModule, ClienteSelector],
@@ -36,7 +38,8 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
               <button mat-flat-button [disabled]="!cliente()" (click)="consultar()">Consultar</button>
             </div>
             @if (estado(); as e) {
-              <h2>{{ e.cliente }} <span class="muted">· {{ e.desde | date: 'dd/MM/yyyy' }} al {{ e.hasta | date: 'dd/MM/yyyy' }}</span></h2>
+              <div class="fila"><h2 style="flex:1">{{ e.cliente }} <span class="muted">· {{ e.desde | date: 'dd/MM/yyyy' }} al {{ e.hasta | date: 'dd/MM/yyyy' }}</span></h2>
+                <button mat-stroked-button class="no-imprimir" (click)="excelEstado(e)"><span class="material-symbols-outlined">table_view</span> Excel</button></div>
               <table class="tabla">
                 <tr><th>Fecha</th><th>Documento</th><th>Referencia</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Balance</th></tr>
                 <tr><td colspan="5"><em>Saldo inicial</em></td><td class="num">{{ e.saldoInicial | currency }}</td></tr>
@@ -55,7 +58,8 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
         @if (auth.esSupervisor()) {
           <mat-tab label="Antigüedad de saldos">
             <div class="tarjeta tabla-contenedor">
-              <button mat-stroked-button class="no-imprimir" (click)="antiguedadCargar()">Actualizar</button>
+              <div class="fila"><button mat-stroked-button class="no-imprimir" (click)="antiguedadCargar()">Actualizar</button>
+                <button mat-stroked-button class="no-imprimir" (click)="excelAntiguedad()"><span class="material-symbols-outlined">table_view</span> Excel</button></div>
               <table class="tabla">
                 <tr><th>Cliente</th><th class="num">Corriente</th><th class="num">1-30</th><th class="num">31-60</th><th class="num">61-90</th><th class="num">+90</th><th class="num">Total</th></tr>
                 @for (a of antiguedad(); track a.clienteId) {
@@ -75,6 +79,31 @@ const TIPOS: Record<string, string> = { FACTURA: 'Factura', NOTA_DEBITO: 'Nota d
 export class EstadoCuenta {
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
+
+  protected excelEstado(e: S['EstadoCuenta']): void {
+    const movs = e.movimientos ?? [];
+    exportarExcel({
+      archivo: `estado-cuenta-${(e.cliente ?? 'cliente').replace(/\W+/g, '-').toLowerCase()}`, titulo: `Estado de cuenta · ${e.cliente}`,
+      subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania, `Del ${fechaRd(e.desde)} al ${fechaRd(e.hasta)}`),
+      columnas: [{ titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Documento' }, { titulo: 'Referencia' },
+        { titulo: 'Débito', tipo: 'moneda' }, { titulo: 'Crédito', tipo: 'moneda' }, { titulo: 'Balance', tipo: 'moneda' }],
+      filas: [[null, 'Saldo inicial', null, null, null, e.saldoInicial ?? 0],
+        ...movs.map((m) => [m.fecha, `${this.tipo(m.tipo)} ${m.numero ?? ''}`.trim(), m.referencia, m.debito || null, m.credito || null, m.balance])],
+      totales: ['Saldo final', null, null, movs.reduce((s, m) => s + (m.debito ?? 0), 0), movs.reduce((s, m) => s + (m.credito ?? 0), 0), e.saldoFinal ?? 0],
+    });
+  }
+
+  protected excelAntiguedad(): void {
+    const a = this.antiguedad();
+    const suma = (k: 'corriente' | 'd1a30' | 'd31a60' | 'd61a90' | 'mas90' | 'total') => a.reduce((s, x) => s + (x[k] ?? 0), 0);
+    exportarExcel({
+      archivo: 'antiguedad-cxc', titulo: 'Antigüedad de saldos de clientes', subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania),
+      columnas: [{ titulo: 'Cliente' }, { titulo: 'Corriente', tipo: 'moneda' }, { titulo: '1-30 días', tipo: 'moneda' }, { titulo: '31-60', tipo: 'moneda' },
+        { titulo: '61-90', tipo: 'moneda' }, { titulo: 'Más de 90', tipo: 'moneda' }, { titulo: 'Total', tipo: 'moneda' }],
+      filas: a.map((x) => [x.cliente, x.corriente, x.d1a30, x.d31a60, x.d61a90, x.mas90, x.total]),
+      totales: ['TOTAL', suma('corriente'), suma('d1a30'), suma('d31a60'), suma('d61a90'), suma('mas90'), suma('total')],
+    });
+  }
 
   protected reimprimir(reciboId: number): void { this.dialog.open(ReciboDialog, { data: { reciboId } }); }
   private readonly notif = inject(Notificacion);

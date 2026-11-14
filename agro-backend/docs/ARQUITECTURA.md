@@ -621,6 +621,14 @@ rechaza fechas imposibles con el aviso "Fecha no válida"). El valor sigue siend
 `ngModel` o `formControlName`; `(cambio)` avisa después de actualizar el modelo. `[compacto]` es para celdas de tabla.
 No se usa `<input type="date">` (en Firefox es texto libre y cambia según el navegador).
 
+### Exportar a Excel
+
+`shared/excel.ts` arma un .xlsx real en el navegador (Office Open XML comprimido con `fflate`): título, empresa y
+fecha de generación, encabezado fijo con autofiltro, montos como número con formato `#,##0.00` (redondeados a 2
+decimales), fechas como fecha y fila de totales en negrita. Botón "Excel" en: antigüedad de CxC y CxP, estado de
+cuenta, pagos a suplidores (pagos y compras pendientes), facturas y compras (todo lo del filtro con `traerTodo`, no
+solo la página), kárdex, cuotas vencidas y movimientos de caja. Los reportes del visor siguen con su CSV del servidor.
+
 ## 8. Autorización: rol + opción de menú
 
 Toda la API se autoriza en el **servidor** con dos capas complementarias:

@@ -24,6 +24,8 @@ interface Abono { doc: Pendiente; monto: number; }
  * monto (de la compra que vence primero a la más reciente), comprobante de pago impreso, pagos realizados y
  * antigüedad de saldos con suplidores.
  */
+import { AuthService } from '../../core/auth.service';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
 @Component({
   selector: 'app-pagos-suplidores',
   imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
@@ -58,6 +60,7 @@ interface Abono { doc: Pendiente; monto: number; }
                     <input matInput type="number" min="0" [(ngModel)]="montoDistribuir" (keydown.enter)="distribuir()" /></mat-form-field>
                   <button mat-stroked-button (click)="distribuir()"><span class="material-symbols-outlined">call_split</span> Distribuir monto</button>
                   <button mat-stroked-button (click)="saldarTodo()">Saldar todo</button>
+                  <button mat-stroked-button (click)="excelPendientes()"><span class="material-symbols-outlined">table_view</span> Excel</button>
                   <mat-form-field style="flex:1 1 240px"><mat-label>Concepto</mat-label><input matInput [(ngModel)]="concepto" maxlength="200" /></mat-form-field>
                   <div class="total">{{ total() | currency: moneda() }}</div>
                   <button mat-flat-button [disabled]="excede() || total() <= 0 || variasMonedas()" (click)="pagar()">Pagar</button>
@@ -71,6 +74,7 @@ interface Abono { doc: Pendiente; monto: number; }
 
         <mat-tab label="Pagos realizados">
           <div class="tarjeta">
+            <div class="fila acciones"><span class="espaciador"></span><button mat-stroked-button (click)="excelPagos()"><span class="material-symbols-outlined">table_view</span> Excel</button></div>
             <div class="tabla-contenedor"><table class="tabla">
               <tr><th>No.</th><th>Fecha</th><th>Suplidor</th><th>Concepto</th><th class="num">Monto</th><th>Estado</th><th></th></tr>
               @for (p of pagos(); track p.id) {
@@ -89,6 +93,7 @@ interface Abono { doc: Pendiente; monto: number; }
 
         <mat-tab label="Antigüedad de saldos">
           <div class="tarjeta">
+            <div class="fila acciones"><span class="espaciador"></span><button mat-stroked-button (click)="excelAntiguedad()"><span class="material-symbols-outlined">table_view</span> Excel</button></div>
             <div class="tabla-contenedor"><table class="tabla">
               <tr><th>Suplidor</th><th class="num">Corriente</th><th class="num">1-30 días</th><th class="num">31-60</th><th class="num">61-90</th>
                 <th class="num">Más de 90</th><th class="num">Total</th></tr>
@@ -112,7 +117,7 @@ interface Abono { doc: Pendiente; monto: number; }
     .celda { width: 110px; padding: 6px; text-align: right; } .vencido { color: var(--mat-sys-error); }
     .pie { display: flex; gap: 16px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
     .total { font: var(--mat-sys-headline-small); color: var(--mat-sys-primary); }
-    .final td { font-weight: 600; } .clickable { cursor: pointer; }`,
+    .final td { font-weight: 600; } .clickable { cursor: pointer; } .acciones { margin-bottom: 8px; }`,
 })
 export class PagosSuplidores {
   private readonly http = inject(HttpClient);
@@ -219,6 +224,43 @@ export class PagosSuplidores {
         },
         error: (e) => this.notif.error(e),
       });
+    });
+  }
+
+  private readonly empresa = inject(AuthService);
+
+  protected excelAntiguedad(): void {
+    const a = this.antiguedad();
+    exportarExcel({
+      archivo: 'antiguedad-cxp', titulo: 'Antigüedad de saldos con suplidores', subtitulos: subtitulosEmpresa(this.empresa.perfil()?.compania),
+      columnas: [{ titulo: 'Suplidor' }, { titulo: 'Corriente', tipo: 'moneda' }, { titulo: '1-30 días', tipo: 'moneda' }, { titulo: '31-60', tipo: 'moneda' },
+        { titulo: '61-90', tipo: 'moneda' }, { titulo: 'Más de 90', tipo: 'moneda' }, { titulo: 'Total', tipo: 'moneda' }],
+      filas: a.map((x) => [x.proveedor, x.corriente, x.d1a30, x.d31a60, x.d61a90, x.mas90, x.total]),
+      totales: ['TOTAL', this.suma('corriente'), this.suma('d1a30'), this.suma('d31a60'), this.suma('d61a90'), this.suma('mas90'), this.suma('total')],
+    });
+  }
+
+  protected excelPagos(): void {
+    const p = this.pagos();
+    exportarExcel({
+      archivo: 'pagos-suplidores', titulo: 'Pagos a suplidores', subtitulos: subtitulosEmpresa(this.empresa.perfil()?.compania),
+      columnas: [{ titulo: 'No.', tipo: 'numero' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Suplidor' }, { titulo: 'Concepto' },
+        { titulo: 'Moneda' }, { titulo: 'Monto', tipo: 'moneda' }, { titulo: 'Estado' }],
+      filas: p.map((x) => [x.numero, x.fecha, this.nombreProveedor(x.proveedorId), x.concepto, x.moneda, x.total, x.estado]),
+      totales: ['TOTAL', null, null, null, null, p.filter((x) => x.estado !== 'ANULADO' && x.moneda === 'DOP').reduce((s, x) => s + (x.total ?? 0), 0), null],
+    });
+  }
+
+  protected excelPendientes(): void {
+    const prov = this.nombreProveedor(this.proveedorId()!);
+    const a = this.abonos();
+    exportarExcel({
+      archivo: `compras-pendientes-${prov.replace(/\W+/g, '-').toLowerCase()}`, titulo: `Compras pendientes · ${prov}`,
+      subtitulos: subtitulosEmpresa(this.empresa.perfil()?.compania),
+      columnas: [{ titulo: 'Compra', tipo: 'numero' }, { titulo: 'NCF' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Vence', tipo: 'fecha' },
+        { titulo: 'Días vencido', tipo: 'numero' }, { titulo: 'Moneda' }, { titulo: 'Balance', tipo: 'moneda' }],
+      filas: a.map((x) => [x.doc.numero, x.doc.ncfProveedor, x.doc.fecha, x.doc.vencimiento, x.doc.diasVencido || null, x.doc.moneda, this.balance(x.doc)]),
+      totales: ['TOTAL', null, null, null, null, null, a.filter((x) => x.doc.moneda === 'DOP').reduce((s, x) => s + this.balance(x.doc), 0)],
     });
   }
 

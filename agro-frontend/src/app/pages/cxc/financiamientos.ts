@@ -14,13 +14,14 @@ import { AuthService } from '../../core/auth.service';
 import { Notificacion } from '../../core/notificacion.service';
 import { ClienteSelector } from '../../shared/cliente-selector';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { params, redondear } from '../../shared/http';
+import { fechaRd, params, redondear } from '../../shared/http';
 
 type Plan = S['FinanciamientoResponse'];
 type Pendiente = S['EstadoCuentaDocumentoPendiente'];
 
 /** Ventas financiadas en cuotas con interés y mora (legacy cuotas / facturapro financiada). */
 import { Fecha } from '../../shared/fecha';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
 @Component({
   selector: 'app-financiamientos',
   imports: [Fecha, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
@@ -76,6 +77,7 @@ import { Fecha } from '../../shared/fecha';
                 <mat-option [value]="null">Todas</mat-option>
                 @for (z of zonas(); track z.id) { <mat-option [value]="z.id">{{ z.nombre }}</mat-option> }</mat-select></mat-form-field>
               <span class="espaciador"></span><strong>Total vencido {{ totalVencido() | currency }}</strong>
+              <button mat-stroked-button (click)="excelVencidas()"><span class="material-symbols-outlined">table_view</span> Excel</button>
             </div>
             <table class="tabla">
               <tr><th>Cliente</th><th>Teléfono</th><th>Plan</th><th>Factura</th><th>Cuota</th><th>Venció</th><th>Atraso</th><th class="num">Pendiente</th><th class="num">Mora</th></tr>
@@ -135,6 +137,22 @@ export class Financiamientos {
   protected readonly planes = signal<Pagina<Plan> | null>(null);
   protected readonly visto = signal<Plan | null>(null);
   protected readonly vencidas = signal<S['FinanciamientoCuotaVencida'][]>([]);
+  private readonly authExcel = inject(AuthService);
+
+  /** Cuotas vencidas para salir a cobrar (con teléfono y zona del filtro). */
+  protected excelVencidas(): void {
+    const v = this.vencidas();
+    const zona = this.zonas().find((z) => z.id === this.zonaId)?.nombre;
+    exportarExcel({
+      archivo: 'cuotas-vencidas', titulo: 'Cuotas vencidas de ventas financiadas',
+      subtitulos: subtitulosEmpresa(this.authExcel.perfil()?.compania, `Al ${fechaRd(this.corte) || 'día de hoy'}${zona ? ' · Zona ' + zona : ''}`),
+      columnas: [{ titulo: 'Cliente' }, { titulo: 'Teléfono' }, { titulo: 'Plan', tipo: 'numero' }, { titulo: 'Factura', tipo: 'numero' },
+        { titulo: 'Cuota', tipo: 'numero' }, { titulo: 'Venció', tipo: 'fecha' }, { titulo: 'Días de atraso', tipo: 'numero' },
+        { titulo: 'Pendiente', tipo: 'moneda' }, { titulo: 'Mora', tipo: 'moneda' }],
+      filas: v.map((x) => [x.cliente, x.telefono, x.planNumero, x.facturaNumero, x.cuota, x.vencimiento, x.diasAtraso, x.pendiente, x.moraPorCobrar]),
+      totales: ['TOTAL', null, null, null, null, null, null, v.reduce((s, x) => s + (x.pendiente ?? 0), 0), v.reduce((s, x) => s + (x.moraPorCobrar ?? 0), 0)],
+    });
+  }
   protected readonly zonas = signal<{ id: number; nombre: string }[]>([]);
   protected readonly cliente = signal<S['ClienteResponse'] | null>(null);
   protected readonly facturas = signal<Pendiente[]>([]);
