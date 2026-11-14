@@ -17,8 +17,16 @@ import { redondear } from '../../shared/http';
   template: `
     <h2 mat-dialog-title>Cobrar {{ total | currency }}</h2>
     <mat-dialog-content class="contenido">
+      @if (disponibleAFavor > 0) {
+        <div class="a-favor">
+          <span class="material-symbols-outlined">savings</span>
+          <span>El cliente tiene <strong>{{ disponibleAFavor | currency }}</strong> de saldo a favor.</span>
+          <span class="espaciador"></span>
+          <button mat-flat-button (click)="usarSaldo()">Usar {{ usable | currency }}</button>
+        </div>
+      }
       <div class="rapidos">
-        <button mat-stroked-button (click)="efectivo.set(total)">Exacto</button>
+        <button mat-stroked-button (click)="efectivo.set(exacto())">Exacto</button>
         @for (b of billetes; track b) { <button mat-stroked-button (click)="efectivo.set(b)">{{ b | currency: 'DOP' : 'symbol' : '1.0-0' }}</button> }
       </div>
       <div class="grid-form">
@@ -39,7 +47,7 @@ import { redondear } from '../../shared/http';
         <mat-form-field><mat-label>Cheque</mat-label>
           <input matInput type="number" min="0" [ngModel]="cheque()" (ngModelChange)="cheque.set(+$event || 0)" /></mat-form-field>
         @if (disponibleAFavor > 0) {
-          <mat-form-field><mat-label>Saldo a favor (disp. {{ disponibleAFavor | currency }})</mat-label>
+          <mat-form-field><mat-label>Saldo a favor usado (disp. {{ disponibleAFavor | currency }})</mat-label>
             <input matInput type="number" min="0" [max]="disponibleAFavor" [ngModel]="saldoAFavor()" (ngModelChange)="saldoAFavor.set(+$event || 0)" /></mat-form-field>
         }
       </div>
@@ -47,6 +55,7 @@ import { redondear } from '../../shared/http';
         <div>Recibido <strong>{{ recibido() | currency }}</strong></div>
         @if (falta() > 0) { <div class="error-texto">Falta <strong>{{ falta() | currency }}</strong></div> }
         @else { <div class="devuelta">Devuelta <strong>{{ devuelta() | currency }}</strong></div> }
+        @if (saldoAFavor() > disponibleAFavor + 0.001) { <div class="error-texto">El saldo a favor disponible es {{ disponibleAFavor | currency }}</div> }
         @if (excesoNoEfectivo()) { <div class="error-texto">Tarjeta, transferencia, cheque y saldo a favor no pueden exceder el total</div> }
       </div>
     </mat-dialog-content>
@@ -58,7 +67,10 @@ import { redondear } from '../../shared/http';
     .contenido { min-width: min(520px, 90vw); }
     .rapidos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .resumen { display: flex; gap: 24px; font: var(--mat-sys-title-medium); flex-wrap: wrap; }
-    .devuelta strong { color: var(--mat-sys-primary); font-size: 1.4em; }`,
+    .devuelta strong { color: var(--mat-sys-primary); font-size: 1.4em; }
+    .a-favor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 12px; border-radius: 12px;
+      background: var(--mat-sys-tertiary-container); color: var(--mat-sys-on-tertiary-container); }
+    .espaciador { flex: 1; }`,
 })
 export class PagoDialog {
   private readonly datos = inject<{ total: number; saldoAFavor?: number }>(MAT_DIALOG_DATA);
@@ -88,6 +100,16 @@ export class PagoDialog {
   protected readonly excesoNoEfectivo = computed(() => this.noEfectivo() > this.total + 0.001);
   protected readonly valido = computed(() => this.falta() === 0 && !this.excesoNoEfectivo() && this.recibido() > 0
     && this.saldoAFavor() <= this.disponibleAFavor);
+
+  /** Lo que se puede tomar del saldo a favor para esta venta (no más que el total). */
+  protected readonly usable = redondear(Math.min(this.disponibleAFavor, this.total));
+  protected usarSaldo(): void {
+    this.saldoAFavor.set(this.usable);
+    // Si el saldo no alcanza, el efectivo propuesto es lo que falta
+    if (this.efectivo() > 0) this.efectivo.set(this.exacto());
+  }
+  /** Efectivo exacto: el total menos lo pagado con las otras formas. */
+  protected exacto(): number { return redondear(Math.max(0, this.total - this.noEfectivo())); }
 
   protected confirmar(): void {
     const pagos: S['PagoRequest'][] = [];

@@ -1,3 +1,4 @@
+import { catchError, map, of, switchMap } from 'rxjs';
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
@@ -187,8 +188,11 @@ export class Conduces {
       return;
     }
     // Contado: se cobra en el momento con el mismo diálogo del punto de venta (entra a la caja como factura a contado)
-    this.dialog.open(PagoDialog, { data: { total: redondear(this.totalSeleccion()) }, autoFocus: 'dialog' })
-      .afterClosed().subscribe((pagos?: S['PagoRequest'][]) => {
+    const clienteId = this.seleccion()[0]?.clienteId;
+    const saldo$ = clienteId ? this.http.get<S['ClienteResponse']>(`/api/v1/catalogos/clientes/${clienteId}`)
+      .pipe(map((x) => x.saldoAFavor ?? 0), catchError(() => of(0))) : of(0);
+    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: redondear(this.totalSeleccion()), saldoAFavor }, autoFocus: 'dialog' })
+      .afterClosed())).subscribe((pagos?: S['PagoRequest'][]) => {
         if (!pagos) return;
         this.http.post<S['VentaContadoResponse']>('/api/v1/ventas/conduces/facturar-contado',
           { facturar: { conduceIds, condicion: 'CONTADO' }, pagos })

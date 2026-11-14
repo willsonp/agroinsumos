@@ -1,3 +1,4 @@
+import { catchError, map, of, switchMap } from 'rxjs';
 import { Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -102,8 +103,10 @@ export class Pos {
 
   protected cobrar(): void {
     if (!this.validar()) return;
-    this.dialog.open(PagoDialog, { data: { total: this.totales().total }, autoFocus: 'dialog' })
-      .afterClosed().subscribe((pagos?: S['PagoRequest'][]) => {
+    const c = this.cliente();
+    const saldo$ = c?.id ? this.http.get<Cliente>(`/api/v1/catalogos/clientes/${c.id}`).pipe(map((x) => x.saldoAFavor ?? 0), catchError(() => of(0))) : of(0);
+    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: this.totales().total, saldoAFavor }, autoFocus: 'dialog' })
+      .afterClosed())).subscribe((pagos?: S['PagoRequest'][]) => {
         if (!pagos) return;
         this.procesando.set(true);
         this.http.post<S['VentaContadoResponse']>('/api/v1/caja/ventas', { factura: this.request('CONTADO'), pagos })
