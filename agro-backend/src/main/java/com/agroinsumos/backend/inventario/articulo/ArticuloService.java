@@ -57,10 +57,13 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                            String estado, boolean manejaVencimiento,
                            String unidad, Long unidadEmpaqueId, String unidadEmpaque, BigDecimal factorEmpaque,
                            BigDecimal precioEmpaqueContadoConItbis, BigDecimal precioEmpaqueCreditoConItbis,
-                           BigDecimal precioEmpaqueMayorConItbis, String codigoBarraEmpaque) {}
+                           BigDecimal precioEmpaqueMayorConItbis, String codigoBarraEmpaque,
+                           /** En apartados abiertos; disponible = existencia − reservado (lo que se puede vender). */
+                           BigDecimal reservado, BigDecimal disponible) {}
 
     private final ArticuloRepository repo;
     private final ExistenciaRepository existencias;
+    private final com.agroinsumos.backend.inventario.kardex.ReservaService reservas;
     private final com.agroinsumos.backend.inventario.kardex.MovimientoInventarioRepository movimientos;
     private final DepartamentoService departamentos;
     private final UnidadService unidades;
@@ -153,6 +156,7 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
     @Override
     protected Response respuesta(Articulo a) {
         BigDecimal existencia = a.getId() == null ? BigDecimal.ZERO : existencias.totalArticulo(a.getId());
+        BigDecimal reservado = a.getId() == null || !a.inventariable() ? BigDecimal.ZERO : reservas.reservado(a.getId());
         return new Response(a.getId(), a.getCodigoBarra(), a.getReferencia(), a.getNombre(), a.getDescripcion(),
                 a.getTipo(), a.getDepartamentoId(), a.getUnidadId(), a.getProveedorId(), a.getIndicadorItbis(),
                 a.getCosto(), a.getCostoPromedio(), a.getPrecioContado(), a.getPrecioCredito(), a.getPrecioMayor(),
@@ -162,7 +166,7 @@ public class ArticuloService extends CrudService<Articulo, ArticuloService.Reque
                 a.getFactorEmpaque(),
                 // Solo los precios propios de la presentación (null = se usa el precio base × factor)
                 propio(a, a.getPrecioEmpaqueContado()), propio(a, a.getPrecioEmpaqueCredito()), propio(a, a.getPrecioEmpaqueMayor()),
-                a.getCodigoBarraEmpaque());
+                a.getCodigoBarraEmpaque(), reservado, existencia.subtract(reservado));
     }
 
     /** Búsqueda por código de barras para el punto de venta (legacy ConsultaArticulo_PorCodigo). */

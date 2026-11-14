@@ -25,6 +25,7 @@ public class KardexService {
     static final int MAX_FILAS = 20_000;
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final ReservaService reservas;
 
     public record Fila(Long id, Instant fecha, String tipo, String documentoTipo, Long documentoId, Long almacenId, String almacen,
                        BigDecimal cantidad, BigDecimal costoUnitario, BigDecimal saldo, String usuario) {}
@@ -37,7 +38,9 @@ public class KardexService {
                           BigDecimal factorEmpaque, BigDecimal costoPromedio,
                           LocalDate desde, LocalDate hasta, Long almacenId, String almacen,
                           BigDecimal saldoAnterior, BigDecimal entradas, BigDecimal salidas, BigDecimal saldoFinal,
-                          List<Fila> movimientos, boolean truncado) {}
+                          List<Fila> movimientos, boolean truncado,
+                          /** Reservado hoy en apartados abiertos (unidad base; en el almacén principal). */
+                          BigDecimal reservado) {}
 
     @Transactional(readOnly = true)
     public Reporte reporte(Long cia, Long articuloId, Long almacenId, LocalDate desde, LocalDate hasta) {
@@ -78,6 +81,7 @@ public class KardexService {
         return new Reporte(articuloId, (String) art.get("codigo"), (String) art.get("nombre"), (String) art.get("unidad"),
                 (String) art.get("unidad_empaque"), (BigDecimal) art.get("factor_empaque"),
                 (BigDecimal) art.get("costo_promedio"), desde, hasta, almacenId, (String) art.get("almacen"),
-                anterior, entradas, salidas, anterior.add(entradas).subtract(salidas), filas, truncado);
+                anterior, entradas, salidas, anterior.add(entradas).subtract(salidas), filas, truncado,
+                almacenId == null ? reservas.reservado(articuloId) : reservas.reservadoEn(articuloId, almacenId));
     }
 }

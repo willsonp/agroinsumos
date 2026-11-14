@@ -153,6 +153,45 @@ class VentasPendientesIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void loApartadoQuedaReservadoYNoSeVende() throws Exception {
+        // 20 sacos en existencia; se apartan 18: solo quedan 2 disponibles para vender
+        long a1 = id(post(cajero, "/api/v1/ventas/apartados", """
+                {"clienteId":%d,"concepto":"Reserva grande","lineas":[{"articuloId":%d,"cantidad":18}]}""".formatted(finca, urea), 201));
+        String art = getJson(admin, "/api/v1/inventario/articulos/" + urea);
+        assertThat(num(art, "$.existencia")).isEqualTo(20.0);
+        assertThat(num(art, "$.reservado")).isEqualTo(18.0);
+        assertThat(num(art, "$.disponible")).isEqualTo(2.0);
+        assertThat(num(getJson(admin, "/api/v1/inventario/articulos/" + urea + "/kardex/reporte"), "$.reservado")).isEqualTo(18.0);
+
+        String venta = """
+                {"clienteId":%d,"condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":%d}]}""";
+        String err = post(admin, "/api/v1/ventas/facturas", venta.formatted(otro, urea, 3), 422);
+        assertThat(code(err)).isEqualTo("EXISTENCIA_RESERVADA");
+        assertThat(JsonPath.<String>read(err, "$.detail")).contains("existencia 20, apartado 18, disponible 2");
+        assertThat(code(post(cajero, "/api/v1/ventas/conduces", conduce(otro, 3), 422))).isEqualTo("EXISTENCIA_RESERVADA");
+        post(admin, "/api/v1/ventas/facturas", venta.formatted(otro, urea, 2), 201);
+        assertThat(existencia()).isEqualTo(18.0);
+        // Ya no hay disponible ni para otro apartado
+        assertThat(code(post(cajero, "/api/v1/ventas/apartados", """
+                {"clienteId":%d,"concepto":"Otro","lineas":[{"articuloId":%d,"cantidad":1}]}""".formatted(otro, urea), 422)))
+                .isEqualTo("EXISTENCIA_RESERVADA");
+
+        // Cancelar libera la reserva
+        post(admin, "/api/v1/ventas/apartados/" + a1 + "/cancelar", "{\"motivo\":\"Desistió\",\"devolverDinero\":false}", 200);
+        assertThat(num(getJson(admin, "/api/v1/inventario/articulos/" + urea), "$.disponible")).isEqualTo(18.0);
+
+        // Al facturar el apartado se usa su propia reserva (aunque sea toda la existencia)
+        long a2 = id(post(cajero, "/api/v1/ventas/apartados", """
+                {"clienteId":%d,"concepto":"Todo","lineas":[{"articuloId":%d,"cantidad":18}],
+                 "abonoInicial":{"forma":"TRANSFERENCIA","monto":44604,"referencia":"T-1"}}""".formatted(otro, urea), 201));
+        assertThat(code(post(admin, "/api/v1/ventas/facturas", venta.formatted(finca, urea, 1), 422))).isEqualTo("EXISTENCIA_RESERVADA");
+        post(cajero, "/api/v1/ventas/apartados/" + a2 + "/facturar", "{}", 201);
+        art = getJson(admin, "/api/v1/inventario/articulos/" + urea);
+        assertThat(num(art, "$.existencia")).isEqualTo(0.0);
+        assertThat(num(art, "$.reservado")).isEqualTo(0.0);
+    }
+
+    @Test
     void ventaFinanciadaEnCuotasConInteresYMora() throws Exception {
         String f = post(admin, "/api/v1/ventas/facturas", """
                 {"clienteId":%d,"condicion":"CREDITO","lineas":[{"articuloId":%d,"cantidad":2}]}""".formatted(finca, urea), 201);

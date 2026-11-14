@@ -34,11 +34,12 @@ type Articulo = S['ArticuloResponse'];
           <thead><tr><th>Código</th><th>Nombre</th><th class="num">Existencia</th><th class="num">Precio</th></tr></thead>
           <tbody>
             @for (a of articulos(); track a.id; let i = $index) {
-              <tr #fila role="option" [attr.aria-selected]="i === activo()" [class.activo]="i === activo()" [class.agotado]="a.tipo === 'B' && (a.existencia ?? 0) <= 0"
+              <tr #fila role="option" [attr.aria-selected]="i === activo()" [class.activo]="i === activo()" [class.agotado]="a.tipo === 'B' && (a.disponible ?? a.existencia ?? 0) <= 0"
                   (click)="elegir(a)" (mouseenter)="activo.set(i)">
                 <td>{{ a.codigoBarra || a.referencia || a.id }}</td>
                 <td>{{ a.nombre }}@if (a.unidadEmpaque) { <span class="muted"> · {{ a.unidadEmpaque }} x {{ a.factorEmpaque }}</span> }</td>
-                <td class="num">{{ a.tipo === 'S' ? 'Servicio' : (a.existencia | number: '1.0-2') }}@if (a.tipo !== 'S' && a.unidad) { <span class="muted"> {{ a.unidad }}</span> }</td>
+                <td class="num">{{ a.tipo === 'S' ? 'Servicio' : (a.existencia | number: '1.0-2') }}@if (a.tipo !== 'S' && a.unidad) { <span class="muted"> {{ a.unidad }}</span> }
+                  @if ((a.reservado ?? 0) > 0) { <div class="pequeno reserva">Apartado {{ a.reservado | number: '1.0-2' }} · Disponible {{ a.disponible | number: '1.0-2' }}</div> }</td>
                 <td class="num">{{ a.precioContadoConItbis | currency }}</td>
               </tr>
             } @empty {
@@ -51,6 +52,7 @@ type Articulo = S['ArticuloResponse'];
         · ↑ ↓ para moverse, Enter o clic para elegir, Esc para cerrar</p>
     </mat-dialog-content>`,
   styles: `.filtro { width: 100%; }
+    .reserva { color: var(--mat-sys-tertiary); white-space: nowrap; } tr.activo .reserva { color: inherit; }
     /* Cabe en la pantalla sin desplazar la ventana: título, filtro y ayuda siempre visibles; la lista usa el resto */
     .contenido { max-height: calc(100vh - 120px); overflow: hidden; }
     .lista { height: min(440px, calc(100vh - 330px)); min-height: 150px; overflow: auto;

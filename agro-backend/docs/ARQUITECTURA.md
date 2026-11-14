@@ -137,10 +137,18 @@ POST /ventas/facturas
   ├─ precios / descuentos autorizados  ──► 403 PRECIO_NO_AUTORIZADO / DESCUENTO_NO_AUTORIZADO
   ├─ crédito: días > 0 y límite         ──► 422 SIN_CREDITO / LIMITE_CREDITO_EXCEDIDO
   ├─ número interno (contador)
-  ├─ salida de inventario (kardex)      ──► 422 EXISTENCIA_INSUFICIENTE
+  ├─ salida de inventario (kardex)      ──► 422 EXISTENCIA_INSUFICIENTE / EXISTENCIA_RESERVADA
   └─ e-CF firmado (e-NCF reservado)     ──► 422 SECUENCIA_* / 503 CERTIFICADO_*
   Cualquier error ⇒ rollback total: ni factura, ni movimiento, ni e-NCF consumido.
 ```
+
+**Reserva de apartados.** Lo que está en un apartado ABIERTO queda reservado en el almacén principal (de donde sale
+su factura): `disponible = existencia − reservado` (cantidad × factor, en unidad base; `ReservaService`). Toda salida
+de ese almacén (factura, conduce, salida, transferencia, devolución a suplidor) debe dejar al menos lo reservado
+(«existencia 12, apartado 1, disponible 11»); el ajuste por conteo físico no se bloquea. Crear un apartado exige
+disponible suficiente (bloqueando la fila de existencia). Al facturar el apartado se marca FACTURADO antes de crear la
+factura, así usa su propia reserva; al cancelarlo la reserva se libera. El artículo expone `reservado`/`disponible`
+(ventana de búsqueda) y el reporte de kárdex `reservado`.
 
 ### Endpoints nuevos
 | Recurso | Rutas |

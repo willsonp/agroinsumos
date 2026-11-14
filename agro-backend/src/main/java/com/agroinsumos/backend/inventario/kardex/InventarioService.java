@@ -24,6 +24,7 @@ public class InventarioService {
     private final JdbcTemplate jdbc;
     private final MovimientoInventarioRepository movimientos;
     private final LoteService lotes;
+    private final ReservaService reservas;
 
     @Value("${app.inventario.permitir-negativo:false}")
     private boolean permitirNegativo;
@@ -64,6 +65,15 @@ public class InventarioService {
                     + "': disponible " + anterior.stripTrailingZeros().toPlainString()
                     + ", requerido " + m.cantidad().stripTrailingZeros().toPlainString());
         }
+        // Lo apartado no se vende: la salida no puede tocar la reserva (el ajuste por conteo físico sí, refleja la realidad)
+        if (!m.tipo().entrada() && m.tipo() != TipoMovimiento.AJUSTE_SALIDA && !permitirNegativo) {
+            BigDecimal reservado = reservas.reservadoEn(a.getId(), m.almacenId());
+            if (reservado.signum() > 0 && fin.compareTo(reservado) < 0) {
+                throw new BusinessException("EXISTENCIA_RESERVADA", "No hay disponible suficiente de '" + a.getNombre()
+                        + "': existencia " + txt(anterior) + ", apartado " + txt(reservado) + ", disponible "
+                        + txt(anterior.subtract(reservado).max(BigDecimal.ZERO)) + ", requerido " + txt(m.cantidad()));
+            }
+        }
         jdbc.update("update existencia set cantidad = ? where articulo_id = ? and almacen_id = ?", fin, a.getId(), m.almacenId());
 
         BigDecimal costo = m.costoUnitario() != null ? m.costoUnitario() : a.getCostoPromedio();
@@ -87,6 +97,29 @@ public class InventarioService {
         lotes.aplicar(a, m, mov.getId());
         return fin;
     }
+
+    /**
+     * Valida que haya disponible (existencia − reservado) para reservar `cantidad` en un apartado nuevo. Bloquea la
+     * fila de existencia para que una venta simultánea no use lo mismo.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void validarDisponible(Articulo a, Long almacenId, BigDecimal cantidad) {
+        if (!a.inventariable() || permitirNegativo) return;
+        BigDecimal existencia = jdbc.queryForObject("""
+                insert into existencia(articulo_id, almacen_id, cantidad) values (?, ?, 0)
+                on conflict (articulo_id, almacen_id) do update set cantidad = existencia.cantidad
+                returning cantidad
+                """, BigDecimal.class, a.getId(), almacenId);
+        BigDecimal reservado = reservas.reservadoEn(a.getId(), almacenId);
+        BigDecimal disponible = existencia.subtract(reservado);
+        if (disponible.compareTo(cantidad) < 0) {
+            throw new BusinessException("EXISTENCIA_RESERVADA", "No hay disponible suficiente de '" + a.getNombre()
+                    + "' para apartar: existencia " + txt(existencia) + ", apartado " + txt(reservado) + ", disponible "
+                    + txt(disponible.max(BigDecimal.ZERO)) + ", requerido " + txt(cantidad));
+        }
+    }
+
+    private static String txt(BigDecimal v) { return v.stripTrailingZeros().toPlainString(); }
 
     /** Existencia actual en un almacén (sin bloquear). */
     public BigDecimal existencia(Long articuloId, Long almacenId) {

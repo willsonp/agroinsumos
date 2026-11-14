@@ -60,6 +60,10 @@ import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
               <div><dt>Costo promedio</dt><dd>{{ k.costoPromedio | currency }} por {{ k.unidad }}
                 @if (k.factorEmpaque) { <div class="muted">= {{ (k.costoPromedio ?? 0) * k.factorEmpaque | currency }} por {{ k.unidadEmpaque }} de {{ k.factorEmpaque | number: '1.0-3' }} {{ k.unidad }}</div> }</dd></div>
               <div><dt>Existencia por almacén</dt><dd>@for (e of existencias(); track e.almacenId) { {{ almacen(e.almacenId) }}: {{ e.cantidad | number: '1.0-3' }}@if (!$last) { · } } @empty { 0 }</dd></div>
+              @if ((k.reservado ?? 0) > 0) {
+                <div><dt>Reservado en apartados</dt><dd class="reserva">{{ k.reservado | number: '1.0-3' }} {{ k.unidad }}
+                  <span class="muted">· disponible para vender {{ (a.existencia ?? 0) - (k.reservado ?? 0) | number: '1.0-3' }}</span></dd></div>
+              }
             </dl>
             <div class="resumen">
               <div><span>Saldo anterior</span><strong>{{ k.saldoAnterior | number: '1.0-3' }}</strong></div>
@@ -107,7 +111,8 @@ import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
         </div>
       }
     </div>`,
-  styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px 8px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
+  styles: `.reserva { color: var(--mat-sys-tertiary); font-weight: 500; }
+    .tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px 8px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
     .tabla .num { text-align: right; white-space: nowrap; } tfoot td { font-weight: 600; border-top: 2px solid var(--mat-sys-outline); }
     .saldo-anterior td { font-style: italic; color: var(--mat-sys-on-surface-variant); }
     .salida { color: var(--mat-sys-error); } .entrada { color: var(--mat-sys-primary); } h3 { font: var(--mat-sys-title-small); margin: 16px 0 8px; }

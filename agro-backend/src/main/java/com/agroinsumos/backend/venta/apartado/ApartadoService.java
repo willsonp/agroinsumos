@@ -14,7 +14,10 @@ import com.agroinsumos.backend.common.pago.FormaPago;
 import com.agroinsumos.backend.common.pago.PagoRequest;
 import com.agroinsumos.backend.cxc.ReciboAplicacion;
 import com.agroinsumos.backend.cxc.ReciboService;
+import com.agroinsumos.backend.catalogo.almacen.AlmacenService;
+import com.agroinsumos.backend.inventario.articulo.Articulo;
 import com.agroinsumos.backend.inventario.articulo.ArticuloService;
+import com.agroinsumos.backend.inventario.kardex.InventarioService;
 import com.agroinsumos.backend.security.AuthUser;
 import com.agroinsumos.backend.venta.comun.LineaVentaRequest;
 import com.agroinsumos.backend.venta.comun.PreciosVentaService;
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -76,6 +80,8 @@ public class ApartadoService {
     private final MovimientoBancarioService banco;
     private final CuentaBancariaRepository cuentasBancarias;
     private final NumeradorService numerador;
+    private final InventarioService inventario;
+    private final AlmacenService almacenes;
     private final Clock clock;
 
     @Transactional
@@ -84,6 +90,15 @@ public class ApartadoService {
         var cliente = clientes.cargarActiva(cia, r.clienteId());
         TipoPrecio lista = r.tipoPrecio() != null ? r.tipoPrecio() : cliente.getTipoPrecio();
         var lineas = precios.preparar(cia, cliente, lista, r.lineas(), user, false);
+        // Lo apartado queda reservado en el almacén principal (de ahí sale su factura): debe haber disponible
+        Long almacen = almacenes.resolver(cia, null).getId();
+        var porArticulo = new LinkedHashMap<Long, BigDecimal>();
+        var arts = new LinkedHashMap<Long, Articulo>();
+        for (var lp : lineas) {
+            porArticulo.merge(lp.articulo().getId(), lp.cantidad().multiply(lp.factor()), BigDecimal::add);
+            arts.putIfAbsent(lp.articulo().getId(), lp.articulo());
+        }
+        porArticulo.forEach((id, cant) -> inventario.validarDisponible(arts.get(id), almacen, cant));
         var a = new Apartado();
         a.setCompaniaId(cia);
         a.setNumero(numerador.siguiente(cia, DOC_TIPO));
@@ -166,6 +181,9 @@ public class ApartadoService {
         var cliente = clientes.cargar(cia, a.getClienteId());
         var req = new FacturaDtos.CrearFacturaRequest(a.getClienteId(), Factura.Condicion.CONTADO, null, null,
                 r == null ? null : r.tipoEcf(), null, null, "Apartado " + a.getNumero() + ": " + a.getConcepto(), null, lineas);
+        // Se marca facturado antes de crear la factura: así su propia reserva queda libre para esta venta
+        a.setEstado(Apartado.Estado.FACTURADO);
+        repo.saveAndFlush(a);
         Factura f = facturas.crearEntidad(cia, user, req, true, null);
         if (f.getTotal().compareTo(a.getAbonado()) > 0 || f.getTotal().compareTo(cliente.getSaldoAFavor()) > 0) {
             throw new BusinessException("ANTICIPO_INSUFICIENTE", "La factura (RD$" + f.getTotal() + ") supera el anticipo disponible");
@@ -173,7 +191,6 @@ public class ApartadoService {
         recibos.cobrarEntidad(user, new ReciboService.ReciboRequest(a.getClienteId(), "Aplicación de abonos del apartado " + a.getNumero(),
                 List.of(new ReciboService.AplicacionRequest(ReciboAplicacion.TipoDocumento.FACTURA, f.getId(), f.getTotal(), null, null)),
                 List.of(new PagoRequest(FormaPago.SALDO_A_FAVOR, f.getTotal(), null, null))));
-        a.setEstado(Apartado.Estado.FACTURADO);
         a.setFacturaId(f.getId());
         return FacturaDtos.FacturaResponse.de(f);
     }
