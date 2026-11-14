@@ -38,6 +38,11 @@ public class NotaProveedorController {
     @GetMapping("/{id}")
     public NotaProveedorService.Response obtener(AuthUser user, @PathVariable Long id) { return service.obtener(user.companiaId(), id); }
 
+    @GetMapping("/{id}/impresion")
+    public NotaProveedorService.NotaImpresion impresion(AuthUser user, @PathVariable Long id) {
+        return service.impresion(user.companiaId(), id);
+    }
+
     @PostMapping("/{id}/anular")
     public NotaProveedorService.Response anular(AuthUser user, @PathVariable Long id, @Valid @RequestBody NotaProveedorService.AnularRequest r) {
         return service.anular(user, id, r.motivo());

@@ -51,6 +51,13 @@ class NotasProveedor608IntegrationTest extends IntegrationTestBase {
         String n1 = post(admin, "/api/v1/cxp/notas", nc.formatted(compraId, "B0400000001", linea, "2"), 201);
         assertThat(num(n1, "$.total")).isEqualTo(2360.0);
         assertThat(num(n1, "$.balanceCompra")).isEqualTo(11800 - 2360.0);
+        // Impreso: suplidor, número de la compra y artículos devueltos con su unidad
+        String imp = getJson("/api/v1/cxp/notas/" + JsonPath.<Number>read(n1, "$.id").longValue() + "/impresion");
+        assertThat(JsonPath.<String>read(imp, "$.proveedor")).isNotBlank();
+        assertThat(JsonPath.<Number>read(imp, "$.nota.compraNumero").longValue()).isEqualTo(JsonPath.<Number>read(n1, "$.compraNumero").longValue());
+        assertThat(JsonPath.<String>read(imp, "$.lineas[0].articulo")).isNotBlank();
+        assertThat(num(imp, "$.lineas[0].cantidad")).isEqualTo(2.0);
+        assertThat(JsonPath.<String>read(imp, "$.atendio")).isEqualTo("admin");
         assertThat(num(getJson("/api/v1/inventario/articulos/" + urea), "$.existencia")).isEqualTo(8.0);
         assertThat(code(post(admin, "/api/v1/cxp/notas", nc.formatted(compraId, "B0400000002", linea, "9"), 422))).isEqualTo("CANTIDAD_EXCEDE");
         assertThat(code(post(admin, "/api/v1/cxp/notas", nc.formatted(compraId, "B0400000001", linea, "1"), 409))).isEqualTo("NCF_DUPLICADO");

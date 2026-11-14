@@ -13,7 +13,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import type { Pagina, S } from '../../api/tipos';
 import { Notificacion } from '../../core/notificacion.service';
 import { ConfirmarDialog } from '../../shared/confirmar-dialog';
-import { params, redondear } from '../../shared/http';
+import { params, redondear, traerTodo } from '../../shared/http';
 
 type Nota = S['NotaProveedorResponse'];
 type Compra = S['CompraResponse'];
@@ -21,14 +21,21 @@ type Compra = S['CompraResponse'];
 /** Notas de crédito / débito recibidas de suplidores (legacy notacreditocxp / notadebitocxp). */
 import { Fecha } from '../../shared/fecha';
 import { ProveedorSelector } from '../../shared/proveedor-selector';
+import { NotaImpresa } from './nota-impresa';
+import { AuthService } from '../../core/auth.service';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-notas-proveedor',
-  imports: [ProveedorSelector, Fecha, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
+  imports: [MatTooltipModule, ProveedorSelector, Fecha, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Notas de suplidores</h1><span class="espaciador"></span>
-        @if (!nuevo()) { <button mat-flat-button (click)="abrir()"><span class="material-symbols-outlined">add</span> Nueva nota</button> }</div>
+        @if (!nuevo()) {
+          <button mat-stroked-button [disabled]="exportando()" (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
+          <button mat-flat-button (click)="abrir()"><span class="material-symbols-outlined">add</span> Nueva nota</button>
+        }</div>
 
       @if (nuevo()) {
         <div class="tarjeta">
@@ -83,9 +90,11 @@ import { ProveedorSelector } from '../../shared/proveedor-selector';
             @for (n of pagina()?.content ?? []; track n.id) {
               <tr [class.anulado]="n.estado === 'ANULADA'"><td>{{ n.numero }}</td><td>{{ n.fecha | date: 'dd/MM/yyyy' }}</td>
                 <td>{{ n.tipo === 'CREDITO' ? 'Crédito' : 'Débito' }}@if (n.devuelveInventario) { <span class="chip">Devolución</span> }</td>
-                <td>{{ n.ncf }}</td><td>{{ n.compraId }}</td><td>{{ n.concepto }}</td><td class="num">{{ n.total | currency }}</td>
+                <td>{{ n.ncf }}</td><td>{{ n.compraNumero }}</td><td>{{ n.concepto }}</td><td class="num">{{ n.total | currency }}</td>
                 <td><span class="chip" [class.ok]="n.estado === 'EMITIDA'" [title]="n.motivoAnulacion ?? ''">{{ n.estado === 'EMITIDA' ? 'Vigente' : 'Anulada' }}</span></td>
-                <td>@if (n.estado === 'EMITIDA') { <button mat-button (click)="anular(n)">Anular</button> }</td></tr>
+                <td class="acciones"><button mat-icon-button (click)="imprimir(n.id!)" matTooltip="Imprimir nota" aria-label="Imprimir nota">
+                    <span class="material-symbols-outlined">print</span></button>
+                  @if (n.estado === 'EMITIDA') { <button mat-button (click)="anular(n)">Anular</button> }</td></tr>
             } @empty { <tr><td colspan="9">Sin notas registradas.</td></tr> }
           </tbody>
         </table>
@@ -122,6 +131,38 @@ export class Notas {
     this.http.get<Pagina<S['ProveedorResponse']>>('/api/v1/catalogos/proveedores', { params: params({ size: 500, sort: 'nombre' }) })
       .subscribe((p) => this.proveedores.set(p.content.filter((x) => x.estado === 'A')));
     this.cargar();
+  }
+
+  protected imprimir(notaId: number): void { this.dialog.open(NotaImpresa, { data: { notaId } }); }
+
+  protected readonly exportando = signal(false);
+  private readonly auth = inject(AuthService);
+
+  /** Todas las notas (no solo la página visible). */
+  protected excel(): void {
+    this.exportando.set(true);
+    const nombres = new Map(this.proveedores().map((x) => [x.id, x.nombre]));
+    traerTodo<Nota>(this.http, '/api/v1/cxp/notas', { sort: 'id,asc' }).subscribe({
+      next: (ns) => {
+        this.exportando.set(false);
+        const vigentes = ns.filter((n) => n.estado === 'EMITIDA');
+        const suma = (t: string) => vigentes.filter((n) => n.tipo === t).reduce((s, n) => s + (n.total ?? 0), 0);
+        exportarExcel({
+          archivo: 'notas-suplidores', titulo: 'Notas de suplidores', subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania,
+            'Vigentes: crédito ' + suma('CREDITO').toFixed(2) + ' · débito ' + suma('DEBITO').toFixed(2)),
+          columnas: [{ titulo: 'No.', tipo: 'numero' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Tipo' }, { titulo: 'Devolución' },
+            { titulo: 'Suplidor' }, { titulo: 'NCF' }, { titulo: 'Compra', tipo: 'numero' }, { titulo: 'NCF de la compra' }, { titulo: 'Concepto' },
+            { titulo: 'Subtotal', tipo: 'moneda' }, { titulo: 'ITBIS', tipo: 'moneda' }, { titulo: 'Total', tipo: 'moneda' }, { titulo: 'Estado' }],
+          filas: ns.map((n) => [n.numero, n.fecha, n.tipo === 'CREDITO' ? 'Crédito' : 'Débito', n.devuelveInventario ? 'Sí' : '',
+            nombres.get(n.proveedorId) ?? n.proveedorId, n.ncf, n.compraNumero, n.compraNcf, n.concepto, n.subtotal, n.itbis, n.total,
+            n.estado === 'EMITIDA' ? 'Vigente' : 'Anulada']),
+          totales: ['TOTAL', null, ns.length + ' nota(s)', null, null, null, null, null, null,
+            vigentes.reduce((s, n) => s + (n.subtotal ?? 0), 0), vigentes.reduce((s, n) => s + (n.itbis ?? 0), 0),
+            vigentes.reduce((s, n) => s + (n.total ?? 0), 0), null],
+        });
+      },
+      error: (e) => { this.exportando.set(false); this.notif.error(e); },
+    });
   }
 
   protected cargar(e?: PageEvent): void {
@@ -166,7 +207,10 @@ export class Notas {
       subtotal: devolucion ? undefined : this.f.subtotal, itbis: devolucion ? undefined : this.f.itbis,
       lineas: devolucion ? Object.entries(this.devolver()).filter(([, q]) => q > 0).map(([id, q]) => ({ compraLineaId: +id, cantidad: q })) : undefined };
     this.http.post<Nota>('/api/v1/cxp/notas', req).subscribe({
-      next: (n) => { this.notif.ok(`Nota ${n.numero} registrada. Balance de la compra: RD$${n.balanceCompra}`); this.nuevo.set(false); this.cargar(); },
+      next: (n) => {
+        this.notif.ok(`Nota ${n.numero} registrada. Balance de la compra: RD$${n.balanceCompra}`); this.nuevo.set(false); this.cargar();
+        this.imprimir(n.id!);   // documento para el suplidor, como en las demás transacciones
+      },
       error: (e) => this.notif.error(e) });
   }
 

@@ -51,7 +51,13 @@ public class NotaProveedorService {
     public record Response(Long id, long numero, NotaProveedor.Tipo tipo, Long proveedorId, Long compraId, LocalDate fecha,
                            String ncf, String concepto, BigDecimal subtotal, BigDecimal itbis, BigDecimal total,
                            boolean devuelveInventario, NotaProveedor.Estado estado, String motivoAnulacion,
-                           BigDecimal balanceCompra, List<LineaResponse> lineas) {}
+                           BigDecimal balanceCompra, List<LineaResponse> lineas, long compraNumero, String compraNcf) {}
+
+    public record LineaImpresion(String articulo, String unidad, BigDecimal cantidad, BigDecimal importe, BigDecimal itbis) {}
+
+    /** Nota de crédito/débito de suplidor impresa (80 mm, como el comprobante de pago). */
+    public record NotaImpresion(Response nota, String proveedor, String proveedorRnc, String atendio, LocalDate compraFecha,
+                                List<LineaImpresion> lineas) {}
 
     private final NotaProveedorRepository repo;
     private final CompraService compras;
@@ -59,6 +65,7 @@ public class NotaProveedorService {
     private final InventarioService inventario;
     private final NumeradorService numerador;
     private final Clock clock;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Transactional
     public Response registrar(AuthUser user, Request r) {
@@ -215,6 +222,24 @@ public class NotaProveedorService {
                 n.getConcepto(), n.getSubtotal(), n.getItbis(), n.getTotal(), n.isDevuelveInventario(), n.getEstado(),
                 n.getMotivoAnulacion(), c.getBalance(),
                 n.getLineas().stream().map(l -> new LineaResponse(l.getCompraLineaId(), l.getArticuloId(), l.getCantidad(),
-                        l.getImporte(), l.getItbis())).toList());
+                        l.getImporte(), l.getItbis())).toList(), c.getNumero(), c.getNcfProveedor() != null ? c.getNcfProveedor() : c.getEncfCompra());
+    }
+
+    public NotaImpresion impresion(Long cia, Long id) {
+        var nota = obtener(cia, id);
+        var datos = jdbc.queryForMap("""
+                select pr.nombre, pr.rnc_cedula, u.username, c.fecha compra_fecha
+                  from nota_proveedor n join proveedor pr on pr.id = n.proveedor_id join compra c on c.id = n.compra_id
+                  left join usuario u on u.id = n.usuario_id
+                 where n.id = ? and n.compania_id = ?""", id, cia);
+        var lineas = jdbc.query("""
+                select a.nombre, case when cl.factor > 1 then coalesce(ue.nombre, u.nombre) else u.nombre end unidad,
+                       l.cantidad, l.importe, l.itbis
+                  from nota_proveedor_linea l join articulo a on a.id = l.articulo_id join unidad u on u.id = a.unidad_id
+                  join compra_linea cl on cl.id = l.compra_linea_id left join unidad ue on ue.id = a.unidad_empaque_id
+                 where l.nota_id = ? order by l.id""", (rs, i) -> new LineaImpresion(rs.getString(1), rs.getString(2),
+                rs.getBigDecimal(3), rs.getBigDecimal(4), rs.getBigDecimal(5)), id);
+        return new NotaImpresion(nota, (String) datos.get("nombre"), (String) datos.get("rnc_cedula"), (String) datos.get("username"),
+                ((java.sql.Date) datos.get("compra_fecha")).toLocalDate(), lineas);
     }
 }
