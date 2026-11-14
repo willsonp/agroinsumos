@@ -11,7 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap } from 'rxjs';
 import type { Pagina, S } from '../api/tipos';
 import { params } from './http';
-import { ProveedorBusquedaDialog } from './proveedor-busqueda-dialog';
+import { ProveedorBusquedaDialog, ProveedorOpcion, proveedoresConDeuda } from './proveedor-busqueda-dialog';
+import { CurrencyPipe } from '@angular/common';
 
 type Proveedor = S['ProveedorResponse'];
 
@@ -21,7 +22,7 @@ type Proveedor = S['ProveedorResponse'];
  */
 @Component({
   selector: 'app-proveedor-selector',
-  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTooltipModule],
+  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTooltipModule, CurrencyPipe],
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ProveedorSelector), multi: true }],
   template: `
     <mat-form-field style="width:100%">
@@ -33,7 +34,8 @@ type Proveedor = S['ProveedorResponse'];
               aria-label="Buscar suplidor"><span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto [displayWith]="mostrar" (optionSelected)="fijar($event.option.value)">
         @for (p of opciones(); track p.id) {
-          <mat-option [value]="p">{{ p.nombre }} @if (p.rncCedula) { <span class="muted">· {{ p.rncCedula }}</span> }</mat-option>
+          <mat-option [value]="p">{{ p.nombre }} @if (p.deuda != null) { <span class="muted">· debe {{ p.deuda | currency }}</span> }
+            @else if (p.rncCedula) { <span class="muted">· {{ p.rncCedula }}</span> }</mat-option>
         }
       </mat-autocomplete>
     </mat-form-field>`,
@@ -48,6 +50,8 @@ export class ProveedorSelector implements ControlValueAccessor {
   readonly requerido = input(false);
   /** Texto cuando no hay suplidor (p. ej. "Todos" en un filtro). */
   readonly vacio = input('');
+  /** Solo suplidores con balance pendiente (pantalla de pagos): sugerencias y ventana con lo que se les debe. */
+  readonly soloConDeuda = input(false);
   /** Después de actualizar el modelo. */
   readonly cambio = output<number | null>();
   protected readonly texto = new FormControl<string | Proveedor>('');
@@ -61,9 +65,10 @@ export class ProveedorSelector implements ControlValueAccessor {
     map((v) => (v as string).trim()),
     distinctUntilChanged(),
     // Solo sugiere al escribir: con el campo vacío no aparece una lista (para verla toda está la lupa)
-    switchMap((q) => !q ? of([] as Proveedor[]) : this.http.get<Pagina<Proveedor>>('/api/v1/catalogos/proveedores', { params: params({ q, size: 15, sort: 'nombre' }) })
-      .pipe(map((p) => p.content.filter((x) => x.estado === 'A')), catchError(() => of([])))),
-  ), { initialValue: [] as Proveedor[] });
+    switchMap((q) => !q ? of([] as ProveedorOpcion[]) : this.soloConDeuda() ? proveedoresConDeuda(this.http, q).pipe(map((x) => x.slice(0, 15)))
+      : this.http.get<Pagina<Proveedor>>('/api/v1/catalogos/proveedores', { params: params({ q, size: 15, sort: 'nombre' }) })
+        .pipe(map((p) => p.content.filter((x) => x.estado === 'A') as ProveedorOpcion[]), catchError(() => of([] as ProveedorOpcion[])))),
+  ), { initialValue: [] as ProveedorOpcion[] });
 
   writeValue(id: number | null): void {
     if (!id) { this.actual = null; this.texto.setValue('', { emitEvent: false }); return; }
@@ -100,7 +105,7 @@ export class ProveedorSelector implements ControlValueAccessor {
     ev?.stopPropagation();   // el clic de la lupa no llega al campo (lo enfocaría y reabriría las sugerencias)
     this.trigger().closePanel();
     const v = this.texto.value;
-    this.dialog.open(ProveedorBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(900px, 96vw)',
+    this.dialog.open(ProveedorBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '', soloConDeuda: this.soloConDeuda() }, width: 'min(900px, 96vw)',
       maxWidth: '96vw', restoreFocus: false })
       .afterClosed().subscribe((p?: Proveedor) => {
         if (p) this.fijar(p);

@@ -26,22 +26,20 @@ interface Abono { doc: Pendiente; monto: number; }
  */
 import { AuthService } from '../../core/auth.service';
 import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { ProveedorSelector } from '../../shared/proveedor-selector';
 @Component({
   selector: 'app-pagos-suplidores',
-  imports: [CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
+  imports: [ProveedorSelector, CurrencyPipe, DatePipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTabsModule,
     MatTooltipModule],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Pagos a suplidores</h1></div>
-      <mat-tab-group>
+      <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="pestana.set($event)">
         <mat-tab label="Pagar">
           <div class="tarjeta">
-            <mat-form-field style="width:100%"><mat-label>Suplidor (con balance pendiente)</mat-label>
-              <mat-select [value]="proveedorId()" (selectionChange)="elegir($event.value)">
-                @for (a of antiguedad(); track a.proveedorId) {
-                  <mat-option [value]="a.proveedorId">{{ a.proveedor }} · debe {{ a.total | currency }}</mat-option>
-                } @empty { <mat-option disabled>No hay compras pendientes de pago</mat-option> }
-              </mat-select></mat-form-field>
+            <app-proveedor-selector etiqueta="Suplidor (con balance pendiente)" [soloConDeuda]="true" [ngModel]="proveedorId()"
+                                    (cambio)="$event ? elegir($event) : limpiar()" />
+            @if (!antiguedad().length) { <p class="muted">No se le debe a ningún suplidor: no hay compras pendientes de pago.</p> }
             @if (proveedorId()) {
               <div class="tabla-contenedor"><table class="tabla">
                 <tr><th>Compra</th><th>NCF</th><th>Fecha</th><th>Vence</th><th class="num">Balance</th><th class="num">Pagar</th></tr>
@@ -98,7 +96,7 @@ import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
               <tr><th>Suplidor</th><th class="num">Corriente</th><th class="num">1-30 días</th><th class="num">31-60</th><th class="num">61-90</th>
                 <th class="num">Más de 90</th><th class="num">Total</th></tr>
               @for (a of antiguedad(); track a.proveedorId) {
-                <tr class="clickable" (click)="elegir(a.proveedorId!)"><td>{{ a.proveedor }}</td><td class="num">{{ a.corriente | currency }}</td>
+                <tr class="clickable" (click)="pagarA(a.proveedorId!)"><td>{{ a.proveedor }}</td><td class="num">{{ a.corriente | currency }}</td>
                   <td class="num">{{ a.d1a30 | currency }}</td><td class="num">{{ a.d31a60 | currency }}</td><td class="num">{{ a.d61a90 | currency }}</td>
                   <td class="num" [class.vencido]="(a.mas90 ?? 0) > 0">{{ a.mas90 | currency }}</td><td class="num"><strong>{{ a.total | currency }}</strong></td></tr>
               } @empty { <tr><td colspan="7" class="muted">No se le debe a ningún suplidor</td></tr> }
@@ -170,6 +168,16 @@ export class PagosSuplidores {
       error: (e) => this.notif.error(e),
     });
   }
+
+  /** Pestaña activa: desde la antigüedad se vuelve a "Pagar" con el suplidor elegido. */
+  protected readonly pestana = signal(0);
+
+  protected pagarA(id: number): void {
+    this.elegir(id);
+    this.pestana.set(0);
+  }
+
+  protected limpiar(): void { this.proveedorId.set(null); this.abonos.set([]); }
 
   protected fijar(i: number, v: number): void {
     this.abonos.set(this.abonos().map((a, j) => (j === i ? { ...a, monto: Math.max(0, v || 0) } : a)));
