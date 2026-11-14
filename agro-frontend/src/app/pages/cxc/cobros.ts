@@ -110,7 +110,7 @@ export class Cobros {
         error: (e) => this.notif.error(e),
       });
     if (this.totalAbono() === 0) { enviar([]); return; } // solo retenciones
-    this.dialog.open(PagoDialog, { data: { total: this.totalAbono(), saldoAFavor: this.cliente()?.saldoAFavor ?? 0 } })
+    this.dialog.open(PagoDialog, { data: { total: this.totalAbono(), saldoAFavor: this.cliente()?.saldoAFavor ?? 0 }, width: 'min(680px, 96vw)', maxWidth: '96vw' })
       .afterClosed().subscribe((pagos?: S['PagoRequest'][]) => pagos && enviar(pagos));
   }
 }

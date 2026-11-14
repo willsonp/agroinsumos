@@ -95,20 +95,26 @@ export function valorDiferencia(d: number): string {
           <div class="resultado" [class.cuadrada]="diferencia() === 0" [class.sobrante]="diferencia() > 0" [class.faltante]="diferencia() < 0">
             {{ resultado() }} : {{ valorDiferencia(diferencia()) }}
           </div>
-          <mat-form-field style="width:100%"><mat-label>Observación</mat-label><input matInput [(ngModel)]="observacion" maxlength="200" /></mat-form-field>
+          <mat-form-field style="width:100%; margin-top: 4px"><mat-label>Observación</mat-label><input matInput [(ngModel)]="observacion" maxlength="200" /></mat-form-field>
         </section>
         <section>
           <h3>Distribución de las denominaciones</h3>
           <table class="conteo">
-            <tr><th>Denominación</th><th>Cantidad</th><th class="num">Total</th></tr>
-            @for (d of datos.denominaciones; track d; let i = $index) {
-              <tr><td>{{ d | currency: 'DOP' : 'symbol' : '1.0-0' }}</td>
-                <td><input type="number" min="0" class="celda" [ngModel]="cantidades()[i]" (ngModelChange)="fijar(i, +$event)" [attr.aria-label]="'Cantidad de ' + d" /></td>
-                <td class="num">{{ d * cantidades()[i] | currency }}</td></tr>
+            <tr><th>Denom.</th><th>Cant.</th><th class="num">Total</th><th class="sep">Denom.</th><th>Cant.</th><th class="num">Total</th></tr>
+            @for (fila of filasConteo; track $index) {
+              <tr>
+                @for (i of fila; track i; let primera = $first) {
+                  <td [class.sep]="!primera">{{ datos.denominaciones[i] | currency: 'DOP' : 'symbol' : '1.0-0' }}</td>
+                  <td><input type="number" min="0" class="celda" [ngModel]="cantidades()[i]" (ngModelChange)="fijar(i, +$event)" [attr.aria-label]="'Cantidad de ' + datos.denominaciones[i]" /></td>
+                  <td class="num">{{ datos.denominaciones[i] * cantidades()[i] | currency }}</td>
+                }
+              </tr>
             }
-            <tr><td>Monto tarjetas</td><td colspan="2"><input type="number" min="0" class="celda ancha" [ngModel]="tarjetas()" (ngModelChange)="tarjetas.set(+$event || 0)" aria-label="Monto tarjetas" /></td></tr>
-            <tr><td>Monto cheques</td><td colspan="2"><input type="number" min="0" class="celda ancha" [ngModel]="cheques()" (ngModelChange)="cheques.set(+$event || 0)" aria-label="Monto cheques" /></td></tr>
-            <tr><td>Monto depósitos / transf.</td><td colspan="2"><input type="number" min="0" class="celda ancha" [ngModel]="transferencias()" (ngModelChange)="transferencias.set(+$event || 0)" aria-label="Monto depósitos" /></td></tr>
+          </table>
+          <table class="conteo otras">
+            <tr><td>Monto tarjetas</td><td><input type="number" min="0" class="celda ancha" [ngModel]="tarjetas()" (ngModelChange)="tarjetas.set(+$event || 0)" aria-label="Monto tarjetas" /></td></tr>
+            <tr><td>Monto cheques</td><td><input type="number" min="0" class="celda ancha" [ngModel]="cheques()" (ngModelChange)="cheques.set(+$event || 0)" aria-label="Monto cheques" /></td></tr>
+            <tr><td>Monto depósitos / transf.</td><td><input type="number" min="0" class="celda ancha" [ngModel]="transferencias()" (ngModelChange)="transferencias.set(+$event || 0)" aria-label="Monto depósitos" /></td></tr>
           </table>
           <div class="total-dia">Total monedas <strong>{{ totalContado() | currency }}</strong></div>
         </section>
@@ -118,14 +124,17 @@ export function valorDiferencia(d: number): string {
       <button mat-button mat-dialog-close>Cancelar</button>
       <button mat-flat-button (click)="cerrar()">Cerrar caja</button>
     </mat-dialog-actions>`,
-  styles: `.cuadre { display: grid; grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr); gap: 20px; align-items: start; }
+  styles: `.cuadre { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(390px, 1fr); gap: 16px; align-items: start; }
+    .tabla { font: var(--mat-sys-body-small); td, th { white-space: nowrap; } td:first-child { white-space: normal; min-width: 150px; } }
+    .sep { border-left: 1px solid var(--mat-sys-outline-variant); padding-left: 10px !important; }
+    .otras { margin-top: 6px; td:last-child { text-align: right; } }
     @media (max-width: 900px) { .cuadre { grid-template-columns: 1fr; } }
     h3 { margin: 0 0 8px; font: var(--mat-sys-title-small); }
-    .tabla, .conteo { width: 100%; border-collapse: collapse; td, th { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--mat-sys-outline-variant); } }
-    .celda { width: 80px; padding: 5px; text-align: right; } .celda.ancha { width: 140px; }
-    .total-dia { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+    .tabla, .conteo { width: 100%; border-collapse: collapse; td, th { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--mat-sys-outline-variant); } }
+    .celda { width: 64px; padding: 4px; text-align: right; } .celda.ancha { width: 140px; }
+    .total-dia { display: flex; justify-content: space-between; margin-top: 8px; padding: 6px 12px; border-radius: 8px;
       background: var(--mat-sys-surface-container-high); font: var(--mat-sys-title-medium); }
-    .resultado { margin: 16px 0 12px; padding: 10px 14px; border-radius: 8px; font: var(--mat-sys-title-medium); }
+    .resultado { margin: 10px 0 12px; padding: 8px 14px; border-radius: 8px; font: var(--mat-sys-title-medium); }
     .resultado { font-weight: 600; }
     .cuadrada { background: #2e9e3e; color: #fff; } .faltante { background: #d32f2f; color: #fff; } .sobrante { background: #f5e100; color: #000; }`,
 })
@@ -146,6 +155,11 @@ export class CierreDialog {
     : this.diferencia() > 0 ? 'Caja descuadrada hay un sobrante' : 'Caja descuadrada hay un faltante');
   protected readonly valorDiferencia = valorDiferencia;
   protected observacion = '';
+  /** Denominaciones en dos columnas: billetes grandes a la izquierda y el resto a la derecha (índices). */
+  protected readonly filasConteo: number[][] = (() => {
+    const n = this.datos.denominaciones.length, mitad = Math.ceil(n / 2);
+    return Array.from({ length: mitad }, (_, i) => (i + mitad < n ? [i, i + mitad] : [i]));
+  })();
 
   constructor() {
     inject(HttpClient).get<S['CierreCajaCierreResumen']>(`/api/v1/caja/sesiones/${this.datos.sesionId}/cierre`)

@@ -84,7 +84,7 @@ export class MiCaja {
 
   protected cerrar(): void {
     this.http.get<number[]>('/api/v1/caja/denominaciones').subscribe((denominaciones) => {
-      this.dialog.open(CierreDialog, { data: { denominaciones, sesionId: this.sesion()!.id! }, width: 'min(1100px, 96vw)', maxWidth: '96vw' })
+      this.dialog.open(CierreDialog, { data: { denominaciones, sesionId: this.sesion()!.id! }, width: 'min(1240px, 98vw)', maxWidth: '98vw' })
         .afterClosed().subscribe((req) => {
           if (!req) return;
           this.http.post<S['CajaSesionResponse']>('/api/v1/caja/sesiones/actual/cerrar', req).subscribe({

@@ -191,7 +191,7 @@ export class Conduces {
     const clienteId = this.seleccion()[0]?.clienteId;
     const saldo$ = clienteId ? this.http.get<S['ClienteResponse']>(`/api/v1/catalogos/clientes/${clienteId}`)
       .pipe(map((x) => x.saldoAFavor ?? 0), catchError(() => of(0))) : of(0);
-    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: redondear(this.totalSeleccion()), saldoAFavor }, autoFocus: 'dialog' })
+    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: redondear(this.totalSeleccion()), saldoAFavor }, width: 'min(680px, 96vw)', maxWidth: '96vw', autoFocus: 'dialog' })
       .afterClosed())).subscribe((pagos?: S['PagoRequest'][]) => {
         if (!pagos) return;
         this.http.post<S['VentaContadoResponse']>('/api/v1/ventas/conduces/facturar-contado',

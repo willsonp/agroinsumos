@@ -54,6 +54,13 @@ mat-form-field + app-articulo-buscador, .fila + app-articulo-buscador, .grid-for
 /* La etiqueta flotante (outline) sobresale ~8px por encima del campo: el contenido del diálogo deja ese espacio
    arriba para que la etiqueta del primer campo no quede recortada. */
 .mat-mdc-dialog-content.mdc-dialog__content { padding-top: 12px !important; }
+/* Ventanas emergentes: usan el alto de la pantalla (Material las limita al 65%, lo que obligaba a desplazar en
+   pantallas de laptop) y sus campos y botones son más compactos para que todo quepa sin desplazarse. */
+.mat-mdc-dialog-container {
+  --mat-dialog-content-max-height: calc(100vh - 140px);
+  @include mat.theme((density: -3));
+}
+.mat-mdc-dialog-actions.mdc-dialog__actions { padding-top: 4px; padding-bottom: 12px; }
 /* Cuando la cuadrícula se pone directamente en el contenido del diálogo, el display:block de Material le ganaba
    y los campos quedaban amontonados sin separación (egreso de caja, pago a suplidor, nota de débito, cotización). */
 .mat-mdc-dialog-content.grid-form { display: grid; }

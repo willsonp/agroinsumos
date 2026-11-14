@@ -105,7 +105,7 @@ export class Pos {
     if (!this.validar()) return;
     const c = this.cliente();
     const saldo$ = c?.id ? this.http.get<Cliente>(`/api/v1/catalogos/clientes/${c.id}`).pipe(map((x) => x.saldoAFavor ?? 0), catchError(() => of(0))) : of(0);
-    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: this.totales().total, saldoAFavor }, autoFocus: 'dialog' })
+    saldo$.pipe(switchMap((saldoAFavor) => this.dialog.open(PagoDialog, { data: { total: this.totales().total, saldoAFavor }, width: 'min(680px, 96vw)', maxWidth: '96vw', autoFocus: 'dialog' })
       .afterClosed())).subscribe((pagos?: S['PagoRequest'][]) => {
         if (!pagos) return;
         this.procesando.set(true);

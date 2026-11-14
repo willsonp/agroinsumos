@@ -22,16 +22,19 @@ import { redondear } from '../../shared/http';
           <span class="material-symbols-outlined">savings</span>
           <span>El cliente tiene <strong>{{ disponibleAFavor | currency }}</strong> de saldo a favor.</span>
           <span class="espaciador"></span>
-          <button mat-flat-button (click)="usarSaldo()">Usar {{ usable | currency }}</button>
+          <button mat-flat-button class="usar" (click)="usarSaldo()">Usar {{ usable | currency }}</button>
         </div>
       }
       <div class="rapidos">
         <button mat-stroked-button (click)="efectivo.set(exacto())">Exacto</button>
         @for (b of billetes; track b) { <button mat-stroked-button (click)="efectivo.set(b)">{{ b | currency: 'DOP' : 'symbol' : '1.0-0' }}</button> }
       </div>
+      <!-- En pares: monto y su referencia en la misma fila -->
       <div class="grid-form">
         <mat-form-field><mat-label>Efectivo recibido</mat-label>
           <input matInput type="number" min="0" [ngModel]="efectivo()" (ngModelChange)="efectivo.set(+$event || 0)" cdkFocusInitial /></mat-form-field>
+        <mat-form-field><mat-label>Cheque</mat-label>
+          <input matInput type="number" min="0" [ngModel]="cheque()" (ngModelChange)="cheque.set(+$event || 0)" /></mat-form-field>
         <mat-form-field><mat-label>Tarjeta</mat-label>
           <input matInput type="number" min="0" [ngModel]="tarjeta()" (ngModelChange)="tarjeta.set(+$event || 0)" /></mat-form-field>
         <mat-form-field><mat-label>No. autorización</mat-label><input matInput [(ngModel)]="autorizacion" /></mat-form-field>
@@ -44,8 +47,6 @@ import { redondear } from '../../shared/http';
             @for (c of cuentas.enPesos(); track c.id) { <mat-option [value]="c.id">{{ etiqueta(c) }}</mat-option> }
           </mat-select></mat-form-field>
         }
-        <mat-form-field><mat-label>Cheque</mat-label>
-          <input matInput type="number" min="0" [ngModel]="cheque()" (ngModelChange)="cheque.set(+$event || 0)" /></mat-form-field>
         @if (disponibleAFavor > 0) {
           <mat-form-field><mat-label>Saldo a favor usado (disp. {{ disponibleAFavor | currency }})</mat-label>
             <input matInput type="number" min="0" [max]="disponibleAFavor" [ngModel]="saldoAFavor()" (ngModelChange)="saldoAFavor.set(+$event || 0)" /></mat-form-field>
@@ -64,11 +65,11 @@ import { redondear } from '../../shared/http';
       <button mat-flat-button [disabled]="!valido()" (click)="confirmar()">Confirmar cobro</button>
     </mat-dialog-actions>`,
   styles: `
-    .contenido { min-width: min(520px, 90vw); }
-    .rapidos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .resumen { display: flex; gap: 24px; font: var(--mat-sys-title-medium); flex-wrap: wrap; }
+    .rapidos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; button { min-width: 0; padding: 0 14px; } }
+    .grid-form { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 12px; }
+    .resumen { display: flex; gap: 24px; margin-top: 2px; font: var(--mat-sys-title-medium); flex-wrap: wrap; }
     .devuelta strong { color: var(--mat-sys-primary); font-size: 1.4em; }
-    .a-favor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 12px; border-radius: 12px;
+    .a-favor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 2px 6px 2px 12px; margin-bottom: 8px; border-radius: 12px;
       background: var(--mat-sys-tertiary-container); color: var(--mat-sys-on-tertiary-container); }
     .espaciador { flex: 1; }`,
 })
