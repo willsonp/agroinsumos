@@ -68,3 +68,16 @@ describe('redondeo (HALF_UP como el backend)', () => {
     expect(calcular([linea], 'CONTADO', false).total).toBe(18);
   });
 });
+
+describe('precios con ITBIS incluido (cero/cero)', () => {
+  it('caja de 12 a RD$500 con ITBIS = 6,000.00 exactos', () => {
+    const glifosato = art(423.7288, 1, { unidadEmpaqueId: 9, factorEmpaque: 12 });
+    const linea = { articulo: glifosato, cantidad: 1, descuentoPorcentaje: 0, empaque: true };
+    const t = calcular([linea], 'CONTADO', false);
+    expect(t.total).toBe(6000);
+    expect(t.subtotal).toBe(5084.75);
+    expect(t.itbis).toBe(915.25);
+    expect(importeConItbis(linea, 'CONTADO', false)).toBe(6000);
+    expect(calcular([{ articulo: glifosato, cantidad: 1, descuentoPorcentaje: 0 }], 'CONTADO', false).total).toBe(500);
+  });
+});

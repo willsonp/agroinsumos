@@ -128,7 +128,7 @@ public class FacturaService {
             l.setIndicadorItbis((short) lp.indicadorItbis());
             l.setTasaItbis(lp.tasaItbis());
             l.setImporte(calc.montoItem());
-            l.setItbis(PreciosVentaService.itbisLinea(calc.montoItem(), lp.tasaItbis()));
+            l.setItbis(calc.itbis());   // la suma de las líneas cuadra con el ITBIS del documento
             // Costo de la unidad vendida (un saco = 100 × costo de la libra): utilidad = cantidad × (precio − costo)
             l.setCostoUnitario(lp.articulo().getCostoPromedio().multiply(lp.factor()).setScale(4, RoundingMode.HALF_UP));
             f.getLineas().add(l);

@@ -580,6 +580,17 @@ Como el módulo CxP del sistema anterior (opción **Compras → Pagos a suplidor
      factura a contado). Sin caja abierta o con pago insuficiente no se emite la factura y el conduce sigue abierto.
 3. **Anular** un conduce abierto devuelve la mercancía. Prueba: `VentasPendientesIntegrationTest`.
 
+## 5.20 Totales con precios con ITBIS (cero/cero)
+
+Los precios se escriben con ITBIS (RD$500) y se guardan sin ITBIS con 4 decimales (423.7288). `EcfCalculadora` calcula
+cada línea gravada desde su total con ITBIS: total = cantidad × precio × (1 + tasa) redondeado; base (montoItem) =
+total / (1 + tasa) redondeada; ITBIS de la línea = total − base. El ITBIS del documento es la suma de las líneas, que
+es lo que se guarda en `factura_linea.itbis` (también cotizaciones y notas de crédito). Así 12 × RD$500 = 6,000.00
+exactos (antes 5,084.75 + 915.26 = 6,000.01) y base + ITBIS = total al centavo. Con precios de hasta 2 decimales el
+resultado es idéntico al cálculo anterior. La base de cada línea queda a menos de un centavo de precio × cantidad,
+dentro de la tolerancia de redondeo del e-CF (informe técnico de la DGII). `shared/calculo.ts` replica la regla para
+la vista previa. Prueba: `EcfCalculadoraTest`.
+
 ## 6. Convenciones (SOLID y buenas prácticas)
 - **SRP**: el controlador solo maneja HTTP, el servicio las reglas y el repositorio los datos (antes, `Ctrl_*` mezclaba UI, SQL y reportes).
 - **DIP**: los puertos `DgiiClient` y `CertificadoProvider` son interfaces, intercambiables por HSM, Vault o mocks en pruebas.

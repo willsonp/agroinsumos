@@ -87,7 +87,7 @@ public class CotizacionService {
             l.setPrecioUnitario(lp.precioUnitario());
             l.setDescuento(calc.descuento());
             l.setImporte(calc.montoItem());
-            l.setItbis(PreciosVentaService.itbisLinea(calc.montoItem(), lp.tasaItbis()));
+            l.setItbis(calc.itbis());   // la suma de las líneas cuadra con el ITBIS del documento
             c.getLineas().add(l);
         }
         c.setTotalItbis(tot.totalItbis());

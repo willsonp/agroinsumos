@@ -40,31 +40,39 @@ export function precioLista(a: Articulo, lista: TipoPrecio, empaque = false): nu
 export interface Totales { subtotal: number; descuento: number; itbis: number; total: number; }
 
 /**
- * Misma regla que el backend (EcfCalculadora): importe por línea redondeado a 2 decimales,
- * ITBIS calculado sobre la suma de cada tasa. Es una vista previa; el total definitivo lo da el servidor.
+ * Misma regla que el backend (EcfCalculadora): cada línea gravada parte de su total con ITBIS (cantidad × precio ×
+ * (1 + tasa), redondeado), base = total / (1 + tasa) redondeada e ITBIS = total − base. Así RD$500 × 12 = 6,000.00
+ * exactos (antes 5,084.75 + 915.26 = 6,000.01). Es una vista previa; el total definitivo lo da el servidor.
  */
 export function calcular(lineas: LineaCarrito[], lista: TipoPrecio, exento: boolean): Totales {
-  const basePorTasa = new Map<number, number>();
-  let subtotal = 0, descuento = 0;
+  let subtotal = 0, descuento = 0, itbis = 0;
   for (const l of lineas) {
     const precio = precioLista(l.articulo, lista, l.empaque);
     const desc = redondear(l.cantidad * precio * (l.descuentoPorcentaje || 0) / 100);
-    const importe = redondear(l.cantidad * precio - desc);
+    const neto = l.cantidad * precio - l.cantidad * precio * (l.descuentoPorcentaje || 0) / 100;
     const tasa = exento ? 0 : TASAS[l.articulo.indicadorItbis ?? 4];
-    basePorTasa.set(tasa, (basePorTasa.get(tasa) ?? 0) + importe);
-    subtotal += importe;
+    const f = linea(neto, tasa);
+    subtotal += f.base;
+    itbis += f.itbis;
     descuento += desc;
   }
-  let itbis = 0;
-  basePorTasa.forEach((base, tasa) => (itbis += redondear(base * tasa / 100)));
   subtotal = redondear(subtotal);
-  return { subtotal, descuento: redondear(descuento), itbis: redondear(itbis), total: redondear(subtotal + itbis) };
+  itbis = redondear(itbis);
+  return { subtotal, descuento: redondear(descuento), itbis, total: redondear(subtotal + itbis) };
 }
 
-/** Importe de la línea con ITBIS (para mostrar en el carrito). */
+/** Base e ITBIS de una línea desde su total con ITBIS (ver calcular). */
+function linea(neto: number, tasa: number): { base: number; itbis: number; total: number } {
+  if (tasa <= 0) { const base = redondear(neto); return { base, itbis: 0, total: base }; }
+  const f = 1 + tasa / 100;
+  const total = redondear(neto * f);
+  const base = redondear(total / f);
+  return { base, itbis: redondear(total - base), total };
+}
+
+/** Importe de la línea con ITBIS (para mostrar en el carrito): el mismo total que usa calcular. */
 export function importeConItbis(l: LineaCarrito, lista: TipoPrecio, exento: boolean): number {
   const precio = precioLista(l.articulo, lista, l.empaque);
-  const importe = redondear(l.cantidad * precio * (1 - (l.descuentoPorcentaje || 0) / 100));
-  const tasa = exento ? 0 : TASAS[l.articulo.indicadorItbis ?? 4];
-  return redondear(importe * (1 + tasa / 100));
+  const neto = l.cantidad * precio * (1 - (l.descuentoPorcentaje || 0) / 100);
+  return linea(neto, exento ? 0 : TASAS[l.articulo.indicadorItbis ?? 4]).total;
 }

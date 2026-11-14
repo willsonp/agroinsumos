@@ -126,7 +126,7 @@ public class DevolucionService {
             var fl = porId.get(dl.getFacturaLineaId());
             BigDecimal importe = tot.lineas().get(i).montoItem();
             dl.setImporte(importe);
-            dl.setItbis(PreciosVentaService.itbisLinea(importe, fl.getTasaItbis()));
+            dl.setItbis(tot.lineas().get(i).itbis());
         }
         boolean total = f.getLineas().stream().allMatch(l -> l.pendienteDevolver().signum() == 0);
         d.setCodigoModificacion((short) (total ? 1 : 3));
