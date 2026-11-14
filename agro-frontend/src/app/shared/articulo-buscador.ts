@@ -6,6 +6,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ArticuloBusquedaDialog } from './articulo-busqueda-dialog';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, of, switchMap } from 'rxjs';
 import type { Pagina, S } from '../api/tipos';
@@ -17,17 +21,19 @@ type Articulo = S['ArticuloResponse'];
 /**
  * Buscador de artículos. Con lector de código de barras: el lector "escribe" el código y envía Enter, que busca por
  * código exacto (de cualquier largo: "1", "7461234000014"). Escribiendo letras, autocompleta por nombre/referencia;
- * con una opción resaltada (flechas), Enter elige esa opción.
+ * con una opción resaltada (flechas), Enter elige esa opción. La lupa (o F2) abre la ventana de búsqueda con la lista.
  */
 @Component({
   selector: 'app-articulo-buscador',
-  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule, CurrencyPipe, DecimalPipe],
+  imports: [ReactiveFormsModule, MatAutocompleteModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTooltipModule, CurrencyPipe, DecimalPipe],
   template: `
     <mat-form-field style="width:100%">
       <mat-label>Artículo</mat-label>
       <span matTextPrefix class="material-symbols-outlined" style="margin-right:6px">barcode_scanner</span>
       <input #campo matInput [formControl]="texto" [matAutocomplete]="auto" (keydown.enter)="porCodigo($event)"
-             placeholder="Escanee el código o escriba el nombre" />
+             (keydown.f2)="buscar($event)" placeholder="Escanee el código o escriba el nombre" />
+      <button mat-icon-button matSuffix type="button" (click)="buscar()" matTooltip="Buscar artículo (F2)" aria-label="Buscar artículo">
+        <span class="material-symbols-outlined">search</span></button>
       <mat-autocomplete #auto (optionSelected)="elegir($event.option.value)">
         @for (a of opciones(); track a.id) {
           <mat-option [value]="a">
@@ -43,6 +49,7 @@ type Articulo = S['ArticuloResponse'];
 export class ArticuloBuscador {
   private readonly http = inject(HttpClient);
   private readonly notif = inject(Notificacion);
+  private readonly dialog = inject(MatDialog);
   readonly elegido = output<Articulo>();
   private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
   private readonly trigger = viewChild.required(MatAutocompleteTrigger);
@@ -81,6 +88,16 @@ export class ArticuloBuscador {
       error: () => sugeridas.length === 1 ? this.elegir(sugeridas[0])
         : this.notif.error(null, sugeridas.length ? `Elija el artículo de la lista o escanee su código` : `No existe un artículo con el código ${codigo}`),
     });
+  }
+
+  /** Ventana de búsqueda (botón de lupa o F2), con lo escrito como filtro inicial. */
+  protected buscar(ev?: Event): void {
+    ev?.preventDefault();
+    this.trigger().closePanel();
+    const v = this.texto.value;
+    this.dialog.open(ArticuloBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(900px, 96vw)',
+      maxWidth: '96vw', autoFocus: 'first-tabbable', restoreFocus: false })
+      .afterClosed().subscribe((a?: Articulo) => a ? this.elegir(a) : this.enfocar());
   }
 
   protected elegir(a: Articulo): void {
