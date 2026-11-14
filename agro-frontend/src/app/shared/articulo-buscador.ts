@@ -86,7 +86,7 @@ export class ArticuloBuscador {
       },
       // No es un código: si lo escrito coincide con un solo artículo, se agrega ese
       error: () => sugeridas.length === 1 ? this.elegir(sugeridas[0])
-        : this.notif.error(null, sugeridas.length ? `Elija el artículo de la lista o escanee su código` : `No existe un artículo con el código ${codigo}`),
+        : this.noEncontrado(sugeridas.length ? `Elija el artículo de la lista o escanee su código` : `No existe un artículo con el código ${codigo}`),
     });
   }
 
@@ -99,6 +99,12 @@ export class ArticuloBuscador {
     this.dialog.open(ArticuloBusquedaDialog, { data: { texto: typeof v === 'string' ? v.trim() : '' }, width: 'min(900px, 96vw)',
       maxWidth: '96vw', autoFocus: 'first-tabbable', restoreFocus: false })
       .afterClosed().subscribe((a?: Articulo) => a ? this.elegir(a) : this.enfocar());
+  }
+
+  /** Avisa y deja el texto seleccionado: el siguiente escaneo lo reemplaza en vez de pegarse detrás ("77461…"). */
+  private noEncontrado(mensaje: string): void {
+    this.notif.error(null, mensaje);
+    setTimeout(() => this.campo().nativeElement.select());
   }
 
   protected elegir(a: Articulo): void {
