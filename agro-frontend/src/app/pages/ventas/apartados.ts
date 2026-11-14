@@ -13,10 +13,13 @@ import { AuthService } from '../../core/auth.service';
 import { Notificacion } from '../../core/notificacion.service';
 import { ArticuloBuscador } from '../../shared/articulo-buscador';
 import { ClienteSelector } from '../../shared/cliente-selector';
-import { ConfirmarDialog } from '../../shared/confirmar-dialog';
+import { ApartadoCancelarDialog, CancelarApartadoResultado } from './apartado-cancelar-dialog';
+import { ApartadoAcuse } from './apartado-acuse';
+import { exportarExcel, subtitulosEmpresa } from '../../shared/excel';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ESCANEADOS_EMPAQUE, LineaCarrito, TipoPrecio, calcular } from '../../shared/calculo';
 import { PresentacionSelector } from '../../shared/presentacion-selector';
-import { params, redondear } from '../../shared/http';
+import { params, redondear, traerTodo } from '../../shared/http';
 import { TicketDialog } from './ticket-dialog';
 
 type Apartado = S['ApartadoResponse'];
@@ -27,7 +30,7 @@ import { Fecha } from '../../shared/fecha';
 @Component({
   selector: 'app-apartados',
   imports: [Fecha, PresentacionSelector, CurrencyPipe, DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatPaginatorModule, ArticuloBuscador, ClienteSelector],
+    MatPaginatorModule, MatTooltipModule, ArticuloBuscador, ClienteSelector],
   template: `
     <div class="pagina">
       <div class="pagina-titulo"><h1>Apartados</h1>
@@ -36,7 +39,10 @@ import { Fecha } from '../../shared/fecha';
             <mat-option value="ABIERTO">Abiertos</mat-option><mat-option value="FACTURADO">Facturados</mat-option>
             <mat-option value="CANCELADO">Cancelados</mat-option></mat-select></mat-form-field>
         <span class="espaciador"></span>
-        @if (!nuevo()) { <button mat-flat-button (click)="abrir()"><span class="material-symbols-outlined">add</span> Nuevo apartado</button> }
+        @if (!nuevo()) {
+          <button mat-stroked-button [disabled]="exportando()" (click)="excel()"><span class="material-symbols-outlined">table_view</span> Excel</button>
+          <button mat-flat-button (click)="abrir()"><span class="material-symbols-outlined">add</span> Nuevo apartado</button>
+        }
       </div>
       <p class="muted">Los abonos en efectivo, tarjeta o cheque entran por su caja abierta y quedan como anticipo del cliente.</p>
 
@@ -80,6 +86,8 @@ import { Fecha } from '../../shared/fecha';
                 <td><span class="chip" [class.ok]="a.estado === 'FACTURADO'" [class.error]="a.estado === 'CANCELADO'" [class.info]="a.estado === 'ABIERTO'">{{ a.estado }}</span>
                   @if (a.estado === 'ABIERTO' && a.fechaLimite && a.fechaLimite < hoy) { <span class="chip error">Vencido</span> }</td>
                 <td style="white-space:nowrap" (click)="$event.stopPropagation()">
+                  <button mat-icon-button (click)="acuse(a)" matTooltip="Imprimir acuse del apartado" aria-label="Imprimir acuse del apartado">
+                    <span class="material-symbols-outlined">print</span></button>
                   @if (a.estado === 'ABIERTO') {
                     @if ((a.pendiente ?? 0) > 0) { <button mat-button (click)="abrirAbono(a)">Abonar</button> }
                     @else { <button mat-flat-button (click)="facturar(a)">Facturar y entregar</button> }
@@ -100,7 +108,9 @@ import { Fecha } from '../../shared/fecha';
               @if (visto()?.id === a.id) {
                 <tr class="detalle"><td colspan="9">
                   <strong>Mercancía:</strong> @for (l of a.lineas; track l.linea) { {{ l.cantidad | number: '1.0-3' }} × {{ l.descripcion }}@if (!$last) { · } }
-                  <br /><strong>Abonos:</strong> @for (b of a.abonos; track b.id) { {{ b.fecha | date: 'dd/MM' }} {{ b.tipo === 'DEVOLUCION' ? 'devolución' : b.forma?.toLowerCase() }} {{ b.monto | currency }}@if (!$last) { · } } @empty { ninguno }
+                  <br /><strong>Abonos:</strong> @for (b of a.abonos; track b.id) { {{ b.fecha | date: 'dd/MM' }} {{ b.tipo === 'DEVOLUCION' ? 'devolución' : b.forma?.toLowerCase() }} {{ b.monto | currency }}
+                    @if (b.tipo !== 'DEVOLUCION') { <button mat-icon-button class="mini" (click)="acuse(a, b.id)" matTooltip="Imprimir acuse de este abono" aria-label="Imprimir acuse del abono">
+                      <span class="material-symbols-outlined">receipt</span></button> }@if (!$last) { · } } @empty { ninguno }
                   @if (a.motivoCancelacion) { <br /><span class="error-texto">Cancelado: {{ a.motivoCancelacion }}</span> }
                 </td></tr>
               }
@@ -113,7 +123,8 @@ import { Fecha } from '../../shared/fecha';
   styles: `.tabla { width: 100%; border-collapse: collapse; td, th { padding: 6px; border-bottom: 1px solid var(--mat-sys-outline-variant); text-align: left; } }
     .tabla .num { text-align: right; } .celda { width: 90px; padding: 6px; text-align: right; } .clickable { cursor: pointer; }
     .detalle td { background: var(--mat-sys-surface-container-low); } .total { font: var(--mat-sys-headline-small); color: var(--mat-sys-primary); }
-    .chip { margin-right: 4px; } section { margin-top: 16px; }`,
+    .chip { margin-right: 4px; } section { margin-top: 16px; }
+    .mini { --mat-icon-button-state-layer-size: 28px; padding: 2px; vertical-align: middle; }`,
 })
 export class Apartados {
   private readonly http = inject(HttpClient);
@@ -161,7 +172,10 @@ export class Apartados {
         empaque: l.empaque || undefined })),
       abonoInicial: this.abono.monto > 0 ? { forma: this.abono.forma, monto: redondear(this.abono.monto) } : undefined };
     this.http.post<Apartado>('/api/v1/ventas/apartados', req).subscribe({
-      next: (a) => { this.notif.ok(`Apartado ${a.numero} registrado · pendiente RD$${a.pendiente}`); this.nuevo.set(false); this.cargar(); },
+      next: (a) => {
+        this.notif.ok(`Apartado ${a.numero} registrado · pendiente RD$${a.pendiente}`); this.nuevo.set(false); this.cargar();
+        this.acuse(a);   // acuse para el cliente: mercancía separada y primer abono
+      },
       error: (e) => this.notif.error(e) });
   }
 
@@ -170,7 +184,11 @@ export class Apartados {
   protected abonar(a: Apartado): void {
     this.http.post<Apartado>(`/api/v1/ventas/apartados/${a.id}/abonos`, { forma: this.nuevoAbono.forma, monto: redondear(this.nuevoAbono.monto),
       referencia: this.nuevoAbono.referencia || undefined }).subscribe({
-      next: (r) => { this.notif.ok(`Abono registrado · pendiente RD$${r.pendiente}`); this.abonando.set(null); this.cargar(); },
+      next: (r) => {
+        this.notif.ok(`Abono registrado · pendiente RD$${r.pendiente}`); this.abonando.set(null); this.cargar();
+        const ultimo = (r.abonos ?? []).filter((b) => b.tipo !== 'DEVOLUCION').at(-1);
+        this.acuse(r, ultimo?.id);
+      },
       error: (e) => this.notif.error(e) });
   }
 
@@ -180,20 +198,46 @@ export class Apartados {
       error: (e) => this.notif.error(e) });
   }
 
+  protected acuse(a: Apartado, abonoId?: number): void { this.dialog.open(ApartadoAcuse, { data: { apartado: a, abonoId } }); }
+
+  protected readonly exportando = signal(false);
+
+  /** Todos los apartados del filtro actual (no solo la página visible). */
+  protected excel(): void {
+    this.exportando.set(true);
+    const nombres: Record<string, string> = { ABIERTO: 'Abierto', FACTURADO: 'Facturado', CANCELADO: 'Cancelado' };
+    traerTodo<Apartado>(this.http, '/api/v1/ventas/apartados', { estado: this.estado }).subscribe({
+      next: (as) => {
+        this.exportando.set(false);
+        const suma = (f: (a: Apartado) => number | undefined) => as.reduce((s, a) => s + (f(a) ?? 0), 0);
+        exportarExcel({
+          archivo: 'apartados', titulo: 'Apartados',
+          subtitulos: subtitulosEmpresa(this.auth.perfil()?.compania, 'Estado: ' + (this.estado ? nombres[this.estado] : 'Todos')),
+          columnas: [{ titulo: 'No.', tipo: 'numero' }, { titulo: 'Fecha', tipo: 'fecha' }, { titulo: 'Cliente' }, { titulo: 'Concepto' },
+            { titulo: 'Mercancía' }, { titulo: 'Total', tipo: 'moneda' }, { titulo: 'Abonado', tipo: 'moneda' }, { titulo: 'Pendiente', tipo: 'moneda' },
+            { titulo: 'Retirar a más tardar', tipo: 'fecha' }, { titulo: 'Estado' }, { titulo: 'Motivo de cancelación' }],
+          filas: as.map((a) => [a.numero, a.fecha, a.cliente, a.concepto,
+            (a.lineas ?? []).map((l) => `${l.cantidad} x ${l.descripcion}`).join('; '), a.total, a.abonado, a.pendiente,
+            a.fechaLimite ?? null, nombres[a.estado ?? ''] ?? a.estado, a.motivoCancelacion ?? '']),
+          totales: ['TOTAL', null, as.length + ' apartado(s)', null, null, suma((a) => a.total), suma((a) => a.abonado), suma((a) => a.pendiente),
+            null, null, null],
+        });
+      },
+      error: (e) => { this.exportando.set(false); this.notif.error(e); },
+    });
+  }
+
   protected cancelar(a: Apartado): void {
-    this.dialog.open(ConfirmarDialog, { data: { titulo: `Cancelar apartado ${a.numero}`, accion: 'Cancelar y devolver', peligro: true, pedirMotivo: 'Motivo',
-      mensaje: `Se devuelven RD$${a.abonado} en efectivo desde su caja. Si el cliente prefiere conservarlos como saldo a favor, use "Cancelar sin devolver".` } })
-      .afterClosed().subscribe((motivo) => {
-        if (!motivo) return;
-        this.http.post(`/api/v1/ventas/apartados/${a.id}/cancelar`, { motivo, devolverDinero: true }).subscribe({
-          next: () => { this.notif.ok('Apartado cancelado y dinero devuelto'); this.cargar(); },
-          error: (e) => {
-            this.notif.error(e);
-            this.dialog.open(ConfirmarDialog, { data: { titulo: 'Cancelar sin devolver', accion: 'Dejar como saldo a favor',
-              mensaje: `¿Cancelar el apartado ${a.numero} dejando RD$${a.abonado} como saldo a favor del cliente?` } }).afterClosed()
-              .subscribe((ok) => ok && this.http.post(`/api/v1/ventas/apartados/${a.id}/cancelar`, { motivo, devolverDinero: false }).subscribe({
-                next: () => { this.notif.ok('Apartado cancelado; los abonos quedan como saldo a favor'); this.cargar(); }, error: (e2) => this.notif.error(e2) }));
+    this.dialog.open(ApartadoCancelarDialog, { data: { numero: a.numero, cliente: a.cliente, abonado: a.abonado ?? 0 }, width: 'min(680px, 96vw)', maxWidth: '96vw' })
+      .afterClosed().subscribe((r?: CancelarApartadoResultado) => {
+        if (!r) return;   // "No cancelar"
+        this.http.post(`/api/v1/ventas/apartados/${a.id}/cancelar`, r).subscribe({
+          next: () => {
+            this.notif.ok(r.devolverDinero ? `Apartado cancelado: se devolvieron RD$${a.abonado} desde su caja`
+              : (a.abonado ?? 0) > 0 ? `Apartado cancelado: RD$${a.abonado} quedan como saldo a favor del cliente` : 'Apartado cancelado');
+            this.cargar();
           },
+          error: (e) => this.notif.error(e),
         });
       });
   }
